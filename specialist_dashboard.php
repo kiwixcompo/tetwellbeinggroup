@@ -5,8 +5,8 @@
  */
 require_once 'db.php';
 
-// Auth Guard: Specialist Only
-if (!isset($_SESSION['user_id']) || ($_SESSION['user_role'] ?? '') !== 'specialist') {
+// Auth Guard: Specialist & Admin Only
+if (!isset($_SESSION['user_id']) || !in_array($_SESSION['user_role'] ?? '', ['specialist', 'admin'])) {
     header('Location: login.php');
     exit;
 }
@@ -14,6 +14,7 @@ if (!isset($_SESSION['user_id']) || ($_SESSION['user_role'] ?? '') !== 'speciali
 $user_id = $_SESSION['user_id'];
 $user_name = $_SESSION['user_name'];
 $user_initial = strtoupper(substr($user_name, 0, 1));
+$user_role = $_SESSION['user_role'] ?? 'specialist';
 
 // 1. FETCH CURRENT SPECIALIST DATA
 $specialist = null;

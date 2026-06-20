@@ -167,11 +167,11 @@ try {
 
     // Insert admin user if not exists
     $stmt = $pdo->prepare("SELECT COUNT(*) FROM users WHERE email = ?");
-    $stmt->execute(['admin@tetwellbeing.com']);
+    $stmt->execute(['admin@tetwellbeinggroup.com']);
     if ($stmt->fetchColumn() == 0) {
-        $hashed_password = password_hash('admin123', PASSWORD_DEFAULT);
+        $hashed_password = password_hash('Admin123!', PASSWORD_DEFAULT);
         $insert = $pdo->prepare("INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, 'admin')");
-        $insert->execute(['System Admin', 'admin@tetwellbeing.com', $hashed_password]);
+        $insert->execute(['System Admin', 'admin@tetwellbeinggroup.com', $hashed_password]);
     }
 
     // Insert demo user Mark if not exists
@@ -234,11 +234,11 @@ try {
 // 2. INITIALIZE SESSION-BASED MOCK STORAGE (Fallback fallback mechanism)
 if (!isset($_SESSION['mock_users'])) {
     $_SESSION['mock_users'] = [
-        'admin@tetwellbeing.com' => [
+        'admin@tetwellbeinggroup.com' => [
             'id' => 99,
             'name' => 'System Admin',
-            'email' => 'admin@tetwellbeing.com',
-            'password' => password_hash('admin123', PASSWORD_DEFAULT),
+            'email' => 'admin@tetwellbeinggroup.com',
+            'password' => password_hash('Admin123!', PASSWORD_DEFAULT),
             'role' => 'admin',
             'is_suspended' => 0,
             'archetype' => NULL
