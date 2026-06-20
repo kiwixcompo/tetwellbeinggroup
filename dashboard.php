@@ -85,6 +85,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Action 2: Dismiss Crisis Helpline Modal
     if ($action === 'clear_crisis') {
         $_SESSION['crisis_state'] = 0;
+        if ($db_connected && $pdo) {
+            try {
+                $stmt = $pdo->prepare("UPDATE users SET crisis_state = 0 WHERE id = ?");
+                $stmt->execute([$user_id]);
+            } catch (PDOException $ex) {}
+        }
+        if (isset($_SESSION['mock_users'])) {
+            foreach ($_SESSION['mock_users'] as $email => &$mu) {
+                if ($mu['id'] == $user_id) {
+                    $mu['crisis_state'] = 0;
+                }
+            }
+        }
         header('Location: dashboard.php?crisis_cleared=1');
         exit;
     }
@@ -100,6 +113,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Sprint 2.2 - Clinical Safety Triage RegEx Scan
             if (EmotionalHealthService::checkDistress($submitted_notes)) {
                 $_SESSION['crisis_state'] = 1;
+                if ($db_connected && $pdo) {
+                    try {
+                        $stmt = $pdo->prepare("UPDATE users SET crisis_state = 1 WHERE id = ?");
+                        $stmt->execute([$user_id]);
+                    } catch (PDOException $ex) {}
+                }
+                if (isset($_SESSION['mock_users'])) {
+                    foreach ($_SESSION['mock_users'] as $email => &$mu) {
+                        if ($mu['id'] == $user_id) {
+                            $mu['crisis_state'] = 1;
+                        }
+                    }
+                }
             }
 
             // Save to DB

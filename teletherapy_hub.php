@@ -63,6 +63,19 @@ $action_error = '';
 // Handle crisis dismissal if triggered in this hub
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'clear_crisis') {
     $_SESSION['crisis_state'] = 0;
+    if ($db_connected && $pdo) {
+        try {
+            $stmt = $pdo->prepare("UPDATE users SET crisis_state = 0 WHERE id = ?");
+            $stmt->execute([$user_id]);
+        } catch (PDOException $ex) {}
+    }
+    if (isset($_SESSION['mock_users'])) {
+        foreach ($_SESSION['mock_users'] as $email => &$mu) {
+            if ($mu['id'] == $user_id) {
+                $mu['crisis_state'] = 0;
+            }
+        }
+    }
     header('Location: teletherapy_hub.php');
     exit;
 }

@@ -47,6 +47,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Action 0: Clear crisis state
     if ($action === 'clear_crisis') {
         $_SESSION['crisis_state'] = 0;
+        if ($db_connected && $pdo) {
+            try {
+                $stmt = $pdo->prepare("UPDATE users SET crisis_state = 0 WHERE id = ?");
+                $stmt->execute([$user_id]);
+            } catch (PDOException $ex) {}
+        }
+        if (isset($_SESSION['mock_users'])) {
+            foreach ($_SESSION['mock_users'] as $email => &$mu) {
+                if ($mu['id'] == $user_id) {
+                    $mu['crisis_state'] = 0;
+                }
+            }
+        }
         header('Location: caregiver_hub.php');
         exit;
     }

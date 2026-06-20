@@ -58,7 +58,8 @@ try {
         "is_approved TINYINT(1) DEFAULT 0",
         "escrow_balance DECIMAL(10,2) DEFAULT 0.00",
         "clearance_balance DECIMAL(10,2) DEFAULT 0.00",
-        "is_suspended TINYINT(1) DEFAULT 0"
+        "is_suspended TINYINT(1) DEFAULT 0",
+        "crisis_state TINYINT(1) DEFAULT 0"
     ];
     foreach ($cols_to_add as $col) {
         try {
@@ -372,24 +373,33 @@ if (!isset($_SESSION['mock_availability'])) {
     ];
 }
 
-// Global suspension check
+// Global suspension check and crisis state synchronization
 $current_page = basename($_SERVER['PHP_SELF']);
 if (isset($_SESSION['user_id']) && !in_array($current_page, ['login.php', 'signup.php', 'logout.php'])) {
     $user_id = $_SESSION['user_id'];
     $is_currently_suspended = false;
+    $db_crisis_state = 0;
+
     if ($db_connected && $pdo) {
         try {
-            $stmt = $pdo->prepare("SELECT is_suspended FROM users WHERE id = ?");
+            $stmt = $pdo->prepare("SELECT is_suspended, crisis_state FROM users WHERE id = ?");
             $stmt->execute([$user_id]);
-            $susp = $stmt->fetchColumn();
-            if ($susp == 1) {
-                $is_currently_suspended = true;
+            $u_info = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($u_info) {
+                if ($u_info['is_suspended'] == 1) {
+                    $is_currently_suspended = true;
+                }
+                $db_crisis_state = (int)$u_info['crisis_state'];
             }
         } catch (PDOException $ex) {}
     } else {
         $user_email = $_SESSION['user_email'] ?? '';
-        if (isset($_SESSION['mock_users'][$user_email]['is_suspended']) && $_SESSION['mock_users'][$user_email]['is_suspended'] == 1) {
-            $is_currently_suspended = true;
+        if (isset($_SESSION['mock_users'][$user_email])) {
+            $mu = $_SESSION['mock_users'][$user_email];
+            if (($mu['is_suspended'] ?? 0) == 1) {
+                $is_currently_suspended = true;
+            }
+            $db_crisis_state = (int)($mu['crisis_state'] ?? 0);
         }
     }
 
@@ -407,5 +417,8 @@ if (isset($_SESSION['user_id']) && !in_array($current_page, ['login.php', 'signu
         header('Location: login.php?suspended=1');
         exit;
     }
+
+    // Sync crisis state
+    $_SESSION['crisis_state'] = $db_crisis_state;
 }
 ?>

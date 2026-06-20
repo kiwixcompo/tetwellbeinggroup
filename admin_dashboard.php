@@ -131,6 +131,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 try {
                     $pdo->beginTransaction();
                     
+                    // Retrieve user name & role in case they are a specialist to delete availability
+                    $stmt_u = $pdo->prepare("SELECT name, role FROM users WHERE id = ?");
+                    $stmt_u->execute([$target_id]);
+                    $user_to_del = $stmt_u->fetch(PDO::FETCH_ASSOC);
+
                     // Cascade deletions in dependent tables to satisfy integrity constraints
                     $stmt = $pdo->prepare("DELETE FROM daily_checkins WHERE user_id = ?");
                     $stmt->execute([$target_id]);
@@ -141,8 +146,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                     $stmt = $pdo->prepare("DELETE FROM caregiver_respite_breaks WHERE user_id = ?");
                     $stmt->execute([$target_id]);
 
-                    $stmt = $pdo->prepare("DELETE FROM teletherapy_bookings WHERE client_id = ? OR therapist_id = ?");
+                    // Fixed Column Name client_id -> user_id
+                    $stmt = $pdo->prepare("DELETE FROM teletherapy_bookings WHERE user_id = ? OR therapist_id = ?");
                     $stmt->execute([$target_id, $target_id]);
+
+                    if ($user_to_del && $user_to_del['role'] === 'specialist') {
+                        $stmt_av = $pdo->prepare("DELETE FROM therapist_availability WHERE therapist_name = ?");
+                        $stmt_av->execute([$user_to_del['name']]);
+                    }
 
                     $stmt = $pdo->prepare("DELETE FROM community_posts WHERE user_id = ?");
                     $stmt->execute([$target_id]);
@@ -151,7 +162,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                     $stmt->execute([$target_id]);
 
                     $pdo->commit();
-                    $action_success = "User and all associated profile history deleted successfully.";
+                    $action_success = "User and all associated data deleted successfully.";
                 } catch (PDOException $e) {
                     $pdo->rollBack();
                     $action_error = "Database error: " . $e->getMessage();
@@ -170,6 +181,181 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                     $action_success = "User deleted successfully (Session Mock).";
                 }
             }
+        }
+    }
+
+    elseif ($action === 'clear_crisis_admin' && $target_id) {
+        if ($db_connected && $pdo) {
+            try {
+                $stmt = $pdo->prepare("UPDATE users SET crisis_state = 0 WHERE id = ?");
+                $stmt->execute([$target_id]);
+                $action_success = "Crisis safety blocker resolved and client access restored.";
+            } catch (PDOException $e) {
+                $action_error = "Database error: " . $e->getMessage();
+            }
+        }
+        if (isset($_SESSION['mock_users'])) {
+            foreach ($_SESSION['mock_users'] as $email => &$user) {
+                if ($user['id'] == $target_id) {
+                    $user['crisis_state'] = 0;
+                    $action_success = "Crisis safety blocker resolved (Session Mock).";
+                }
+            }
+        }
+    }
+
+    elseif ($action === 'release_escrow' && $target_id) {
+        if ($db_connected && $pdo) {
+            try {
+                $pdo->beginTransaction();
+                $stmt = $pdo->prepare("SELECT * FROM teletherapy_bookings WHERE id = ? AND payment_status = 'escrow'");
+                $stmt->execute([$target_id]);
+                $bk = $stmt->fetch(PDO::FETCH_ASSOC);
+                if ($bk) {
+                    $amount = $bk['amount_paid'];
+                    $t_id = $bk['therapist_id'];
+                    
+                    $stmt_up = $pdo->prepare("UPDATE teletherapy_bookings SET payment_status = 'released' WHERE id = ?");
+                    $stmt_up->execute([$target_id]);
+                    
+                    if ($t_id) {
+                        $stmt_bal = $pdo->prepare("UPDATE users SET escrow_balance = GREATEST(0, escrow_balance - ?), clearance_balance = clearance_balance + ? WHERE id = ?");
+                        $stmt_bal->execute([$amount, $amount, $t_id]);
+                    }
+                    $pdo->commit();
+                    $action_success = "Escrow hold released and funds credited to specialist cleared balance.";
+                } else {
+                    $pdo->rollBack();
+                    $action_error = "Escrow booking not found or already released.";
+                }
+            } catch (PDOException $e) {
+                if ($pdo->inTransaction()) $pdo->rollBack();
+                $action_error = "Database error: " . $e->getMessage();
+            }
+        }
+        if (isset($_SESSION['mock_bookings'])) {
+            foreach ($_SESSION['mock_bookings'] as $idx => &$bk) {
+                if (($bk['payment_status'] ?? '') === 'escrow' && ($idx + 1) == $target_id) {
+                    $bk['payment_status'] = 'released';
+                    $amount = $bk['amount_paid'];
+                    $t_id = $bk['therapist_id'];
+                    if ($t_id && isset($_SESSION['mock_users'])) {
+                        foreach ($_SESSION['mock_users'] as $email => &$u) {
+                            if ($u['id'] == $t_id) {
+                                $u['escrow_balance'] = max(0, ($u['escrow_balance'] ?? 0.00) - $amount);
+                                $u['clearance_balance'] = ($u['clearance_balance'] ?? 0.00) + $amount;
+                            }
+                        }
+                    }
+                    $action_success = "Escrow hold released (Session Mock).";
+                    break;
+                }
+            }
+        }
+    }
+
+    elseif ($action === 'delete_post' && $target_id) {
+        if ($db_connected && $pdo) {
+            try {
+                $stmt = $pdo->prepare("DELETE FROM community_posts WHERE id = ?");
+                $stmt->execute([$target_id]);
+                $action_success = "Community forum post moderated and deleted successfully.";
+            } catch (PDOException $e) {
+                $action_error = "Database error: " . $e->getMessage();
+            }
+        }
+        if (isset($_SESSION['mock_community_posts'])) {
+            foreach ($_SESSION['mock_community_posts'] as $idx => $p) {
+                if ($p['id'] == $target_id) {
+                    unset($_SESSION['mock_community_posts'][$idx]);
+                    $_SESSION['mock_community_posts'] = array_values($_SESSION['mock_community_posts']);
+                    $action_success = "Community forum post deleted (Session Mock).";
+                    break;
+                }
+            }
+        }
+    }
+
+    elseif ($action === 'seed_test_crisis') {
+        if ($db_connected && $pdo) {
+            try {
+                $cid = $pdo->query("SELECT id FROM users WHERE role = 'client' LIMIT 1")->fetchColumn();
+                if ($cid) {
+                    $stmt = $pdo->prepare("UPDATE users SET crisis_state = 1 WHERE id = ?");
+                    $stmt->execute([$cid]);
+                    
+                    $stmt = $pdo->prepare("INSERT INTO daily_checkins (user_id, mood, notes) VALUES (?, 'terrible', 'I feel overwhelmed and want to end my life')");
+                    $stmt->execute([$cid]);
+                    
+                    $action_success = "Test client crisis flag successfully simulated in database.";
+                } else {
+                    $action_error = "No client users found to seed simulated crisis.";
+                }
+            } catch (PDOException $e) {
+                $action_error = "Database error: " . $e->getMessage();
+            }
+        }
+        if (isset($_SESSION['mock_users'])) {
+            foreach ($_SESSION['mock_users'] as $email => &$u) {
+                if ($u['role'] === 'client') {
+                    $u['crisis_state'] = 1;
+                    $_SESSION['mock_checkins'][] = [
+                        'user_id' => $u['id'],
+                        'mood' => 'terrible',
+                        'notes' => 'I feel overwhelmed and want to end my life',
+                        'created_at' => date('Y-m-d H:i:s')
+                    ];
+                    $action_success = "Test client crisis flag simulated (Session Mock).";
+                    break;
+                }
+            }
+        }
+    }
+
+    elseif ($action === 'seed_test_escrow') {
+        if ($db_connected && $pdo) {
+            try {
+                $cid = $pdo->query("SELECT id FROM users WHERE role = 'client' LIMIT 1")->fetchColumn();
+                $tid = $pdo->query("SELECT id, name FROM users WHERE role = 'specialist' AND is_approved = 1 LIMIT 1")->fetch(PDO::FETCH_ASSOC);
+                
+                if ($cid && $tid) {
+                    $release_date = date('Y-m-d H:i:s', strtotime('+7 days'));
+                    $stmt = $pdo->prepare("INSERT INTO teletherapy_bookings (user_id, therapist_name, therapist_id, booking_date, booking_time, amount_paid, payment_status, release_date) VALUES (?, ?, ?, ?, '10:00 AM', 120.00, 'escrow', ?)");
+                    $stmt->execute([$cid, $tid['name'], $tid['id'], date('Y-m-d', strtotime('+2 days')), $release_date]);
+                    
+                    $stmt_up = $pdo->prepare("UPDATE users SET escrow_balance = escrow_balance + 120.00 WHERE id = ?");
+                    $stmt_up->execute([$tid['id']]);
+                    
+                    $action_success = "Test escrow hold booking simulated successfully.";
+                } else {
+                    $action_error = "No client or approved specialist found to seed escrow.";
+                }
+            } catch (PDOException $e) {
+                $action_error = "Database error: " . $e->getMessage();
+            }
+        }
+        if (isset($_SESSION['mock_users'])) {
+            $cid = 1;
+            $tid = 2;
+            $tname = 'Dr. Evelyn Carter, PhD';
+            $release_date = date('Y-m-d H:i:s', strtotime('+7 days'));
+            $_SESSION['mock_bookings'][] = [
+                'user_id' => $cid,
+                'therapist_name' => $tname,
+                'therapist_id' => $tid,
+                'booking_date' => date('Y-m-d', strtotime('+2 days')),
+                'booking_time' => '10:00 AM',
+                'amount_paid' => 120.00,
+                'payment_status' => 'escrow',
+                'release_date' => $release_date,
+                'created_at' => date('Y-m-d H:i:s')
+            ];
+            foreach ($_SESSION['mock_users'] as $email => &$u) {
+                if ($u['id'] == $tid) {
+                    $u['escrow_balance'] = ($u['escrow_balance'] ?? 0.00) + 120.00;
+                }
+            }
+            $action_success = "Test escrow hold booking simulated (Session Mock).";
         }
     }
 }
@@ -208,6 +394,84 @@ foreach ($users as $u) {
     if (($u['is_suspended'] ?? 0) == 1) {
         $suspended_accounts++;
     }
+}
+
+// Fetch Escrow bookings
+$escrow_bookings = [];
+if ($db_connected && $pdo) {
+    try {
+        $stmt = $pdo->query("SELECT b.*, u.name as client_name, t.name as therapist_name_db FROM teletherapy_bookings b 
+                             LEFT JOIN users u ON b.user_id = u.id 
+                             LEFT JOIN users t ON b.therapist_id = t.id 
+                             WHERE b.payment_status = 'escrow' ORDER BY b.release_date ASC");
+        $escrow_bookings = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {}
+} else {
+    if (isset($_SESSION['mock_bookings'])) {
+        foreach ($_SESSION['mock_bookings'] as $idx => $bk) {
+            if (($bk['payment_status'] ?? '') === 'escrow') {
+                $c_name = 'Unknown Client';
+                $t_name = $bk['therapist_name'];
+                if (isset($_SESSION['mock_users'])) {
+                    foreach ($_SESSION['mock_users'] as $mu) {
+                        if ($mu['id'] == $bk['user_id']) {
+                            $c_name = $mu['name'];
+                        }
+                    }
+                }
+                $escrow_bookings[] = array_merge($bk, ['client_name' => $c_name, 'therapist_name_db' => $t_name, 'id' => $idx + 1]);
+            }
+        }
+    }
+}
+
+// Fetch Crisis Alerts
+$crisis_alerts = [];
+if ($db_connected && $pdo) {
+    try {
+        // Query users with active crisis flags and their latest daily checkins
+        $stmt = $pdo->query("SELECT u.id as user_id, u.name as user_name, u.email as user_email, 
+                                    (SELECT notes FROM daily_checkins WHERE user_id = u.id ORDER BY created_at DESC LIMIT 1) as notes,
+                                    (SELECT created_at FROM daily_checkins WHERE user_id = u.id ORDER BY created_at DESC LIMIT 1) as created_at
+                             FROM users u 
+                             WHERE u.crisis_state = 1");
+        $crisis_alerts = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {}
+} else {
+    if (isset($_SESSION['mock_users'])) {
+        foreach ($_SESSION['mock_users'] as $mu) {
+            if (($mu['crisis_state'] ?? 0) == 1) {
+                $note = "Severe distress reported via daily check-in.";
+                $date = date('Y-m-d H:i:s');
+                if (isset($_SESSION['mock_checkins'])) {
+                    foreach ($_SESSION['mock_checkins'] as $mc) {
+                        if ($mc['user_id'] == $mu['id']) {
+                            $note = $mc['notes'];
+                            $date = $mc['created_at'];
+                        }
+                    }
+                }
+                $crisis_alerts[] = [
+                    'user_id' => $mu['id'],
+                    'user_name' => $mu['name'],
+                    'user_email' => $mu['email'],
+                    'notes' => $note,
+                    'created_at' => $date
+                ];
+            }
+        }
+    }
+}
+
+// Fetch community posts for moderation
+$forum_posts = [];
+if ($db_connected && $pdo) {
+    try {
+        $stmt = $pdo->query("SELECT * FROM community_posts ORDER BY created_at DESC LIMIT 15");
+        $forum_posts = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {}
+} else {
+    $forum_posts = array_slice($_SESSION['mock_community_posts'] ?? [], 0, 15);
 }
 ?>
 <!DOCTYPE html>
@@ -657,6 +921,175 @@ foreach ($users as $u) {
             </div>
         </div>
 
+        <!-- ESCROW HOLDS & RELEASES -->
+        <div class="bg-white rounded-3xl shadow-card border border-gray-100 overflow-hidden mb-10">
+            <div class="p-6 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                    <h2 class="text-lg font-bold font-outfit text-brand-slate">System Escrow Holds</h2>
+                    <p class="text-xs text-gray-500 mt-0.5">Manually release funds from system escrow holds directly to specialist cleared balances.</p>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-brand-bg text-[10px] font-bold text-brand-slate uppercase tracking-wider border-b border-gray-100">
+                            <th class="p-4 pl-6">Client</th>
+                            <th class="p-4">Clinical Specialist</th>
+                            <th class="p-4">Session Details</th>
+                            <th class="p-4">Hold Amount</th>
+                            <th class="p-4">Release Date</th>
+                            <th class="p-4 pr-6 text-right font-outfit">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100 text-xs">
+                        <?php if (empty($escrow_bookings)): ?>
+                        <tr>
+                            <td colspan="6" class="p-8 text-center text-gray-500 font-medium">No pending escrow holds.</td>
+                        </tr>
+                        <?php else: foreach ($escrow_bookings as $eb): ?>
+                        <tr class="hover:bg-brand-bg/40 transition-colors">
+                            <td class="p-4 pl-6 font-bold text-brand-slate"><?php echo htmlspecialchars($eb['client_name']); ?></td>
+                            <td class="p-4 font-bold text-brand-slate"><?php echo htmlspecialchars($eb['therapist_name_db']); ?></td>
+                            <td class="p-4 text-gray-500"><?php echo htmlspecialchars($eb['booking_date']); ?> at <?php echo htmlspecialchars($eb['booking_time']); ?></td>
+                            <td class="p-4 font-bold text-brand-coral">$<?php echo number_format($eb['amount_paid'], 2); ?></td>
+                            <td class="p-4 font-mono text-[10px] text-gray-500"><?php echo htmlspecialchars($eb['release_date']); ?></td>
+                            <td class="p-4 pr-6 text-right font-outfit">
+                                <form method="POST" class="inline" onsubmit="return confirm('Release this escrow hold to the specialist cleared balance immediately?');">
+                                    <input type="hidden" name="action" value="release_escrow">
+                                    <input type="hidden" name="target_id" value="<?php echo $eb['id']; ?>">
+                                    <button type="submit" class="px-2.5 py-1.5 rounded-xl bg-brand-sage hover:bg-brand-sageHover text-white font-bold text-[10px] shadow-sm transition-colors font-outfit">
+                                        Release Escrow
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        <?php endforeach; endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- CLINICAL SAFETY TRIAGE ALERTS -->
+        <div class="bg-white rounded-3xl shadow-card border border-brand-coral/20 overflow-hidden mb-10">
+            <div class="p-6 border-b border-brand-coral/10 bg-brand-coralLight flex items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-lg font-bold font-outfit text-brand-coral">Clinical Safety Distress Alerts</h2>
+                    <p class="text-xs text-brand-coral/80 mt-0.5">Real-time keyword flag notifications for client members currently blocked by the crisis safety net.</p>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-brand-bg text-[10px] font-bold text-brand-slate uppercase tracking-wider border-b border-gray-100">
+                            <th class="p-4 pl-6">Vulnerable Member</th>
+                            <th class="p-4">Flagged Note Content</th>
+                            <th class="p-4">Timestamp</th>
+                            <th class="p-4 pr-6 text-right font-outfit">Safety Resolution</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100 text-xs">
+                        <?php if (empty($crisis_alerts)): ?>
+                        <tr>
+                            <td colspan="4" class="p-8 text-center text-gray-500 font-medium">All members safe. No active crisis flags.</td>
+                        </tr>
+                        <?php else: foreach ($crisis_alerts as $ca): ?>
+                        <tr class="hover:bg-brand-bg/40 transition-colors">
+                            <td class="p-4 pl-6">
+                                <h4 class="font-bold text-brand-slate"><?php echo htmlspecialchars($ca['user_name']); ?></h4>
+                                <p class="text-[10px] text-gray-400 mt-0.5"><?php echo htmlspecialchars($ca['user_email']); ?></p>
+                            </td>
+                            <td class="p-4 text-gray-600 max-w-sm whitespace-normal leading-relaxed font-medium">
+                                "<?php echo htmlspecialchars($ca['notes'] ?? 'No text check-in logs submitted.'); ?>"
+                            </td>
+                            <td class="p-4 font-mono text-[10px] text-gray-500"><?php echo htmlspecialchars($ca['created_at']); ?></td>
+                            <td class="p-4 pr-6 text-right font-outfit">
+                                <form method="POST" class="inline" onsubmit="return confirm('Clear the safety triage blocker for this client?');">
+                                    <input type="hidden" name="action" value="clear_crisis_admin">
+                                    <input type="hidden" name="target_id" value="<?php echo $ca['user_id']; ?>">
+                                    <button type="submit" class="px-2.5 py-1.5 rounded-xl bg-brand-coral hover:bg-brand-coralHover text-white font-bold text-[10px] shadow-sm transition-colors font-outfit">
+                                        Clear Crisis State
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        <?php endforeach; endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- FORUM CONTENT MODERATION -->
+        <div class="bg-white rounded-3xl shadow-card border border-gray-100 overflow-hidden mb-10">
+            <div class="p-6 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                    <h2 class="text-lg font-bold font-outfit text-brand-slate">Peer Forum Moderation</h2>
+                    <p class="text-xs text-gray-500 mt-0.5">Moderate posts submitted to the community boards to ensure a safe, supportive environment.</p>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-brand-bg text-[10px] font-bold text-brand-slate uppercase tracking-wider border-b border-gray-100">
+                            <th class="p-4 pl-6">Author</th>
+                            <th class="p-4">Channel</th>
+                            <th class="p-4">Post Content</th>
+                            <th class="p-4">Date Posted</th>
+                            <th class="p-4 pr-6 text-right font-outfit">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100 text-xs">
+                        <?php if (empty($forum_posts)): ?>
+                        <tr>
+                            <td colspan="5" class="p-8 text-center text-gray-500 font-medium">No community posts found.</td>
+                        </tr>
+                        <?php else: foreach ($forum_posts as $fp): ?>
+                        <tr class="hover:bg-brand-bg/40 transition-colors">
+                            <td class="p-4 pl-6 font-bold text-brand-slate"><?php echo htmlspecialchars($fp['author_name']); ?></td>
+                            <td class="p-4">
+                                <span class="font-bold text-[10px] uppercase text-brand-sage bg-brand-sageLight px-2 py-0.5 rounded-md font-outfit">
+                                    #<?php echo htmlspecialchars($fp['channel']); ?>
+                                </span>
+                            </td>
+                            <td class="p-4 text-gray-600 max-w-md whitespace-normal leading-relaxed"><?php echo htmlspecialchars($fp['content']); ?></td>
+                            <td class="p-4 font-mono text-[10px] text-gray-500"><?php echo htmlspecialchars($fp['created_at']); ?></td>
+                            <td class="p-4 pr-6 text-right font-outfit">
+                                <form method="POST" class="inline" onsubmit="return confirm('Are you sure you want to permanently delete this forum post?');">
+                                    <input type="hidden" name="action" value="delete_post">
+                                    <input type="hidden" name="target_id" value="<?php echo $fp['id']; ?>">
+                                    <button type="submit" class="px-2.5 py-1.5 rounded-xl hover:bg-brand-coralLight text-gray-400 hover:text-brand-coral font-bold text-[10px] transition-colors font-outfit">
+                                        Delete Post
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        <?php endforeach; endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- DEVELOPER SIMULATOR CARD -->
+        <div class="bg-white rounded-3xl p-6 shadow-soft border border-gray-100 mb-10 flex flex-col md:flex-row md:items-center justify-between gap-6 font-outfit">
+            <div>
+                <h3 class="text-sm font-bold font-outfit text-brand-slate uppercase tracking-wider">Developer QA Testing Sandbox</h3>
+                <p class="text-xs text-gray-500 mt-1">Directly trigger test inputs to review and demonstrate the crisis resolution and escrow release workflows.</p>
+            </div>
+            <div class="flex flex-wrap gap-3">
+                <form method="POST" class="inline">
+                    <input type="hidden" name="action" value="seed_test_crisis">
+                    <button type="submit" class="px-3.5 py-2.5 rounded-2xl bg-brand-coralLight text-brand-coral hover:bg-brand-coral hover:text-white font-bold text-xs transition-colors font-outfit">
+                        Simulate Client Crisis State
+                    </button>
+                </form>
+                <form method="POST" class="inline">
+                    <input type="hidden" name="action" value="seed_test_escrow">
+                    <button type="submit" class="px-3.5 py-2.5 rounded-2xl bg-brand-skyLight text-brand-slate hover:bg-brand-sky hover:text-brand-slate font-bold text-xs transition-colors font-outfit">
+                        Simulate Escrow Booking Hold
+                    </button>
+                </form>
+            </div>
+        </div>
+
     </main>
 
     <!-- EDIT USER MODAL -->
@@ -697,9 +1130,9 @@ foreach ($users as $u) {
                     <div>
                         <label for="modal-role" class="block font-bold mb-1.5">System Access Role</label>
                         <select name="role" id="modal-role" onchange="toggleRoleFields()" class="w-full px-3.5 py-2.5 rounded-2xl border border-gray-200 bg-brand-inputBg focus:outline-none focus:ring-2 focus:ring-brand-sage/20 focus:border-brand-sage font-medium font-outfit">
-                            <option value="client font-outfit">Client Member</option>
-                            <option value="specialist font-outfit">Clinical Specialist</option>
-                            <option value="admin font-outfit">System Administrator</option>
+                            <option value="client">Client Member</option>
+                            <option value="specialist">Clinical Specialist</option>
+                            <option value="admin">System Administrator</option>
                         </select>
                     </div>
 
@@ -708,9 +1141,9 @@ foreach ($users as $u) {
                         <label for="modal-archetype" class="block font-bold mb-1.5">Onboarding Archetype</label>
                         <select name="archetype" id="modal-archetype" class="w-full px-3.5 py-2.5 rounded-2xl border border-gray-200 bg-brand-inputBg focus:outline-none focus:ring-2 focus:ring-brand-sage/20 focus:border-brand-sage font-medium font-outfit">
                             <option value="">None / Not Selected</option>
-                            <option value="Dementia Carer font-outfit">Dementia Carer</option>
-                            <option value="Stressed Student font-outfit">Stressed Student</option>
-                            <option value="General Wellbeing font-outfit">General Wellbeing</option>
+                            <option value="Dementia Carer">Dementia Carer</option>
+                            <option value="Stressed Student">Stressed Student</option>
+                            <option value="General Wellbeing">General Wellbeing</option>
                         </select>
                     </div>
 
