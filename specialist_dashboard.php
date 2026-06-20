@@ -420,6 +420,9 @@ if (empty($current_avail_periods) && isset($_SESSION['mock_availability'])) {
                         <div class="px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Signed in as</div>
                         <div class="px-3 py-1 font-bold text-brand-slate text-sm truncate"><?php echo htmlspecialchars($user_name); ?></div>
                         <hr class="my-2 border-gray-100">
+                        <?php if ($user_role === 'admin'): ?>
+                        <a href="admin_dashboard.php" class="block px-3 py-2 text-sm text-brand-sage rounded-xl hover:bg-brand-sageLight transition-colors font-bold">Admin Console</a>
+                        <?php endif; ?>
                         <a href="logout.php" class="block px-3 py-2 text-sm text-brand-coral rounded-xl hover:bg-brand-coralLight transition-colors font-medium">Log out</a>
                     </div>
                 </div>

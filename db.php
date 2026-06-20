@@ -57,7 +57,8 @@ try {
         "hourly_rate DECIMAL(10,2) DEFAULT NULL",
         "is_approved TINYINT(1) DEFAULT 0",
         "escrow_balance DECIMAL(10,2) DEFAULT 0.00",
-        "clearance_balance DECIMAL(10,2) DEFAULT 0.00"
+        "clearance_balance DECIMAL(10,2) DEFAULT 0.00",
+        "is_suspended TINYINT(1) DEFAULT 0"
     ];
     foreach ($cols_to_add as $col) {
         try {
@@ -164,6 +165,15 @@ try {
         $insert_avail->execute(['Clara Mendoza, LMFT', 'Thursday', '02:00 PM']);
     }
 
+    // Insert admin user if not exists
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM users WHERE email = ?");
+    $stmt->execute(['admin@tetwellbeing.com']);
+    if ($stmt->fetchColumn() == 0) {
+        $hashed_password = password_hash('admin123', PASSWORD_DEFAULT);
+        $insert = $pdo->prepare("INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, 'admin')");
+        $insert->execute(['System Admin', 'admin@tetwellbeing.com', $hashed_password]);
+    }
+
     // Insert demo user Mark if not exists
     $stmt = $pdo->prepare("SELECT COUNT(*) FROM users WHERE email = ?");
     $stmt->execute(['mark@tetwellbeing.com']);
@@ -224,12 +234,22 @@ try {
 // 2. INITIALIZE SESSION-BASED MOCK STORAGE (Fallback fallback mechanism)
 if (!isset($_SESSION['mock_users'])) {
     $_SESSION['mock_users'] = [
+        'admin@tetwellbeing.com' => [
+            'id' => 99,
+            'name' => 'System Admin',
+            'email' => 'admin@tetwellbeing.com',
+            'password' => password_hash('admin123', PASSWORD_DEFAULT),
+            'role' => 'admin',
+            'is_suspended' => 0,
+            'archetype' => NULL
+        ],
         'mark@tetwellbeing.com' => [
             'id' => 1,
             'name' => 'Mark',
             'email' => 'mark@tetwellbeing.com',
             'password' => password_hash('password123', PASSWORD_DEFAULT),
             'role' => 'client',
+            'is_suspended' => 0,
             'archetype' => NULL
         ],
         'evelyn@tetwellbeing.com' => [
@@ -242,6 +262,7 @@ if (!isset($_SESSION['mock_users'])) {
             'bio' => 'Specializes in neuro-cognitive approaches and behavioral tools to interrupt panic cycles and ease chronic care pressures.',
             'hourly_rate' => 120.00,
             'is_approved' => 1,
+            'is_suspended' => 0,
             'escrow_balance' => 0.00,
             'clearance_balance' => 0.00,
             'archetype' => NULL
@@ -256,6 +277,7 @@ if (!isset($_SESSION['mock_users'])) {
             'bio' => 'Dedicated family consultant providing respite counseling, boundary-setting workflows, and emotional tools for family caregivers.',
             'hourly_rate' => 100.00,
             'is_approved' => 1,
+            'is_suspended' => 0,
             'escrow_balance' => 0.00,
             'clearance_balance' => 0.00,
             'archetype' => NULL
@@ -270,6 +292,7 @@ if (!isset($_SESSION['mock_users'])) {
             'bio' => 'Guiding individuals through workplace stress, role fatigue, and life transitions using mindful acceptance commitment frameworks.',
             'hourly_rate' => 110.00,
             'is_approved' => 1,
+            'is_suspended' => 0,
             'escrow_balance' => 0.00,
             'clearance_balance' => 0.00,
             'archetype' => NULL
@@ -347,5 +370,42 @@ if (!isset($_SESSION['mock_availability'])) {
         ['therapist_name' => 'Clara Mendoza, LMFT', 'day_of_week' => 'Thursday', 'time_slot' => '09:00 AM'],
         ['therapist_name' => 'Clara Mendoza, LMFT', 'day_of_week' => 'Thursday', 'time_slot' => '02:00 PM']
     ];
+}
+
+// Global suspension check
+$current_page = basename($_SERVER['PHP_SELF']);
+if (isset($_SESSION['user_id']) && !in_array($current_page, ['login.php', 'signup.php', 'logout.php'])) {
+    $user_id = $_SESSION['user_id'];
+    $is_currently_suspended = false;
+    if ($db_connected && $pdo) {
+        try {
+            $stmt = $pdo->prepare("SELECT is_suspended FROM users WHERE id = ?");
+            $stmt->execute([$user_id]);
+            $susp = $stmt->fetchColumn();
+            if ($susp == 1) {
+                $is_currently_suspended = true;
+            }
+        } catch (PDOException $ex) {}
+    } else {
+        $user_email = $_SESSION['user_email'] ?? '';
+        if (isset($_SESSION['mock_users'][$user_email]['is_suspended']) && $_SESSION['mock_users'][$user_email]['is_suspended'] == 1) {
+            $is_currently_suspended = true;
+        }
+    }
+
+    if ($is_currently_suspended) {
+        $_SESSION = array();
+        if (ini_get("session.use_cookies")) {
+            $params = session_get_cookie_params();
+            setcookie(session_name(), '', time() - 42000,
+                $params["path"], $params["domain"],
+                $params["secure"], $params["httponly"]
+            );
+        }
+        session_destroy();
+        session_start();
+        header('Location: login.php?suspended=1');
+        exit;
+    }
 }
 ?>

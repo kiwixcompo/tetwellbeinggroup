@@ -7,7 +7,13 @@ require_once 'db.php';
 
 // Redirect if already logged in
 if (isset($_SESSION['user_id'])) {
-    header('Location: dashboard.php');
+    if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'admin') {
+        header('Location: admin_dashboard.php');
+    } elseif (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'specialist') {
+        header('Location: specialist_dashboard.php');
+    } else {
+        header('Location: dashboard.php');
+    }
     exit;
 }
 
@@ -19,6 +25,10 @@ if (isset($_GET['signup_success'])) {
     $success = "Registration successful! You can now log in using your credentials.";
 }
 
+if (isset($_GET['suspended'])) {
+    $error = "Your account has been suspended by an administrator. Please contact support.";
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = filter_input(INPUT_POST, 'email', FILTER_VALIDATE_EMAIL);
     $password = $_POST['password'] ?? '';
@@ -26,6 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($email && $password) {
         $authenticated = false;
         $user_data = null;
+        $is_suspended = false;
 
         // 1. ATTEMPT MYSQL DATABASE AUTHENTICATION
         if ($db_connected && $pdo) {
@@ -35,13 +46,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $user = $stmt->fetch();
 
                 if ($user && password_verify($password, $user['password'])) {
-                    $authenticated = true;
-                    $user_data = [
-                        'id' => $user['id'],
-                        'name' => $user['name'],
-                        'email' => $user['email'],
-                        'role' => $user['role'] ?? 'client'
-                    ];
+                    if (isset($user['is_suspended']) && $user['is_suspended'] == 1) {
+                        $is_suspended = true;
+                    } else {
+                        $authenticated = true;
+                        $user_data = [
+                            'id' => $user['id'],
+                            'name' => $user['name'],
+                            'email' => $user['email'],
+                            'role' => $user['role'] ?? 'client'
+                        ];
+                    }
                 }
             } catch (PDOException $e) {
                 // Ignore DB error, fall back to session
@@ -49,16 +64,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         // 2. FALLBACK SESSION MOCK AUTHENTICATION
-        if (!$authenticated && isset($_SESSION['mock_users'][$email])) {
+        if (!$authenticated && !$is_suspended && isset($_SESSION['mock_users'][$email])) {
             $mock_user = $_SESSION['mock_users'][$email];
             if (password_verify($password, $mock_user['password'])) {
-                $authenticated = true;
-                $user_data = [
-                    'id' => $mock_user['id'] ?? 999,
-                    'name' => $mock_user['name'],
-                    'email' => $mock_user['email'],
-                    'role' => $mock_user['role'] ?? 'client'
-                ];
+                if (isset($mock_user['is_suspended']) && $mock_user['is_suspended'] == 1) {
+                    $is_suspended = true;
+                } else {
+                    $authenticated = true;
+                    $user_data = [
+                        'id' => $mock_user['id'] ?? 999,
+                        'name' => $mock_user['name'],
+                        'email' => $mock_user['email'],
+                        'role' => $mock_user['role'] ?? 'client'
+                    ];
+                }
             }
         }
 
@@ -69,14 +88,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['user_email'] = $user_data['email'];
             $_SESSION['user_role'] = $user_data['role'];
 
-            if ($user_data['role'] === 'specialist') {
+            if ($user_data['role'] === 'admin') {
+                header('Location: admin_dashboard.php');
+            } elseif ($user_data['role'] === 'specialist') {
                 header('Location: specialist_dashboard.php');
             } else {
                 header('Location: dashboard.php');
             }
             exit;
         } else {
-            $error = "Invalid email address or password combination.";
+            if ($is_suspended) {
+                $error = "Your account has been suspended by an administrator. Please contact support.";
+            } else {
+                $error = "Invalid email address or password combination.";
+            }
         }
     } else {
         $error = "Please provide both a valid email and password.";
