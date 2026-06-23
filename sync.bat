@@ -1,7 +1,7 @@
 @echo off
 :: Tet Wellbeing Group - Git Sync Tool
 echo ==============================================
-echo   Tet Wellbeing Group - Git Backup & Sync Tool
+echo   Tet Wellbeing Group - Git Backup ^& Sync Tool
 echo ==============================================
 echo.
 
