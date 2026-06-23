@@ -178,6 +178,7 @@ $today_date = date('l, F j, Y');
 <html lang="en" class="h-full scroll-smooth">
 <head>
     <meta charset="UTF-8">
+    <link rel="icon" type="image/svg+xml" href="logo.svg">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Tet Wellbeing Group</title>
     <!-- Tailwind CSS CDN -->

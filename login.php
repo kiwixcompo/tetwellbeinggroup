@@ -112,6 +112,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <html lang="en" class="h-full">
 <head>
     <meta charset="UTF-8">
+    <link rel="icon" type="image/svg+xml" href="logo.svg">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Log In - Tet Wellbeing Group</title>
     <!-- Tailwind CSS CDN -->
