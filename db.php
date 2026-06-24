@@ -277,6 +277,88 @@ try {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     ) ENGINE=InnoDB");
 
+    // Create streaming tables DDL
+    $pdo->exec("CREATE TABLE IF NOT EXISTS streaming_categories (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(100) NOT NULL UNIQUE,
+        icon_emoji VARCHAR(20) NOT NULL,
+        description TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB");
+
+    $pdo->exec("CREATE TABLE IF NOT EXISTS streaming_content (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        category_id INT NOT NULL,
+        title VARCHAR(150) NOT NULL,
+        description TEXT NOT NULL,
+        duration_seconds INT NOT NULL,
+        plays_count INT DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (category_id) REFERENCES streaming_categories(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB");
+
+    // Seed streaming categories
+    $stream_cat_count = $pdo->query("SELECT COUNT(*) FROM streaming_categories")->fetchColumn();
+    if ($stream_cat_count == 0) {
+        $pdo->exec("INSERT INTO streaming_categories (id, name, icon_emoji, description) VALUES
+            (1, 'Guided Meditation', '🧘', 'Centering practices to ground your focus and restore calm.'),
+            (2, 'Sleep Therapy', '💤', 'Deep sleep soundscapes, sleep stories, and ambient noise.'),
+            (3, 'Caregiver Wellbeing', '❤️', 'Coping skills and respite guides built specifically for active caregivers.'),
+            (4, 'Parenting de-escalation', '👶', 'Practical boundaries, child crisis management, and emotional support.'),
+            (5, 'Anxiety Management', '🌬️', 'Exposure scenarios, box breathing, and panic cycle interrupters.'),
+            (6, 'Trauma Recovery', '🩹', 'Gentle mindfulness sequences and recovery strategies.'),
+            (7, 'Grief Support', '🕊️', 'Coping tools for grieving process and loss adaptation.')");
+    }
+
+    // Seed streaming content
+    $stream_content_count = $pdo->query("SELECT COUNT(*) FROM streaming_content")->fetchColumn();
+    if ($stream_content_count == 0) {
+        $pdo->exec("INSERT INTO streaming_content (id, category_id, title, description, duration_seconds, plays_count) VALUES
+            (1, 1, '5-Minute Morning Grounding', 'A quick, restorative guided meditation to align your thoughts for the day.', 300, 142),
+            (2, 2, 'Deep Ocean Dreams sleepscape', 'Soft ocean swell recordings mixed with binaural sleep tones.', 1800, 480),
+            (3, 3, 'Navigating Compassion Fatigue', 'A therapeutic talk by Dr. Evelyn Carter on clinical boundary setting.', 600, 95),
+            (4, 4, 'Calming Toddler Tantrum de-escalation', 'De-escalation pathways to handle emotional storms with patience.', 420, 68),
+            (5, 5, 'Overcoming Sudden Panic Spikes', 'A rapid box breathing audio pacemaker to lower active heart rates.', 240, 215),
+            (6, 6, 'Somatic Release for Held Stress', 'Simple physical check-in prompts designed to identify bodily triggers.', 480, 54),
+            (7, 7, 'Grief: Honoring the Memory', 'A quiet guidance session on adapting to caregiver loss.', 900, 37),
+            (8, 2, 'Rainfall over Forest Sanctuary', 'Natural rain sounds layered with standing wind noise to mask thoughts.', 1200, 310)");
+    }
+
+    // Create research tables
+    $pdo->exec("CREATE TABLE IF NOT EXISTS research_studies (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        title VARCHAR(150) NOT NULL,
+        description TEXT NOT NULL,
+        status ENUM('active', 'completed', 'draft') DEFAULT 'active',
+        target_participants INT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB");
+
+    $pdo->exec("CREATE TABLE IF NOT EXISTS research_participants (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        study_id INT NOT NULL,
+        consented_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY uniq_user_study (user_id, study_id),
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (study_id) REFERENCES research_studies(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB");
+
+    // Seed research studies
+    $study_count = $pdo->query("SELECT COUNT(*) FROM research_studies")->fetchColumn();
+    if ($study_count == 0) {
+        $pdo->exec("INSERT INTO research_studies (id, title, description, status, target_participants) VALUES
+            (1, 'VR Resilience Efficacy Trial', 'Clinical study analyzing the physiological and emotional effects of VR mindfulness simulations on active frontline care coordinators.', 'active', 50),
+            (2, 'Wearable Biometrics Stress Correlation', 'Anonymized analysis matching daily active minutes and sleep depth against weekly self-reported caregiver burnout scores.', 'active', 100),
+            (3, 'Shift Transition Fatigue Study', 'Evaluating cognitive load and stress levels before and after structured clinical handover procedures in critical care units.', 'active', 35)");
+    }
+
+    // Seed research participation
+    $participant_count = $pdo->query("SELECT COUNT(*) FROM research_participants")->fetchColumn();
+    if ($participant_count == 0) {
+        $pdo->exec("INSERT INTO research_participants (id, user_id, study_id) VALUES (1, 1, 1)");
+    }
+
     // Seed departments & update Mark if empty
     $dept_count = $pdo->query("SELECT COUNT(*) FROM workplace_departments")->fetchColumn();
     if ($dept_count == 0) {
@@ -709,6 +791,41 @@ if (!isset($_SESSION['mock_workplace_conflicts'])) {
             'ai_mitigation_plan' => 'Utilize the Peer Matching index to optimize case sharing. Redesign workload distribution templates to include active caregiver metrics.',
             'logged_date' => '2026-06-23'
         ]
+    ];
+}
+if (!isset($_SESSION['mock_streaming_categories'])) {
+    $_SESSION['mock_streaming_categories'] = [
+        ['id' => 1, 'name' => 'Guided Meditation', 'icon_emoji' => '🧘', 'description' => 'Centering practices to ground your focus and restore calm.'],
+        ['id' => 2, 'name' => 'Sleep Therapy', 'icon_emoji' => '💤', 'description' => 'Deep sleep soundscapes, sleep stories, and ambient noise.'],
+        ['id' => 3, 'name' => 'Caregiver Wellbeing', 'icon_emoji' => '❤️', 'description' => 'Coping skills and respite guides built specifically for active caregivers.'],
+        ['id' => 4, 'name' => 'Parenting de-escalation', 'icon_emoji' => '👶', 'description' => 'Practical boundaries, child crisis management, and emotional support.'],
+        ['id' => 5, 'name' => 'Anxiety Management', 'icon_emoji' => '🌬️', 'description' => 'Exposure scenarios, box breathing, and panic cycle interrupters.'],
+        ['id' => 6, 'name' => 'Trauma Recovery', 'icon_emoji' => '🩹', 'description' => 'Gentle mindfulness sequences and recovery strategies.'],
+        ['id' => 7, 'name' => 'Grief Support', 'icon_emoji' => '🕊️', 'description' => 'Coping tools for grieving process and loss adaptation.']
+    ];
+}
+if (!isset($_SESSION['mock_streaming_content'])) {
+    $_SESSION['mock_streaming_content'] = [
+        ['id' => 1, 'category_id' => 1, 'title' => '5-Minute Morning Grounding', 'description' => 'A quick, restorative guided meditation to align your thoughts for the day.', 'duration_seconds' => 300, 'plays_count' => 142],
+        ['id' => 2, 'category_id' => 2, 'title' => 'Deep Ocean Dreams sleepscape', 'description' => 'Soft ocean swell recordings mixed with binaural sleep tones.', 'duration_seconds' => 1800, 'plays_count' => 480],
+        ['id' => 3, 'category_id' => 3, 'title' => 'Navigating Compassion Fatigue', 'description' => 'A therapeutic talk by Dr. Evelyn Carter on clinical boundary setting.', 'duration_seconds' => 600, 'plays_count' => 95],
+        ['id' => 4, 'category_id' => 4, 'title' => 'Calming Toddler Tantrum de-escalation', 'description' => 'De-escalation pathways to handle emotional storms with patience.', 'duration_seconds' => 420, 'plays_count' => 68],
+        ['id' => 5, 'category_id' => 5, 'title' => 'Overcoming Sudden Panic Spikes', 'description' => 'A rapid box breathing audio pacemaker to lower active heart rates.', 'duration_seconds' => 240, 'plays_count' => 215],
+        ['id' => 6, 'category_id' => 6, 'title' => 'Somatic Release for Held Stress', 'description' => 'Simple physical check-in prompts designed to identify bodily triggers.', 'duration_seconds' => 480, 'plays_count' => 54],
+        ['id' => 7, 'category_id' => 7, 'title' => 'Grief: Honoring the Memory', 'description' => 'A quiet guidance session on adapting to caregiver loss.', 'duration_seconds' => 900, 'plays_count' => 37],
+        ['id' => 8, 'category_id' => 2, 'title' => 'Rainfall over Forest Sanctuary', 'description' => 'Natural rain sounds layered with standing wind noise to mask thoughts.', 'duration_seconds' => 1200, 'plays_count' => 310]
+    ];
+}
+if (!isset($_SESSION['mock_research_studies'])) {
+    $_SESSION['mock_research_studies'] = [
+        ['id' => 1, 'title' => 'VR Resilience Efficacy Trial', 'description' => 'Clinical study analyzing the physiological and emotional effects of VR mindfulness simulations on active frontline care coordinators.', 'status' => 'active', 'target_participants' => 50],
+        ['id' => 2, 'title' => 'Wearable Biometrics Stress Correlation', 'description' => 'Anonymized analysis matching daily active minutes and sleep depth against weekly self-reported caregiver burnout scores.', 'status' => 'active', 'target_participants' => 100],
+        ['id' => 3, 'title' => 'Shift Transition Fatigue Study', 'description' => 'Evaluating cognitive load and stress levels before and after structured clinical handover procedures in critical care units.', 'status' => 'active', 'target_participants' => 35]
+    ];
+}
+if (!isset($_SESSION['mock_research_participants'])) {
+    $_SESSION['mock_research_participants'] = [
+        ['id' => 1, 'user_id' => 1, 'study_id' => 1]
     ];
 }
 

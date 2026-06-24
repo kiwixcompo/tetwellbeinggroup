@@ -138,6 +138,10 @@ if (isset($_GET['action']) && $_GET['action'] === 'get_slots') {
 
 // 2. HANDLE Simulated Availability Profile Save
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'save_availability') {
+    if (($_SESSION['user_role'] ?? 'client') === 'client') {
+        header("Location: teletherapy_hub.php?availability_error=unauthorized");
+        exit;
+    }
     $therapist = filter_input(INPUT_POST, 'therapist_name', FILTER_DEFAULT);
     $selected_slots = $_POST['slots'] ?? []; // format: Array of 'Day_of_week|Time_slot'
     
@@ -323,6 +327,9 @@ if (isset($_GET['booking_success'])) {
 if (isset($_GET['availability_success'])) {
     $action_success = "Practitioner availability schedule updated successfully.";
 }
+if (isset($_GET['availability_error']) && $_GET['availability_error'] === 'unauthorized') {
+    $action_error = "Access denied: Client users are not permitted to edit practitioner availability.";
+}
 
 // 3. READ ACTIVE BOOKINGS FOR USER
 $bookings = [];
@@ -487,16 +494,7 @@ $today_date = date('l, F j, Y');
         </div>
 
         <!-- APP NAVIGATION TABS -->
-        <div class="flex items-center gap-6 border-b border-[#EBE8E0] mb-8 text-sm font-semibold overflow-x-auto whitespace-nowrap pb-1">
-            <a href="dashboard.php" class="border-b-2 border-transparent pb-3 px-1 text-gray-400 hover:text-brand-slate hover:border-gray-300 transition-all font-outfit">My Dashboard</a>
-            <a href="caregiver_hub.php" class="border-b-2 border-transparent pb-3 px-1 text-gray-400 hover:text-brand-slate hover:border-gray-300 transition-all font-outfit">Caregiver Hub</a>
-            <a href="community_hub.php" class="border-b-2 border-transparent pb-3 px-1 text-gray-400 hover:text-brand-slate hover:border-gray-300 transition-all font-outfit">Community Hub</a>
-            <a href="teletherapy_hub.php" class="border-b-2 border-brand-sage pb-3 px-1 text-brand-sage font-outfit">Teletherapy Hub</a>
-            <a href="ai_companion.php" class="border-b-2 border-transparent pb-3 px-1 text-gray-400 hover:text-brand-slate hover:border-gray-300 transition-all font-outfit">AI Companion</a>
-            <a href="predictive_hub.php" class="border-b-2 border-transparent pb-3 px-1 text-gray-400 hover:text-brand-slate hover:border-gray-300 transition-all font-outfit">Digital Twin</a>
-            <a href="vr_resilience.php" class="border-b-2 border-transparent pb-3 px-1 text-gray-400 hover:text-brand-slate hover:border-gray-300 transition-all font-outfit">VR Centre</a>
-            <a href="workplace_safety.php" class="border-b-2 border-transparent pb-3 px-1 text-gray-400 hover:text-brand-slate hover:border-gray-300 transition-all font-outfit">Workplace Safety</a>
-        </div>
+        <?php include 'nav_menu.php'; ?>
 
         <!-- NOTIFICATIONS -->
         <?php if (!empty($action_success)): ?>
@@ -711,8 +709,13 @@ $today_date = date('l, F j, Y');
             <!-- PRACTITIONER AVAILABILITY EDITOR (Simulated Profile Settings) -->
             <section class="bg-white rounded-3xl p-6 md:p-8 shadow-soft border border-[#EBE8E0]">
                 <div class="mb-4">
-                    <h3 class="text-lg font-bold font-outfit text-brand-slate">Practitioner Availability Settings (Simulated)</h3>
-                    <p class="text-xs text-gray-500 mt-1">Select a clinical specialist below to update their available times in their active profile. Clients will only see slots matching these settings that aren't already booked.</p>
+                    <?php if (($_SESSION['user_role'] ?? 'client') === 'client'): ?>
+                        <h3 class="text-lg font-bold font-outfit text-brand-slate">Practitioner Availability Profile (Read-Only)</h3>
+                        <p class="text-xs text-gray-500 mt-1">Select a clinical specialist below to view their active availability profile set by the consultant. To schedule a session, click on one of the available times above under 'Book a Session'.</p>
+                    <?php else: ?>
+                        <h3 class="text-lg font-bold font-outfit text-brand-slate">Practitioner Availability Settings (Simulated)</h3>
+                        <p class="text-xs text-gray-500 mt-1">Select a clinical specialist below to update their available times in their active profile. Clients will only see slots matching these settings that aren't already booked.</p>
+                    <?php endif; ?>
                 </div>
                 
                 <form method="POST" action="teletherapy_hub.php" class="space-y-6">
@@ -729,7 +732,7 @@ $today_date = date('l, F j, Y');
 
                     <!-- Interactive grid of checkboxes -->
                     <div class="space-y-4 pt-2">
-                        <span class="block text-xs font-bold text-brand-slate uppercase tracking-wider font-outfit">Select Available Weekly Slots</span>
+                        <span class="block text-xs font-bold text-brand-slate uppercase tracking-wider font-outfit">Weekly Slots Availability</span>
                         
                         <div class="grid grid-cols-1 sm:grid-cols-5 gap-4" id="availability-checkboxes-grid">
                             <?php
@@ -746,13 +749,14 @@ $today_date = date('l, F j, Y');
                                 $current_avail = $_SESSION['mock_availability'];
                             }
                             
+                            $disabled_attr = (($_SESSION['user_role'] ?? 'client') === 'client') ? ' disabled onclick="return false;"' : '';
                             foreach ($days as $d) {
                                 echo '<div class="p-3 bg-[#FAF9F6] rounded-2xl border border-gray-100 space-y-2">';
                                 echo '<h4 class="text-xs font-bold text-brand-slate border-b border-gray-200 pb-1 font-outfit">' . $d . '</h4>';
                                 foreach ($slots as $s) {
                                     $key = $d . '|' . $s;
                                     echo '<label class="flex items-center gap-2 cursor-pointer select-none text-[11px] text-gray-600 font-medium py-0.5 hover:text-brand-slate">';
-                                    echo '<input type="checkbox" name="slots[]" value="' . htmlspecialchars($key) . '" class="avail-chk rounded border-gray-300 text-brand-sage focus:ring-brand-sage" data-day="' . $d . '" data-slot="' . $s . '">';
+                                    echo '<input type="checkbox" name="slots[]" value="' . htmlspecialchars($key) . '" class="avail-chk rounded border-gray-300 text-brand-sage focus:ring-brand-sage" data-day="' . $d . '" data-slot="' . $s . '"' . $disabled_attr . '>';
                                     echo '<span>' . $s . '</span>';
                                     echo '</label>';
                                 }
@@ -762,11 +766,13 @@ $today_date = date('l, F j, Y');
                         </div>
                     </div>
 
+                    <?php if (($_SESSION['user_role'] ?? 'client') !== 'client'): ?>
                     <div class="flex justify-end pt-2">
                         <button type="submit" class="px-6 py-2.5 rounded-2xl bg-brand-sage hover:bg-brand-sageHover text-white font-bold text-xs shadow-soft transition-all active:scale-95">
                             Save Availability Profile
                         </button>
                     </div>
+                    <?php endif; ?>
                 </form>
             </section>
 
