@@ -84,7 +84,7 @@ CREATE TABLE IF NOT EXISTS `therapist_availability` (
     `therapist_name` VARCHAR(100) NOT NULL,
     `day_of_week` VARCHAR(15) NOT NULL,
     `time_slot` VARCHAR(20) NOT NULL,
-    `UNIQUE KEY `uniq_therapist_day_slot` (`therapist_name`, `day_of_week`, `time_slot`)
+    UNIQUE KEY `uniq_therapist_day_slot` (`therapist_name`, `day_of_week`, `time_slot`)
 ) ENGINE=InnoDB;
 
 -- =========================================================
