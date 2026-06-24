@@ -322,11 +322,12 @@ function Math_Round($val) {
 
         <!-- APP NAVIGATION TABS -->
         <div class="flex items-center gap-6 border-b border-[#EBE8E0] mb-8 text-sm font-semibold overflow-x-auto whitespace-nowrap pb-1">
-            <a href="dashboard.php" class="border-b-2 border-transparent pb-3 px-1 text-gray-400 hover:text-brand-slate hover:border-gray-300 transition-all">My Dashboard</a>
-            <a href="caregiver_hub.php" class="border-b-2 border-transparent pb-3 px-1 text-gray-400 hover:text-brand-slate hover:border-gray-300 transition-all">Caregiver Hub</a>
-            <a href="community_hub.php" class="border-b-2 border-brand-sage pb-3 px-1 text-brand-sage">Community Hub</a>
-            <a href="teletherapy_hub.php" class="border-b-2 border-transparent pb-3 px-1 text-gray-400 hover:text-brand-slate hover:border-gray-300 transition-all">Teletherapy Hub</a>
-            <a href="ai_companion.php" class="border-b-2 border-transparent pb-3 px-1 text-gray-400 hover:text-brand-slate hover:border-gray-300 transition-all">AI Companion</a>
+            <a href="dashboard.php" class="border-b-2 border-transparent pb-3 px-1 text-gray-400 hover:text-brand-slate hover:border-gray-300 transition-all font-outfit">My Dashboard</a>
+            <a href="caregiver_hub.php" class="border-b-2 border-transparent pb-3 px-1 text-gray-400 hover:text-brand-slate hover:border-gray-300 transition-all font-outfit">Caregiver Hub</a>
+            <a href="community_hub.php" class="border-b-2 border-brand-sage pb-3 px-1 text-brand-sage font-outfit">Community Hub</a>
+            <a href="teletherapy_hub.php" class="border-b-2 border-transparent pb-3 px-1 text-gray-400 hover:text-brand-slate hover:border-gray-300 transition-all font-outfit">Teletherapy Hub</a>
+            <a href="ai_companion.php" class="border-b-2 border-transparent pb-3 px-1 text-gray-400 hover:text-brand-slate hover:border-gray-300 transition-all font-outfit">AI Companion</a>
+            <a href="predictive_hub.php" class="border-b-2 border-transparent pb-3 px-1 text-gray-400 hover:text-brand-slate hover:border-gray-300 transition-all font-outfit">Digital Twin</a>
         </div>
 
         <!-- NOTIFICATIONS -->

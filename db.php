@@ -194,6 +194,34 @@ try {
         UNIQUE KEY uniq_user_course (user_id, course_id)
     ) ENGINE=InnoDB");
 
+    // Create User Telemetry Logs table
+    $pdo->exec("CREATE TABLE IF NOT EXISTS user_telemetry_logs (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        log_date DATE NOT NULL,
+        sleep_hours DECIMAL(4,2) DEFAULT 0.00,
+        sleep_quality INT DEFAULT 0,
+        steps INT DEFAULT 0,
+        active_minutes INT DEFAULT 0,
+        hrv INT DEFAULT 0,
+        resting_hr INT DEFAULT 0,
+        social_interaction INT DEFAULT 5,
+        voice_stress_score INT DEFAULT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY uniq_user_date (user_id, log_date)
+    ) ENGINE=InnoDB");
+
+    // Create Digital Twin Profiles table
+    $pdo->exec("CREATE TABLE IF NOT EXISTS digital_twin_profiles (
+        user_id INT PRIMARY KEY,
+        learned_triggers TEXT,
+        coping_styles TEXT,
+        anxiety_resilience INT DEFAULT 50,
+        depression_resistance INT DEFAULT 50,
+        burnout_buffer INT DEFAULT 50,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB");
+
     // Seed default availability if empty
     $avail_count = $pdo->query("SELECT COUNT(*) FROM therapist_availability")->fetchColumn();
     if ($avail_count == 0) {
@@ -478,6 +506,30 @@ if (!isset($_SESSION['mock_connections'])) {
 }
 if (!isset($_SESSION['mock_academy_progress'])) {
     $_SESSION['mock_academy_progress'] = [];
+}
+if (!isset($_SESSION['mock_telemetry_logs'])) {
+    $_SESSION['mock_telemetry_logs'] = [
+        ['user_id' => 1, 'log_date' => '2026-06-18', 'sleep_hours' => 7.5, 'sleep_quality' => 82, 'steps' => 8500, 'active_minutes' => 45, 'hrv' => 55, 'resting_hr' => 62, 'social_interaction' => 7, 'voice_stress_score' => 25, 'created_at' => '2026-06-18 12:00:00'],
+        ['user_id' => 1, 'log_date' => '2026-06-19', 'sleep_hours' => 6.8, 'sleep_quality' => 78, 'steps' => 6200, 'active_minutes' => 30, 'hrv' => 48, 'resting_hr' => 65, 'social_interaction' => 6, 'voice_stress_score' => 32, 'created_at' => '2026-06-19 12:00:00'],
+        ['user_id' => 1, 'log_date' => '2026-06-20', 'sleep_hours' => 5.5, 'sleep_quality' => 60, 'steps' => 2800, 'active_minutes' => 15, 'hrv' => 38, 'resting_hr' => 72, 'social_interaction' => 4, 'voice_stress_score' => 48, 'created_at' => '2026-06-20 12:00:00'],
+        ['user_id' => 1, 'log_date' => '2026-06-21', 'sleep_hours' => 5.0, 'sleep_quality' => 55, 'steps' => 1800, 'active_minutes' => 10, 'hrv' => 32, 'resting_hr' => 78, 'social_interaction' => 2, 'voice_stress_score' => 60, 'created_at' => '2026-06-21 12:00:00'],
+        ['user_id' => 1, 'log_date' => '2026-06-22', 'sleep_hours' => 4.8, 'sleep_quality' => 52, 'steps' => 1200, 'active_minutes' => 5,  'hrv' => 28, 'resting_hr' => 84, 'social_interaction' => 1, 'voice_stress_score' => 75, 'created_at' => '2026-06-22 12:00:00'],
+        ['user_id' => 1, 'log_date' => '2026-06-23', 'sleep_hours' => 5.2, 'sleep_quality' => 58, 'steps' => 2100, 'active_minutes' => 12, 'hrv' => 30, 'resting_hr' => 82, 'social_interaction' => 3, 'voice_stress_score' => 65, 'created_at' => '2026-06-23 12:00:00'],
+        ['user_id' => 1, 'log_date' => '2026-06-24', 'sleep_hours' => 6.2, 'sleep_quality' => 70, 'steps' => 4100, 'active_minutes' => 25, 'hrv' => 45, 'resting_hr' => 68, 'social_interaction' => 5, 'voice_stress_score' => 40, 'created_at' => '2026-06-24 12:00:00']
+    ];
+}
+if (!isset($_SESSION['mock_digital_twin_profiles'])) {
+    $_SESSION['mock_digital_twin_profiles'] = [
+        1 => [
+            'user_id' => 1,
+            'learned_triggers' => '["Low sleep duration (<6 hours)","Sedentary routines (<3000 steps)","Elevated resting heart rate (>80 bpm)"]',
+            'coping_styles' => '["Sensory Grounding (5-4-3-2-1)","Stretching Exercises","Teletherapy Checkins"]',
+            'anxiety_resilience' => 65,
+            'depression_resistance' => 58,
+            'burnout_buffer' => 48,
+            'updated_at' => '2026-06-24 12:00:00'
+        ]
+    ];
 }
 
 // Global suspension check and crisis state synchronization

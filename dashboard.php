@@ -163,6 +163,9 @@ $ehi = EmotionalHealthService::calculateIndex($user_id);
 // Check for Downward Trend Warning
 $downward_trend_detected = EmotionalHealthService::checkDownwardTrend($user_id);
 
+// Check for Predictive Early Warnings
+$early_warnings = EmotionalHealthService::detectEarlyWarnings($user_id);
+
 // Dynamic Greeting based on server time
 $hour = (int)date('H');
 if ($hour < 12) {
@@ -323,10 +326,11 @@ $today_date = date('l, F j, Y');
         <!-- APP NAVIGATION TABS -->
         <div class="flex items-center gap-6 border-b border-[#EBE8E0] mb-8 text-sm font-semibold overflow-x-auto whitespace-nowrap pb-1">
             <a href="dashboard.php" class="border-b-2 border-brand-sage pb-3 px-1 text-brand-sage">My Dashboard</a>
-            <a href="caregiver_hub.php" class="border-b-2 border-transparent pb-3 px-1 text-gray-400 hover:text-brand-slate hover:border-gray-300 transition-all">Caregiver Hub</a>
-            <a href="community_hub.php" class="border-b-2 border-transparent pb-3 px-1 text-gray-400 hover:text-brand-slate hover:border-gray-300 transition-all">Community Hub</a>
-            <a href="teletherapy_hub.php" class="border-b-2 border-transparent pb-3 px-1 text-gray-400 hover:text-brand-slate hover:border-gray-300 transition-all">Teletherapy Hub</a>
-            <a href="ai_companion.php" class="border-b-2 border-transparent pb-3 px-1 text-gray-400 hover:text-brand-slate hover:border-gray-300 transition-all">AI Companion</a>
+            <a href="caregiver_hub.php" class="border-b-2 border-transparent pb-3 px-1 text-gray-400 hover:text-brand-slate hover:border-gray-300 transition-all font-outfit">Caregiver Hub</a>
+            <a href="community_hub.php" class="border-b-2 border-transparent pb-3 px-1 text-gray-400 hover:text-brand-slate hover:border-gray-300 transition-all font-outfit">Community Hub</a>
+            <a href="teletherapy_hub.php" class="border-b-2 border-transparent pb-3 px-1 text-gray-400 hover:text-brand-slate hover:border-gray-300 transition-all font-outfit">Teletherapy Hub</a>
+            <a href="ai_companion.php" class="border-b-2 border-transparent pb-3 px-1 text-gray-400 hover:text-brand-slate hover:border-gray-300 transition-all font-outfit">AI Companion</a>
+            <a href="predictive_hub.php" class="border-b-2 border-transparent pb-3 px-1 text-gray-400 hover:text-brand-slate hover:border-gray-300 transition-all font-outfit">Digital Twin</a>
         </div>
 
         <!-- NOTIFICATIONS -->
@@ -379,14 +383,38 @@ $today_date = date('l, F j, Y');
                         We've noticed a consecutive decline in your mood check-ins over the past few days. Your wellbeing is our priority. Consider utilizing some caregiver respite planning toolsets or schedule a virtual session with one of our specialized clinicians.
                     </p>
                     <div class="pt-2 flex flex-wrap gap-2">
-                        <a href="caregiver_hub.php" class="px-3.5 py-1.5 bg-white hover:bg-gray-50 border border-gray-200 text-brand-slate rounded-xl text-[10px] font-bold shadow-sm transition-all">
+                        <a href="caregiver_hub.php" class="px-3.5 py-1.5 bg-white hover:bg-gray-50 border border-gray-200 text-brand-slate rounded-xl text-[10px] font-bold shadow-sm transition-all font-outfit">
                             Explore Respite Hub
                         </a>
-                        <a href="teletherapy_hub.php?recommend=1" class="px-3.5 py-1.5 bg-brand-coral hover:bg-brand-coralHover text-white rounded-xl text-[10px] font-bold shadow-sm transition-all">
+                        <a href="teletherapy_hub.php?recommend=1" class="px-3.5 py-1.5 bg-brand-coral hover:bg-brand-coralHover text-white rounded-xl text-[10px] font-bold shadow-sm transition-all font-outfit">
                             Talk to Recommended Specialist
                         </a>
                     </div>
                 </div>
+            </div>
+        <?php endif; ?>
+
+        <!-- PREDICTIVE EARLY WARNINGS -->
+        <?php if (!empty($early_warnings)): ?>
+            <div class="mb-8 space-y-3">
+                <?php foreach ($early_warnings as $warn): ?>
+                    <div class="flex items-start gap-4 rounded-3xl border border-brand-coral/20 bg-brand-coralLight p-6 text-brand-slate shadow-soft">
+                        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-brand-coral text-white text-xl">
+                            ⚠️
+                        </div>
+                        <div class="flex-grow space-y-1">
+                            <h4 class="font-bold text-sm font-outfit text-brand-coral"><?php echo htmlspecialchars($warn['title']); ?></h4>
+                            <p class="text-xs text-gray-600 leading-relaxed">
+                                <?php echo htmlspecialchars($warn['desc']); ?>
+                            </p>
+                            <div class="pt-2">
+                                <a href="<?php echo htmlspecialchars($warn['link']); ?>" class="px-3.5 py-1.5 bg-brand-slate hover:bg-brand-slate/90 text-white rounded-xl text-[10px] font-bold shadow-sm transition-all inline-block font-outfit">
+                                    <?php echo htmlspecialchars($warn['action']); ?>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
             </div>
         <?php endif; ?>
 

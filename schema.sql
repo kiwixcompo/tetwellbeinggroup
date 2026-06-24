@@ -227,3 +227,50 @@ INSERT INTO `users` (`id`, `name`, `email`, `password`, `role`, `archetype`)
 SELECT 104, 'Lisa Vance', 'lisa@tetwellbeing.com', '$2y$10$vK3zY0.5q4bS51o4U5b1x.1F9Vj5y7R.y.2z.2z.5t.7t.5t.3t.1t', 'client', 'general_wellbeing'
 FROM dual WHERE NOT EXISTS (SELECT 1 FROM `users` WHERE `email` = 'lisa@tetwellbeing.com');
 
+-- 13. User Telemetry Logs Table
+CREATE TABLE IF NOT EXISTS `user_telemetry_logs` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `user_id` INT NOT NULL,
+    `log_date` DATE NOT NULL,
+    `sleep_hours` DECIMAL(4,2) DEFAULT 0.00,
+    `sleep_quality` INT DEFAULT 0, -- 0-100%
+    `steps` INT DEFAULT 0,
+    `active_minutes` INT DEFAULT 0,
+    `hrv` INT DEFAULT 0, -- heart rate variability in ms
+    `resting_hr` INT DEFAULT 0, -- resting heart rate in bpm
+    `social_interaction` INT DEFAULT 5, -- 1-10 scale
+    `voice_stress_score` INT DEFAULT NULL, -- 0-100%
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
+    UNIQUE KEY `uniq_user_date` (`user_id`, `log_date`)
+) ENGINE=InnoDB;
+
+-- 14. Digital Twin Profiles Table
+CREATE TABLE IF NOT EXISTS `digital_twin_profiles` (
+    `user_id` INT PRIMARY KEY,
+    `learned_triggers` TEXT, -- JSON array of strings
+    `coping_styles` TEXT, -- JSON array of strings
+    `anxiety_resilience` INT DEFAULT 50, -- 0-100
+    `depression_resistance` INT DEFAULT 50, -- 0-100
+    `burnout_buffer` INT DEFAULT 50, -- 0-100
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- Seed default user_telemetry_logs (7 days) for Mark (user_id = 1)
+-- Today is 2026-06-24. We seed from 2026-06-18 to 2026-06-24
+INSERT INTO `user_telemetry_logs` (`user_id`, `log_date`, `sleep_hours`, `sleep_quality`, `steps`, `active_minutes`, `hrv`, `resting_hr`, `social_interaction`, `voice_stress_score`) VALUES
+(1, '2026-06-18', 7.5, 82, 8500, 45, 55, 62, 7, 25),
+(1, '2026-06-19', 6.8, 78, 6200, 30, 48, 65, 6, 32),
+(1, '2026-06-20', 5.5, 60, 2800, 15, 38, 72, 4, 48),
+(1, '2026-06-21', 5.0, 55, 1800, 10, 32, 78, 2, 60),
+(1, '2026-06-22', 4.8, 52, 1200, 5,  28, 84, 1, 75),
+(1, '2026-06-23', 5.2, 58, 2100, 12, 30, 82, 3, 65),
+(1, '2026-06-24', 6.2, 70, 4100, 25, 45, 68, 5, 40)
+ON DUPLICATE KEY UPDATE `user_id` = `user_id`;
+
+-- Seed default digital_twin_profile for Mark
+INSERT INTO `digital_twin_profiles` (`user_id`, `learned_triggers`, `coping_styles`, `anxiety_resilience`, `depression_resistance`, `burnout_buffer`) VALUES
+(1, '["Low sleep duration (<6 hours)","Sedentary routines (<3000 steps)","Elevated resting heart rate (>80 bpm)"]', '["Sensory Grounding (5-4-3-2-1)","Stretching Exercises","Teletherapy Checkins"]', 65, 58, 48)
+ON DUPLICATE KEY UPDATE `user_id` = `user_id`;
+
