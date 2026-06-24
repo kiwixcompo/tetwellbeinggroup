@@ -65,23 +65,45 @@ try {
         ]);
         echo "✅ Connected to existing database '$db_name' successfully.\n\n";
     } catch (PDOException $e) {
-        // If database doesn't exist, try connecting to host only and creating it (local development setup)
-        if ($e->getCode() == 1049 || strpos($e->getMessage(), 'Unknown database') !== false) {
-            echo "ℹ️ Database '$db_name' not found. Attempting to create it...\n";
-            $temp_pdo = new PDO("mysql:host=$db_host;charset=utf8mb4", $db_user, $db_pass, [
-                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            ]);
-            $temp_pdo->exec("CREATE DATABASE IF NOT EXISTS `$db_name` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
-            echo "✅ Database '$db_name' created.\n";
-            
-            // Reconnect with database selected
-            $pdo = new PDO("mysql:host=$db_host;dbname=$db_name;charset=utf8mb4", $db_user, $db_pass, [
-                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                PDO::ATTR_EMULATE_PREPARES => false,
-            ]);
-            echo "✅ Connected to newly created database.\n\n";
-        } else {
-            throw $e;
+        // Fallback for local WAMP (access denied error code 1045)
+        if ($e->getCode() == 1045 || strpos($e->getMessage(), 'Access denied') !== false) {
+            try {
+                echo "ℹ️ Connection failed with db.php credentials. Attempting local WAMP 'root' fallback...\n";
+                $db_user = 'root';
+                $db_pass = '';
+                $pdo = new PDO("mysql:host=$db_host;dbname=$db_name;charset=utf8mb4", $db_user, $db_pass, [
+                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                    PDO::ATTR_EMULATE_PREPARES => false,
+                ]);
+                echo "✅ Connected to database '$db_name' using local WAMP root credentials.\n\n";
+            } catch (PDOException $e2) {
+                if ($e2->getCode() == 1049 || strpos($e2->getMessage(), 'Unknown database') !== false) {
+                    $e = $e2;
+                } else {
+                    throw $e2;
+                }
+            }
+        }
+        
+        if ($pdo === null) {
+            // If database doesn't exist, try connecting to host only and creating it (local development setup)
+            if ($e->getCode() == 1049 || strpos($e->getMessage(), 'Unknown database') !== false) {
+                echo "ℹ️ Database '$db_name' not found. Attempting to create it...\n";
+                $temp_pdo = new PDO("mysql:host=$db_host;charset=utf8mb4", $db_user, $db_pass, [
+                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                ]);
+                $temp_pdo->exec("CREATE DATABASE IF NOT EXISTS `$db_name` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+                echo "✅ Database '$db_name' created.\n";
+                
+                // Reconnect with database selected
+                $pdo = new PDO("mysql:host=$db_host;dbname=$db_name;charset=utf8mb4", $db_user, $db_pass, [
+                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                    PDO::ATTR_EMULATE_PREPARES => false,
+                ]);
+                echo "✅ Connected to newly created database.\n\n";
+            } else {
+                throw $e;
+            }
         }
     }
 

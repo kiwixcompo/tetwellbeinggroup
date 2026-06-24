@@ -160,3 +160,70 @@ FROM dual WHERE NOT EXISTS (SELECT 1 FROM `community_posts` WHERE `content` LIKE
 INSERT INTO `community_posts` (`user_id`, `author_name`, `channel`, `content`, `is_anonymous`, `hearts`, `created_at`)
 SELECT 102, 'Sarah Jenkins', 'mindfulness', 'Highly recommend the 5-Minute Breathing guide in the Caregiver Hub. It is an instant calm down.', 0, 8, NOW() - INTERVAL 1 DAY
 FROM dual WHERE NOT EXISTS (SELECT 1 FROM `community_posts` WHERE `content` LIKE 'Highly recommend the 5-Minute%');
+
+-- 9. Caregiver Resilience Plans Table
+CREATE TABLE IF NOT EXISTS `caregiver_resilience_plans` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `user_id` INT NOT NULL,
+    `stressors` TEXT,
+    `daily_buffers` TEXT,
+    `coping_strategies` TEXT,
+    `signs_of_burnout` TEXT,
+    `backup_support` TEXT,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- 10. Caregiver Daily Goals Table
+CREATE TABLE IF NOT EXISTS `caregiver_daily_goals` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `user_id` INT NOT NULL,
+    `goal_text` VARCHAR(255) NOT NULL,
+    `is_completed` TINYINT(1) DEFAULT 0,
+    `created_date` DATE NOT NULL,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- 11. Caregiver Peer Connections Table
+CREATE TABLE IF NOT EXISTS `caregiver_connections` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `requester_id` INT NOT NULL,
+    `receiver_id` INT NOT NULL,
+    `status` VARCHAR(20) DEFAULT 'connected',
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (`requester_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`receiver_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
+    UNIQUE KEY `uniq_connection` (`requester_id`, `receiver_id`)
+) ENGINE=InnoDB;
+
+-- 12. Caregiver Academy Progress Table
+CREATE TABLE IF NOT EXISTS `caregiver_academy_progress` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `user_id` INT NOT NULL,
+    `course_id` VARCHAR(50) NOT NULL,
+    `is_completed` TINYINT(1) DEFAULT 0,
+    `score` INT DEFAULT NULL,
+    `completed_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
+    UNIQUE KEY `uniq_user_course` (`user_id`, `course_id`)
+) ENGINE=InnoDB;
+
+-- Seed extra client users for peer matching
+INSERT INTO `users` (`id`, `name`, `email`, `password`, `role`, `archetype`)
+SELECT 101, 'Sarah Jenkins', 'sarah@tetwellbeing.com', '$2y$10$vK3zY0.5q4bS51o4U5b1x.1F9Vj5y7R.y.2z.2z.5t.7t.5t.3t.1t', 'client', 'dementia_carer'
+FROM dual WHERE NOT EXISTS (SELECT 1 FROM `users` WHERE `email` = 'sarah@tetwellbeing.com');
+
+INSERT INTO `users` (`id`, `name`, `email`, `password`, `role`, `archetype`)
+SELECT 102, 'David Chen', 'david@tetwellbeing.com', '$2y$10$vK3zY0.5q4bS51o4U5b1x.1F9Vj5y7R.y.2z.2z.5t.7t.5t.3t.1t', 'client', 'stressed_student'
+FROM dual WHERE NOT EXISTS (SELECT 1 FROM `users` WHERE `email` = 'david@tetwellbeing.com');
+
+INSERT INTO `users` (`id`, `name`, `email`, `password`, `role`, `archetype`)
+SELECT 103, 'John Obi', 'john@tetwellbeing.com', '$2y$10$vK3zY0.5q4bS51o4U5b1x.1F9Vj5y7R.y.2z.2z.5t.7t.5t.3t.1t', 'client', 'dementia_carer'
+FROM dual WHERE NOT EXISTS (SELECT 1 FROM `users` WHERE `email` = 'john@tetwellbeing.com');
+
+INSERT INTO `users` (`id`, `name`, `email`, `password`, `role`, `archetype`)
+SELECT 104, 'Lisa Vance', 'lisa@tetwellbeing.com', '$2y$10$vK3zY0.5q4bS51o4U5b1x.1F9Vj5y7R.y.2z.2z.5t.7t.5t.3t.1t', 'client', 'general_wellbeing'
+FROM dual WHERE NOT EXISTS (SELECT 1 FROM `users` WHERE `email` = 'lisa@tetwellbeing.com');
+

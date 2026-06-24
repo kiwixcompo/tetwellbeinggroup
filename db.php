@@ -150,6 +150,50 @@ try {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     ) ENGINE=InnoDB");
 
+    // Create Caregiver Resilience Plans table
+    $pdo->exec("CREATE TABLE IF NOT EXISTS caregiver_resilience_plans (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        stressors TEXT,
+        daily_buffers TEXT,
+        coping_strategies TEXT,
+        signs_of_burnout TEXT,
+        backup_support TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB");
+
+    // Create Caregiver Daily Goals table
+    $pdo->exec("CREATE TABLE IF NOT EXISTS caregiver_daily_goals (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        goal_text VARCHAR(255) NOT NULL,
+        is_completed TINYINT(1) DEFAULT 0,
+        created_date DATE NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB");
+
+    // Create Caregiver Connections table
+    $pdo->exec("CREATE TABLE IF NOT EXISTS caregiver_connections (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        requester_id INT NOT NULL,
+        receiver_id INT NOT NULL,
+        status VARCHAR(20) DEFAULT 'connected',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY uniq_connection (requester_id, receiver_id)
+    ) ENGINE=InnoDB");
+
+    // Create Caregiver Academy Progress table
+    $pdo->exec("CREATE TABLE IF NOT EXISTS caregiver_academy_progress (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        course_id VARCHAR(50) NOT NULL,
+        is_completed TINYINT(1) DEFAULT 0,
+        score INT DEFAULT NULL,
+        completed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY uniq_user_course (user_id, course_id)
+    ) ENGINE=InnoDB");
+
     // Seed default availability if empty
     $avail_count = $pdo->query("SELECT COUNT(*) FROM therapist_availability")->fetchColumn();
     if ($avail_count == 0) {
@@ -307,6 +351,42 @@ if (!isset($_SESSION['mock_users'])) {
             'escrow_balance' => 0.00,
             'clearance_balance' => 0.00,
             'archetype' => NULL
+        ],
+        'sarah@tetwellbeing.com' => [
+            'id' => 101,
+            'name' => 'Sarah Jenkins',
+            'email' => 'sarah@tetwellbeing.com',
+            'password' => password_hash('password123', PASSWORD_DEFAULT),
+            'role' => 'client',
+            'is_suspended' => 0,
+            'archetype' => 'dementia_carer'
+        ],
+        'david@tetwellbeing.com' => [
+            'id' => 102,
+            'name' => 'David Chen',
+            'email' => 'david@tetwellbeing.com',
+            'password' => password_hash('password123', PASSWORD_DEFAULT),
+            'role' => 'client',
+            'is_suspended' => 0,
+            'archetype' => 'stressed_student'
+        ],
+        'john@tetwellbeing.com' => [
+            'id' => 103,
+            'name' => 'John Obi',
+            'email' => 'john@tetwellbeing.com',
+            'password' => password_hash('password123', PASSWORD_DEFAULT),
+            'role' => 'client',
+            'is_suspended' => 0,
+            'archetype' => 'dementia_carer'
+        ],
+        'lisa@tetwellbeing.com' => [
+            'id' => 104,
+            'name' => 'Lisa Vance',
+            'email' => 'lisa@tetwellbeing.com',
+            'password' => password_hash('password123', PASSWORD_DEFAULT),
+            'role' => 'client',
+            'is_suspended' => 0,
+            'archetype' => 'general_wellbeing'
         ]
     ];
 }
@@ -385,6 +465,19 @@ if (!isset($_SESSION['mock_availability'])) {
         ['therapist_name' => 'Clara Mendoza, LMFT', 'day_of_week' => 'Thursday', 'time_slot' => '09:00 AM'],
         ['therapist_name' => 'Clara Mendoza, LMFT', 'day_of_week' => 'Thursday', 'time_slot' => '02:00 PM']
     ];
+}
+
+if (!isset($_SESSION['mock_resilience_plans'])) {
+    $_SESSION['mock_resilience_plans'] = [];
+}
+if (!isset($_SESSION['mock_daily_goals'])) {
+    $_SESSION['mock_daily_goals'] = [];
+}
+if (!isset($_SESSION['mock_connections'])) {
+    $_SESSION['mock_connections'] = [];
+}
+if (!isset($_SESSION['mock_academy_progress'])) {
+    $_SESSION['mock_academy_progress'] = [];
 }
 
 // Global suspension check and crisis state synchronization
