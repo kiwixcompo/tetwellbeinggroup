@@ -54,6 +54,10 @@ if %errorlevel% equ 0 (
     echo ==============================================
     echo [SUCCESS] Your work has been pushed and backed up!
     echo ==============================================
+    echo.
+    echo [INFO] Triggering cPanel Auto-Deployment...
+    curl -s "https://tetwellbeinggroup.com/deploy.php?token=tet_deploy_secret_2026"
+    echo.
 ) else (
     echo.
     echo [WARNING] Push failed. Make sure you created the repo on GitHub and have authorization.

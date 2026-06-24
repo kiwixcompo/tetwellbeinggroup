@@ -140,6 +140,16 @@ try {
         UNIQUE KEY uniq_therapist_day_slot (therapist_name, day_of_week, time_slot)
     ) ENGINE=InnoDB");
 
+    // Create AI Chat Logs table
+    $pdo->exec("CREATE TABLE IF NOT EXISTS ai_chat_logs (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        sender ENUM('user', 'ai') NOT NULL,
+        message TEXT NOT NULL,
+        language VARCHAR(10) DEFAULT 'en',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB");
+
     // Seed default availability if empty
     $avail_count = $pdo->query("SELECT COUNT(*) FROM therapist_availability")->fetchColumn();
     if ($avail_count == 0) {
@@ -350,6 +360,10 @@ if (!isset($_SESSION['mock_community_posts'])) {
 }
 if (!isset($_SESSION['mock_bookings'])) {
     $_SESSION['mock_bookings'] = [];
+}
+
+if (!isset($_SESSION['mock_ai_chats'])) {
+    $_SESSION['mock_ai_chats'] = [];
 }
 
 if (!isset($_SESSION['mock_availability'])) {

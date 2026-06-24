@@ -87,6 +87,16 @@ CREATE TABLE IF NOT EXISTS `therapist_availability` (
     UNIQUE KEY `uniq_therapist_day_slot` (`therapist_name`, `day_of_week`, `time_slot`)
 ) ENGINE=InnoDB;
 
+-- 8. AI Chat Logs Table
+CREATE TABLE IF NOT EXISTS `ai_chat_logs` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `user_id` INT NOT NULL,
+    `sender` ENUM('user', 'ai') NOT NULL,
+    `message` TEXT NOT NULL,
+    `language` VARCHAR(10) DEFAULT 'en',
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
 -- =========================================================
 -- SEED DATA
 -- =========================================================

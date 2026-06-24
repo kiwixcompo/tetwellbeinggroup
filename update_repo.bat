@@ -19,10 +19,16 @@ if errorlevel 1 (
     exit /b 1
 )
 echo ╔═══════════════════════════════════════════════════════════════╗
-echo ║  ✅ UPDATE SUCCESSFUL!                                        ║
+echo ║  ✅ PUSH SUCCESSFUL!                                          ║
 echo ╚═══════════════════════════════════════════════════════════════╝
 echo.
 echo 📍 Repository: https://github.com/kiwixcompo/tetwellbeinggroup
-echo 📍 cPanel will auto-deploy in 1-2 minutes
+echo.
+echo 🌐 Triggering cPanel Auto-Deployment Webhook...
+curl -s "https://tetwellbeinggroup.com/deploy.php?token=tet_deploy_secret_2026"
+echo.
+echo ╔═══════════════════════════════════════════════════════════════╗
+echo ║  ✅ DEPLOYMENT FINISHED!                                      ║
+echo ╚═══════════════════════════════════════════════════════════════╝
 echo.
 pause
