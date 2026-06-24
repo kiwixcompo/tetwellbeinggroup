@@ -222,6 +222,112 @@ try {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     ) ENGINE=InnoDB");
 
+    // Create VR Practice Logs table
+    $pdo->exec("CREATE TABLE IF NOT EXISTS vr_practice_logs (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        simulation_id VARCHAR(50) NOT NULL,
+        practice_date DATE NOT NULL,
+        duration_seconds INT NOT NULL,
+        mood_improvement INT DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB");
+
+    // Alter users table to add department_id if missing
+    try {
+        $pdo->exec("ALTER TABLE users ADD COLUMN department_id INT DEFAULT NULL");
+    } catch (PDOException $e) {
+        // column already exists
+    }
+
+    // Create workplace safety tables
+    $pdo->exec("CREATE TABLE IF NOT EXISTS workplace_departments (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(100) NOT NULL UNIQUE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB");
+
+    $pdo->exec("CREATE TABLE IF NOT EXISTS workplace_survey_responses (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        department_id INT NOT NULL,
+        q1_raise_issues INT NOT NULL,
+        q2_team_mistakes INT NOT NULL,
+        q3_supportive_env INT NOT NULL,
+        q4_respect_others INT NOT NULL,
+        q5_burnout_level INT NOT NULL,
+        feedback TEXT DEFAULT NULL,
+        submitted_date DATE NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB");
+
+    $pdo->exec("CREATE TABLE IF NOT EXISTS workplace_user_survey_status (
+        user_id INT NOT NULL,
+        survey_period VARCHAR(7) NOT NULL,
+        PRIMARY KEY (user_id, survey_period)
+    ) ENGINE=InnoDB");
+
+    $pdo->exec("CREATE TABLE IF NOT EXISTS workplace_conflicts (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        department_id INT NOT NULL,
+        description TEXT NOT NULL,
+        severity ENUM('low', 'medium', 'high') NOT NULL,
+        status ENUM('open', 'investigating', 'resolved') DEFAULT 'open',
+        ai_mitigation_plan TEXT DEFAULT NULL,
+        logged_date DATE NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB");
+
+    // Seed departments & update Mark if empty
+    $dept_count = $pdo->query("SELECT COUNT(*) FROM workplace_departments")->fetchColumn();
+    if ($dept_count == 0) {
+        $pdo->exec("INSERT INTO workplace_departments (id, name) VALUES 
+            (1, 'Nursing'),
+            (2, 'ICU & ER'),
+            (3, 'Social Work'),
+            (4, 'Caregiver Administration')");
+        $pdo->exec("UPDATE users SET department_id = 1 WHERE id = 1");
+    }
+
+    // Seed survey responses if empty
+    $resp_count = $pdo->query("SELECT COUNT(*) FROM workplace_survey_responses")->fetchColumn();
+    if ($resp_count == 0) {
+        $pdo->exec("INSERT INTO workplace_survey_responses (department_id, q1_raise_issues, q2_team_mistakes, q3_supportive_env, q4_respect_others, q5_burnout_level, feedback, submitted_date) VALUES
+            (1, 4, 3, 5, 4, 2, 'Great teamwork, but shift handovers are sometimes chaotic.', '2026-04-15'),
+            (1, 5, 4, 4, 5, 1, 'Nursing staff is very supportive of mistakes.', '2026-04-18'),
+            (2, 2, 2, 3, 3, 4, 'High burnout in the ICU due to scheduling.', '2026-04-20'),
+            (2, 3, 2, 4, 3, 4, 'Friction between residents and senior staff.', '2026-04-22'),
+            (3, 4, 4, 4, 4, 3, 'Heavy caseloads make it hard to sync.', '2026-04-25'),
+            (1, 3, 3, 4, 4, 3, 'Feeling slight burnout from overtime.', '2026-05-12'),
+            (1, 4, 4, 5, 5, 2, 'Team is cohesive and respects boundaries.', '2026-05-15'),
+            (2, 2, 1, 2, 3, 5, 'Extremely short staffed. Need structural intervention.', '2026-05-18'),
+            (2, 3, 2, 3, 4, 4, 'Under immense pressure.', '2026-05-20'),
+            (3, 5, 4, 5, 5, 2, 'Great environment.', '2026-05-22'),
+            (4, 4, 5, 4, 4, 2, 'Administrative workload is high but manageable.', '2026-05-28'),
+            (1, 4, 4, 4, 4, 2, 'Decent support this month.', '2026-06-10'),
+            (1, 5, 4, 5, 5, 1, 'Love this team.', '2026-06-12'),
+            (2, 3, 2, 3, 3, 4, 'Friction is improving slowly but stress remains high.', '2026-06-15'),
+            (2, 1, 2, 2, 2, 5, 'ICU team is overwhelmed, high turnover.', '2026-06-18'),
+            (3, 4, 3, 4, 4, 3, 'Anonymity makes it easy to share concerns.', '2026-06-20'),
+            (4, 5, 4, 5, 4, 2, 'Management is responsive to issues.', '2026-06-22')");
+    }
+
+    // Seed survey status if empty
+    $status_count = $pdo->query("SELECT COUNT(*) FROM workplace_user_survey_status")->fetchColumn();
+    if ($status_count == 0) {
+        $pdo->exec("INSERT INTO workplace_user_survey_status (user_id, survey_period) VALUES
+            (1, '2026-04'),
+            (1, '2026-05')");
+    }
+
+    // Seed conflicts if empty
+    $conflict_count = $pdo->query("SELECT COUNT(*) FROM workplace_conflicts")->fetchColumn();
+    if ($conflict_count == 0) {
+        $pdo->exec("INSERT INTO workplace_conflicts (id, department_id, description, severity, status, ai_mitigation_plan, logged_date) VALUES
+            (1, 1, 'Communication friction during shift handovers causing stress spikes and transcription errors.', 'medium', 'resolved', 'Implement 10-minute structured SBAR templates for cross-shift handovers. Conduct a brief team training.', '2026-06-10'),
+            (2, 2, 'Inter-disciplinary tension between junior residents and senior nursing supervisors regarding safety protocol overrides in ER.', 'high', 'investigating', 'Conduct a facilitated joint debriefing session led by the clinical specialist. Formally document nursing override authority pathways to clarify boundary rights.', '2026-06-18'),
+            (3, 3, 'Case distribution inequality friction leading to feelings of isolation and overload among social workers.', 'medium', 'open', 'Utilize the Peer Matching index to optimize case sharing. Redesign workload distribution templates to include active caregiver metrics.', '2026-06-23')");
+    }
+
     // Seed default availability if empty
     $avail_count = $pdo->query("SELECT COUNT(*) FROM therapist_availability")->fetchColumn();
     if ($avail_count == 0) {
@@ -333,7 +439,8 @@ if (!isset($_SESSION['mock_users'])) {
             'password' => password_hash('password123', PASSWORD_DEFAULT),
             'role' => 'client',
             'is_suspended' => 0,
-            'archetype' => NULL
+            'archetype' => NULL,
+            'department_id' => 1
         ],
         'evelyn@tetwellbeing.com' => [
             'id' => 2,
@@ -528,6 +635,79 @@ if (!isset($_SESSION['mock_digital_twin_profiles'])) {
             'depression_resistance' => 58,
             'burnout_buffer' => 48,
             'updated_at' => '2026-06-24 12:00:00'
+        ]
+    ];
+}
+if (!isset($_SESSION['mock_vr_practice_logs'])) {
+    $_SESSION['mock_vr_practice_logs'] = [
+        ['id' => 1, 'user_id' => 1, 'simulation_id' => 'forest', 'practice_date' => '2026-06-22', 'duration_seconds' => 180, 'mood_improvement' => 2, 'created_at' => '2026-06-22 10:00:00'],
+        ['id' => 2, 'user_id' => 1, 'simulation_id' => 'auditorium', 'practice_date' => '2026-06-23', 'duration_seconds' => 300, 'mood_improvement' => 3, 'created_at' => '2026-06-23 15:00:00'],
+        ['id' => 3, 'user_id' => 1, 'simulation_id' => 'forest', 'practice_date' => '2026-06-24', 'duration_seconds' => 240, 'mood_improvement' => 1, 'created_at' => '2026-06-24 09:00:00']
+    ];
+}
+if (!isset($_SESSION['mock_workplace_departments'])) {
+    $_SESSION['mock_workplace_departments'] = [
+        ['id' => 1, 'name' => 'Nursing'],
+        ['id' => 2, 'name' => 'ICU & ER'],
+        ['id' => 3, 'name' => 'Social Work'],
+        ['id' => 4, 'name' => 'Caregiver Administration']
+    ];
+}
+if (!isset($_SESSION['mock_workplace_survey_responses'])) {
+    $_SESSION['mock_workplace_survey_responses'] = [
+        ['id' => 1, 'department_id' => 1, 'q1_raise_issues' => 4, 'q2_team_mistakes' => 3, 'q3_supportive_env' => 5, 'q4_respect_others' => 4, 'q5_burnout_level' => 2, 'feedback' => 'Great teamwork, but shift handovers are sometimes chaotic.', 'submitted_date' => '2026-04-15'],
+        ['id' => 2, 'department_id' => 1, 'q1_raise_issues' => 5, 'q2_team_mistakes' => 4, 'q3_supportive_env' => 4, 'q4_respect_others' => 5, 'q5_burnout_level' => 1, 'feedback' => 'Nursing staff is very supportive of mistakes.', 'submitted_date' => '2026-04-18'],
+        ['id' => 3, 'department_id' => 2, 'q1_raise_issues' => 2, 'q2_team_mistakes' => 2, 'q3_supportive_env' => 3, 'q4_respect_others' => 3, 'q5_burnout_level' => 4, 'feedback' => 'High burnout in the ICU due to scheduling.', 'submitted_date' => '2026-04-20'],
+        ['id' => 4, 'department_id' => 2, 'q1_raise_issues' => 3, 'q2_team_mistakes' => 2, 'q3_supportive_env' => 4, 'q4_respect_others' => 3, 'q5_burnout_level' => 4, 'feedback' => 'Friction between residents and senior staff.', 'submitted_date' => '2026-04-22'],
+        ['id' => 5, 'department_id' => 3, 'q1_raise_issues' => 4, 'q2_team_mistakes' => 4, 'q3_supportive_env' => 4, 'q4_respect_others' => 4, 'q5_burnout_level' => 3, 'feedback' => 'Heavy caseloads make it hard to sync.', 'submitted_date' => '2026-04-25'],
+        ['id' => 6, 'department_id' => 1, 'q1_raise_issues' => 3, 'q2_team_mistakes' => 3, 'q3_supportive_env' => 4, 'q4_respect_others' => 4, 'q5_burnout_level' => 3, 'feedback' => 'Feeling slight burnout from overtime.', 'submitted_date' => '2026-05-12'],
+        ['id' => 7, 'department_id' => 1, 'q1_raise_issues' => 4, 'q2_team_mistakes' => 4, 'q3_supportive_env' => 5, 'q4_respect_others' => 5, 'q5_burnout_level' => 2, 'feedback' => 'Team is cohesive and respects boundaries.', 'submitted_date' => '2026-05-15'],
+        ['id' => 8, 'department_id' => 2, 'q1_raise_issues' => 2, 'q2_team_mistakes' => 1, 'q3_supportive_env' => 2, 'q4_respect_others' => 3, 'q5_burnout_level' => 5, 'feedback' => 'Extremely short staffed. Need structural intervention.', 'submitted_date' => '2026-05-18'],
+        ['id' => 9, 'department_id' => 2, 'q1_raise_issues' => 3, 'q2_team_mistakes' => 2, 'q3_supportive_env' => 3, 'q4_respect_others' => 4, 'q5_burnout_level' => 4, 'feedback' => 'Under immense pressure.', 'submitted_date' => '2026-05-20'],
+        ['id' => 10, 'department_id' => 3, 'q1_raise_issues' => 5, 'q2_team_mistakes' => 4, 'q3_supportive_env' => 5, 'q4_respect_others' => 5, 'q5_burnout_level' => 2, 'feedback' => 'Great environment.', 'submitted_date' => '2026-05-22'],
+        ['id' => 11, 'department_id' => 4, 'q1_raise_issues' => 4, 'q2_team_mistakes' => 5, 'q3_supportive_env' => 4, 'q4_respect_others' => 4, 'q5_burnout_level' => 2, 'feedback' => 'Administrative workload is high but manageable.', 'submitted_date' => '2026-05-28'],
+        ['id' => 12, 'department_id' => 1, 'q1_raise_issues' => 4, 'q2_team_mistakes' => 4, 'q3_supportive_env' => 4, 'q4_respect_others' => 4, 'q5_burnout_level' => 2, 'feedback' => 'Decent support this month.', 'submitted_date' => '2026-06-10'],
+        ['id' => 13, 'department_id' => 1, 'q1_raise_issues' => 5, 'q2_team_mistakes' => 4, 'q3_supportive_env' => 5, 'q4_respect_others' => 5, 'q5_burnout_level' => 1, 'feedback' => 'Love this team.', 'submitted_date' => '2026-06-12'],
+        ['id' => 14, 'department_id' => 2, 'q1_raise_issues' => 3, 'q2_team_mistakes' => 2, 'q3_supportive_env' => 3, 'q4_respect_others' => 3, 'q5_burnout_level' => 4, 'feedback' => 'Friction is improving slowly but stress remains high.', 'submitted_date' => '2026-06-15'],
+        ['id' => 15, 'department_id' => 2, 'q1_raise_issues' => 1, 'q2_team_mistakes' => 2, 'q3_supportive_env' => 2, 'q4_respect_others' => 2, 'q5_burnout_level' => 5, 'feedback' => 'ICU team is overwhelmed, high turnover.', 'submitted_date' => '2026-06-18'],
+        ['id' => 16, 'department_id' => 3, 'q1_raise_issues' => 4, 'q2_team_mistakes' => 3, 'q3_supportive_env' => 4, 'q4_respect_others' => 4, 'q5_burnout_level' => 3, 'feedback' => 'Anonymity makes it easy to share concerns.', 'submitted_date' => '2026-06-20'],
+        ['id' => 17, 'department_id' => 4, 'q1_raise_issues' => 5, 'q2_team_mistakes' => 4, 'q3_supportive_env' => 5, 'q4_respect_others' => 4, 'q5_burnout_level' => 2, 'feedback' => 'Management is responsive to issues.', 'submitted_date' => '2026-06-22']
+    ];
+}
+if (!isset($_SESSION['mock_workplace_user_survey_status'])) {
+    $_SESSION['mock_workplace_user_survey_status'] = [
+        ['user_id' => 1, 'survey_period' => '2026-04'],
+        ['user_id' => 1, 'survey_period' => '2026-05']
+    ];
+}
+if (!isset($_SESSION['mock_workplace_conflicts'])) {
+    $_SESSION['mock_workplace_conflicts'] = [
+        [
+            'id' => 1,
+            'department_id' => 1,
+            'description' => 'Communication friction during shift handovers causing stress spikes and transcription errors.',
+            'severity' => 'medium',
+            'status' => 'resolved',
+            'ai_mitigation_plan' => 'Implement 10-minute structured SBAR (Situation, Background, Assessment, Recommendation) templates for cross-shift handovers. Conduct a brief team training.',
+            'logged_date' => '2026-06-10'
+        ],
+        [
+            'id' => 2,
+            'department_id' => 2,
+            'description' => 'Inter-disciplinary tension between junior residents and senior nursing supervisors regarding safety protocol overrides in ER.',
+            'severity' => 'high',
+            'status' => 'investigating',
+            'ai_mitigation_plan' => 'Conduct a facilitated joint debriefing session led by the clinical specialist. Formally document nursing override authority pathways to clarify boundary rights.',
+            'logged_date' => '2026-06-18'
+        ],
+        [
+            'id' => 3,
+            'department_id' => 3,
+            'description' => 'Case distribution inequality friction leading to feelings of isolation and overload among social workers.',
+            'severity' => 'medium',
+            'status' => 'open',
+            'ai_mitigation_plan' => 'Utilize the Peer Matching index to optimize case sharing. Redesign workload distribution templates to include active caregiver metrics.',
+            'logged_date' => '2026-06-23'
         ]
     ];
 }

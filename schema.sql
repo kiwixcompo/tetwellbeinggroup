@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS `users` (
     `clearance_balance` DECIMAL(10,2) DEFAULT 0.00,
     `is_suspended` TINYINT(1) DEFAULT 0,
     `crisis_state` TINYINT(1) DEFAULT 0,
+    `department_id` INT DEFAULT NULL,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 
@@ -273,4 +274,113 @@ ON DUPLICATE KEY UPDATE `user_id` = `user_id`;
 INSERT INTO `digital_twin_profiles` (`user_id`, `learned_triggers`, `coping_styles`, `anxiety_resilience`, `depression_resistance`, `burnout_buffer`) VALUES
 (1, '["Low sleep duration (<6 hours)","Sedentary routines (<3000 steps)","Elevated resting heart rate (>80 bpm)"]', '["Sensory Grounding (5-4-3-2-1)","Stretching Exercises","Teletherapy Checkins"]', 65, 58, 48)
 ON DUPLICATE KEY UPDATE `user_id` = `user_id`;
+
+-- 15. VR Practice Logs Table
+CREATE TABLE IF NOT EXISTS `vr_practice_logs` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `user_id` INT NOT NULL,
+    `simulation_id` VARCHAR(50) NOT NULL,
+    `practice_date` DATE NOT NULL,
+    `duration_seconds` INT NOT NULL,
+    `mood_improvement` INT DEFAULT 0,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- Seed default VR practice logs for Mark (user_id = 1)
+INSERT INTO `vr_practice_logs` (`user_id`, `simulation_id`, `practice_date`, `duration_seconds`, `mood_improvement`) VALUES
+(1, 'forest', '2026-06-22', 180, 2),
+(1, 'auditorium', '2026-06-23', 300, 3),
+(1, 'forest', '2026-06-24', 240, 1)
+ON DUPLICATE KEY UPDATE `id` = `id`;
+
+-- 16. Workplace Departments Table
+CREATE TABLE IF NOT EXISTS `workplace_departments` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `name` VARCHAR(100) NOT NULL UNIQUE,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+-- Seed default departments
+INSERT INTO `workplace_departments` (`id`, `name`) VALUES
+(1, 'Nursing'),
+(2, 'ICU & ER'),
+(3, 'Social Work'),
+(4, 'Caregiver Administration')
+ON DUPLICATE KEY UPDATE `name` = `name`;
+
+-- Update Mark (user_id = 1) to be in Nursing (department_id = 1)
+UPDATE `users` SET `department_id` = 1 WHERE `id` = 1;
+
+-- 17. Workplace Survey Responses Table (Anonymous responses)
+CREATE TABLE IF NOT EXISTS `workplace_survey_responses` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `department_id` INT NOT NULL,
+    `q1_raise_issues` INT NOT NULL,
+    `q2_team_mistakes` INT NOT NULL,
+    `q3_supportive_env` INT NOT NULL,
+    `q4_respect_others` INT NOT NULL,
+    `q5_burnout_level` INT NOT NULL,
+    `feedback` TEXT DEFAULT NULL,
+    `submitted_date` DATE NOT NULL,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (`department_id`) REFERENCES `workplace_departments`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- Seed historical survey responses (Nursing = 1, ICU = 2, Social Work = 3, Admin = 4)
+-- We will seed a distribution of scores from April, May, and June 2026
+INSERT INTO `workplace_survey_responses` (`department_id`, `q1_raise_issues`, `q2_team_mistakes`, `q3_supportive_env`, `q4_respect_others`, `q5_burnout_level`, `feedback`, `submitted_date`) VALUES
+(1, 4, 3, 5, 4, 2, 'Great teamwork, but shift handovers are sometimes chaotic.', '2026-04-15'),
+(1, 5, 4, 4, 5, 1, 'Nursing staff is very supportive of mistakes.', '2026-04-18'),
+(2, 2, 2, 3, 3, 4, 'High burnout in the ICU due to scheduling.', '2026-04-20'),
+(2, 3, 2, 4, 3, 4, 'Friction between residents and senior staff.', '2026-04-22'),
+(3, 4, 4, 4, 4, 3, 'Heavy caseloads make it hard to sync.', '2026-04-25'),
+(1, 3, 3, 4, 4, 3, 'Feeling slight burnout from overtime.', '2026-05-12'),
+(1, 4, 4, 5, 5, 2, 'Team is cohesive and respects boundaries.', '2026-05-15'),
+(2, 2, 1, 2, 3, 5, 'Extremely short staffed. Need structural intervention.', '2026-05-18'),
+(2, 3, 2, 3, 4, 4, 'Under immense pressure.', '2026-05-20'),
+(3, 5, 4, 5, 5, 2, 'Great environment.', '2026-05-22'),
+(4, 4, 5, 4, 4, 2, 'Administrative workload is high but manageable.', '2026-05-28'),
+(1, 4, 4, 4, 4, 2, 'Decent support this month.', '2026-06-10'),
+(1, 5, 4, 5, 5, 1, 'Love this team.', '2026-06-12'),
+(2, 3, 2, 3, 3, 4, 'Friction is improving slowly but stress remains high.', '2026-06-15'),
+(2, 1, 2, 2, 2, 5, 'ICU team is overwhelmed, high turnover.', '2026-06-18'),
+(3, 4, 3, 4, 4, 3, 'Anonymity makes it easy to share concerns.', '2026-06-20'),
+(4, 5, 4, 5, 4, 2, 'Management is responsive to issues.', '2026-06-22')
+ON DUPLICATE KEY UPDATE `id` = `id`;
+
+-- 18. Workplace User Survey Status Table (To prevent duplicate submissions)
+CREATE TABLE IF NOT EXISTS `workplace_user_survey_status` (
+    `user_id` INT NOT NULL,
+    `survey_period` VARCHAR(7) NOT NULL, -- Format: YYYY-MM (e.g. '2026-06')
+    PRIMARY KEY (`user_id`, `survey_period`),
+    FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- Seed that Mark has already completed his April and May surveys, but NOT his June 2026 survey
+INSERT INTO `workplace_user_survey_status` (`user_id`, `survey_period`) VALUES
+(1, '2026-04'),
+(1, '2026-05')
+ON DUPLICATE KEY UPDATE `user_id` = `user_id`;
+
+-- 19. Workplace Conflicts Table
+CREATE TABLE IF NOT EXISTS `workplace_conflicts` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `department_id` INT NOT NULL,
+    `description` TEXT NOT NULL,
+    `severity` ENUM('low', 'medium', 'high') NOT NULL,
+    `status` ENUM('open', 'investigating', 'resolved') DEFAULT 'open',
+    `ai_mitigation_plan` TEXT DEFAULT NULL,
+    `logged_date` DATE NOT NULL,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (`department_id`) REFERENCES `workplace_departments`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- Seed default conflicts
+INSERT INTO `workplace_conflicts` (`id`, `department_id`, `description`, `severity`, `status`, `ai_mitigation_plan`, `logged_date`) VALUES
+(1, 1, 'Communication friction during shift handovers causing stress spikes and transcription errors.', 'medium', 'resolved', 'Implement 10-minute structured SBAR (Situation, Background, Assessment, Recommendation) templates for cross-shift handovers. Conduct a brief team training.', '2026-06-10'),
+(2, 2, 'Inter-disciplinary tension between junior residents and senior nursing supervisors regarding safety protocol overrides in ER.', 'high', 'investigating', 'Conduct a facilitated joint debriefing session led by the clinical specialist. Formally document nursing override authority pathways to clarify boundary rights.', '2026-06-18'),
+(3, 3, 'Case distribution inequality friction leading to feelings of isolation and overload among social workers.', 'medium', 'open', 'Utilize the Peer Matching index to optimize case sharing. Redesign workload distribution templates to include active caregiver metrics.', '2026-06-23')
+ON DUPLICATE KEY UPDATE `id` = `id`;
+
 

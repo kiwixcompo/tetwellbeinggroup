@@ -119,6 +119,13 @@ try {
     
     echo "✅ Loaded schema.sql (" . strlen($sql) . " bytes).\n\n";
 
+    // Ensure department_id column exists in users table before executing schema.sql
+    try {
+        $pdo->exec("ALTER TABLE `users` ADD COLUMN `department_id` INT DEFAULT NULL");
+    } catch (PDOException $e) {
+        // Column already exists, ignore
+    }
+
     echo "⚙️ Executing SQL statements...\n";
     $pdo->exec($sql);
     echo "✅ Tables created, and seed data initialized successfully!\n\n";
