@@ -10,9 +10,9 @@ if (session_status() === PHP_SESSION_NONE) {
 require_once 'EmotionalHealthService.php';
 
 $db_host = 'localhost';
-$db_user = 'root';
-$db_pass = '';
-$db_name = 'tet_wellbeing';
+$db_user = 'tetwellb_tetwellbeinggroup';
+$db_pass = ',!PX7{%zy1-vgh.7';
+$db_name = 'tetwellb_tetwellbeinggroup';
 
 $pdo = null;
 $db_connected = false;
