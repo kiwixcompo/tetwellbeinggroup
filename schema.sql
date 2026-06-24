@@ -1,8 +1,8 @@
 -- Tet Wellbeing Group Database Schema & Seed Data
--- Database: tet_wellbeing
+-- Database: tetwellb_tetwellbeinggroup
 
-CREATE DATABASE IF NOT EXISTS `tet_wellbeing` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE `tet_wellbeing`;
+CREATE DATABASE IF NOT EXISTS `tetwellb_tetwellbeinggroup` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE `tetwellb_tetwellbeinggroup`;
 
 -- 1. Users Table
 CREATE TABLE IF NOT EXISTS `users` (
