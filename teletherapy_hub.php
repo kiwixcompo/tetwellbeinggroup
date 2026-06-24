@@ -83,7 +83,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 // 1. AJAX API Endpoint: Get available slots
 if (isset($_GET['action']) && $_GET['action'] === 'get_slots') {
     header('Content-Type: application/json');
-    $therapist = filter_input(INPUT_GET, 'therapist', FILTER_SANITIZE_SPECIAL_CHARS);
+    $therapist = filter_input(INPUT_GET, 'therapist', FILTER_DEFAULT);
     $date_str = $_GET['date'] ?? '';
     
     if (empty($therapist) || empty($date_str)) {
@@ -138,7 +138,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'get_slots') {
 
 // 2. HANDLE Simulated Availability Profile Save
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'save_availability') {
-    $therapist = filter_input(INPUT_POST, 'therapist_name', FILTER_SANITIZE_SPECIAL_CHARS);
+    $therapist = filter_input(INPUT_POST, 'therapist_name', FILTER_DEFAULT);
     $selected_slots = $_POST['slots'] ?? []; // format: Array of 'Day_of_week|Time_slot'
     
     if (!empty($therapist)) {
@@ -199,10 +199,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
 // 3. HANDLE BOOKING APPOINTMENTS
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'book_session') {
-    $therapist_name = filter_input(INPUT_POST, 'therapist_name', FILTER_SANITIZE_SPECIAL_CHARS);
+    $therapist_name = filter_input(INPUT_POST, 'therapist_name', FILTER_DEFAULT);
     $booking_date = $_POST['booking_date'] ?? '';
     $booking_time = $_POST['booking_time'] ?? '';
-    $insurance_provider = filter_input(INPUT_POST, 'insurance_provider', FILTER_SANITIZE_SPECIAL_CHARS);
+    $insurance_provider = filter_input(INPUT_POST, 'insurance_provider', FILTER_DEFAULT);
 
     if (!empty($therapist_name) && !empty($booking_date) && !empty($booking_time)) {
         

@@ -113,8 +113,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Action 3.1: Update Profile Details
     if ($action === 'update_profile') {
-        $license_no = filter_input(INPUT_POST, 'license_no', FILTER_SANITIZE_SPECIAL_CHARS);
-        $bio = filter_input(INPUT_POST, 'bio', FILTER_SANITIZE_SPECIAL_CHARS);
+        $license_no = filter_input(INPUT_POST, 'license_no', FILTER_DEFAULT);
+        $bio = filter_input(INPUT_POST, 'bio', FILTER_DEFAULT);
         $hourly_rate = filter_input(INPUT_POST, 'hourly_rate', FILTER_VALIDATE_FLOAT);
 
         if (!empty($license_no) && !empty($bio) && $hourly_rate > 0) {

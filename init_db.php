@@ -101,6 +101,26 @@ try {
     $pdo->exec($sql);
     echo "✅ Tables created, and seed data initialized successfully!\n\n";
     
+    echo "🧹 Cleaning up double-escaped HTML entities in existing tables...\n";
+    $cleanup_tables = [
+        'users' => ['name', 'bio', 'license_no'],
+        'daily_checkins' => ['notes'],
+        'caregiver_respite_breaks' => ['cover_plan'],
+        'teletherapy_bookings' => ['therapist_name', 'insurance_provider'],
+        'community_posts' => ['author_name', 'content'],
+        'ai_chat_logs' => ['message']
+    ];
+
+    foreach ($cleanup_tables as $table => $columns) {
+        $table_check = $pdo->query("SHOW TABLES LIKE '$table'")->rowCount();
+        if ($table_check > 0) {
+            foreach ($columns as $column) {
+                $pdo->exec("UPDATE `$table` SET `$column` = REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(`$column`, '&amp;', '&'), '&#039;', '\''), '&quot;', '\"'), '&lt;', '<'), '&gt;', '>') WHERE `$column` LIKE '%&%'");
+            }
+        }
+    }
+    echo "✅ Existing records cleaned.\n\n";
+    
     echo "💡 You can now log in using:\n";
     echo "   - Client Demo User: mark@tetwellbeing.com (Password: password123)\n";
     echo "   - Specialist User: evelyn@tetwellbeing.com (Password: password123)\n";

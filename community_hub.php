@@ -51,7 +51,7 @@ if ($user_archetype === 'dementia_carer') {
     $channels['student-stress'] = 'Student Anxiety Circle';
 }
 
-$current_channel = filter_input(INPUT_GET, 'channel', FILTER_SANITIZE_SPECIAL_CHARS);
+$current_channel = filter_input(INPUT_GET, 'channel', FILTER_DEFAULT);
 if (!array_key_exists($current_channel, $channels)) {
     $current_channel = 'general';
 }
@@ -111,7 +111,7 @@ if (isset($_POST['action']) && $_POST['action'] === 'heart_post') {
 
 // 2. HANDLE COMPOSING A POST
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'create_post') {
-    $content = filter_input(INPUT_POST, 'content', FILTER_SANITIZE_SPECIAL_CHARS);
+    $content = filter_input(INPUT_POST, 'content', FILTER_DEFAULT);
     $is_anonymous = isset($_POST['is_anonymous']) ? 1 : 0;
 
     if (!empty($content)) {

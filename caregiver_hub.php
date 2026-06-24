@@ -67,7 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Action 1: Save Burnout Assessment
     if ($action === 'log_burnout') {
         $score = filter_input(INPUT_POST, 'score', FILTER_VALIDATE_INT);
-        $level = filter_input(INPUT_POST, 'level', FILTER_SANITIZE_SPECIAL_CHARS);
+        $level = filter_input(INPUT_POST, 'level', FILTER_DEFAULT);
 
         if ($score !== false && !empty($level)) {
             if ($db_connected && $pdo) {
@@ -96,7 +96,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'schedule_respite') {
         $break_date = $_POST['break_date'] ?? '';
         $duration = filter_input(INPUT_POST, 'duration_hours', FILTER_VALIDATE_INT);
-        $cover_plan = filter_input(INPUT_POST, 'cover_plan', FILTER_SANITIZE_SPECIAL_CHARS);
+        $cover_plan = filter_input(INPUT_POST, 'cover_plan', FILTER_DEFAULT);
 
         if (!empty($break_date) && $duration > 0 && !empty($cover_plan)) {
             if ($db_connected && $pdo) {

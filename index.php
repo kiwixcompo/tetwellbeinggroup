@@ -15,9 +15,9 @@ $contact_submitted = false;
 $contact_name = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['contact_form'])) {
-    $contact_name = filter_input(INPUT_POST, 'name', FILTER_SANITIZE_SPECIAL_CHARS);
+    $contact_name = filter_input(INPUT_POST, 'name', FILTER_DEFAULT);
     $contact_email = filter_input(INPUT_POST, 'email', FILTER_VALIDATE_EMAIL);
-    $contact_message = filter_input(INPUT_POST, 'message', FILTER_SANITIZE_SPECIAL_CHARS);
+    $contact_message = filter_input(INPUT_POST, 'message', FILTER_DEFAULT);
     
     if ($contact_name && $contact_email && $contact_message) {
         $contact_submitted = true;

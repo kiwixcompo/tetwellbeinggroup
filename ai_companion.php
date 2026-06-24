@@ -387,8 +387,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     // E. Return JSON Response
     echo json_encode([
         'status' => 'success',
-        'user_message' => htmlspecialchars($user_msg),
-        'ai_message' => htmlspecialchars($ai_msg),
+        'user_message' => $user_msg,
+        'ai_message' => $ai_msg,
         'is_crisis' => $is_distressed
     ]);
     exit;

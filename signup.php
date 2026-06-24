@@ -14,7 +14,7 @@ if (isset($_SESSION['user_id'])) {
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $name = filter_input(INPUT_POST, 'name', FILTER_SANITIZE_SPECIAL_CHARS);
+    $name = filter_input(INPUT_POST, 'name', FILTER_DEFAULT);
     $email = filter_input(INPUT_POST, 'email', FILTER_VALIDATE_EMAIL);
     $password = $_POST['password'] ?? '';
     $terms_accepted = isset($_POST['terms_accepted']);
@@ -22,7 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!$terms_accepted) {
         $error = "You must agree to the Terms of Service to create an account.";
     } elseif ($name && $email && $password) {
-        $role = filter_input(INPUT_POST, 'role', FILTER_SANITIZE_SPECIAL_CHARS);
+        $role = filter_input(INPUT_POST, 'role', FILTER_DEFAULT);
         if ($role !== 'specialist') {
             $role = 'client';
         }

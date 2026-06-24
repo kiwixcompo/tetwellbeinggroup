@@ -53,7 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Action 1: Onboarding Archetype Save
     if ($action === 'save_onboarding') {
-        $archetype = filter_input(INPUT_POST, 'archetype', FILTER_SANITIZE_SPECIAL_CHARS);
+        $archetype = filter_input(INPUT_POST, 'archetype', FILTER_DEFAULT);
         if (in_array($archetype, ['dementia_carer', 'stressed_student', 'general_wellbeing'])) {
             $saved = false;
             if ($db_connected && $pdo) {
@@ -104,8 +104,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Action 3: Log Daily Check-in
     if (empty($action) && isset($_POST['mood_value'])) {
-        $submitted_mood = filter_input(INPUT_POST, 'mood_value', FILTER_SANITIZE_SPECIAL_CHARS);
-        $submitted_notes = filter_input(INPUT_POST, 'mood_notes', FILTER_SANITIZE_SPECIAL_CHARS);
+        $submitted_mood = filter_input(INPUT_POST, 'mood_value', FILTER_DEFAULT);
+        $submitted_notes = filter_input(INPUT_POST, 'mood_notes', FILTER_DEFAULT);
         
         if (!empty($submitted_mood)) {
             $form_submitted = true;
