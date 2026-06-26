@@ -9,6 +9,29 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 require_once 'EmotionalHealthService.php';
 
+// --- ERROR LOGGING CONFIGURATION ---
+$log_dir = __DIR__ . '/storage/logs';
+if (!is_dir($log_dir)) {
+    mkdir($log_dir, 0755, true);
+}
+ini_set('log_errors', 1);
+ini_set('error_log', $log_dir . '/error.log');
+ini_set('display_errors', 0); // Hide errors from UI, log them instead
+
+set_error_handler(function($errno, $errstr, $errfile, $errline) {
+    $date = date('Y-m-d H:i:s');
+    $log_msg = "[$date] ERROR [$errno]: $errstr in $errfile on line $errline";
+    error_log($log_msg); // This will write to storage/logs/error.log
+    return false; // Let PHP's internal error handler also do its thing if needed
+});
+
+set_exception_handler(function($exception) {
+    $date = date('Y-m-d H:i:s');
+    $log_msg = "[$date] EXCEPTION: " . $exception->getMessage() . " in " . $exception->getFile() . " on line " . $exception->getLine() . PHP_EOL . $exception->getTraceAsString();
+    error_log($log_msg);
+});
+// -----------------------------------
+
 $db_host = 'localhost';
 $db_user = 'tetwellb_tetwellbeinggroup';
 $db_pass = ',!PX7{%zy1-vgh.7';
