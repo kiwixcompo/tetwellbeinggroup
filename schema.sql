@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS `users` (
     `clearance_balance` DECIMAL(10,2) DEFAULT 0.00,
     `is_suspended` TINYINT(1) DEFAULT 0,
     `crisis_state` TINYINT(1) DEFAULT 0,
+    `is_champion` TINYINT(1) DEFAULT 0,
     `department_id` INT DEFAULT NULL,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
@@ -76,6 +77,7 @@ CREATE TABLE IF NOT EXISTS `community_posts` (
     `content` TEXT NOT NULL,
     `is_anonymous` TINYINT(1) DEFAULT 0,
     `hearts` INT DEFAULT 0,
+    `is_pinned` TINYINT(1) DEFAULT 0,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 
@@ -459,6 +461,183 @@ CREATE TABLE IF NOT EXISTS `research_participants` (
 INSERT INTO `research_participants` (`id`, `user_id`, `study_id`) VALUES
 (1, 1, 1)
 ON DUPLICATE KEY UPDATE `user_id` = `user_id`;
+
+-- Seed a default teletherapy booking for Mark (user_id = 1) with Dr. Evelyn Carter (therapist_id = 2) for tomorrow
+INSERT INTO `teletherapy_bookings` (`id`, `user_id`, `therapist_name`, `therapist_id`, `booking_date`, `booking_time`, `insurance_provider`, `amount_paid`, `payment_status`, `release_date`) VALUES
+(1, 1, 'Dr. Evelyn Carter, PhD', 2, DATE_ADD(CURDATE(), INTERVAL 1 DAY), '11:00 AM', 'Blue Shield', 120.00, 'escrow', DATE_ADD(NOW(), INTERVAL 8 DAY))
+ON DUPLICATE KEY UPDATE `therapist_name` = `therapist_name`;
+
+-- 24. Teletherapy Chat Logs Table
+CREATE TABLE IF NOT EXISTS `teletherapy_chat_logs` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `booking_id` INT NOT NULL,
+    `sender_id` INT NOT NULL,
+    `message` TEXT NOT NULL,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (`booking_id`) REFERENCES `teletherapy_bookings`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`sender_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- Seed default chat messages between Mark and Dr. Carter
+INSERT INTO `teletherapy_chat_logs` (`id`, `booking_id`, `sender_id`, `message`) VALUES
+(1, 1, 1, 'Hi Dr. Carter, I am looking forward to our session tomorrow. I wanted to ask if we will cover boundary setting coping strategies?'),
+(2, 1, 2, 'Hi Mark, yes absolutely! We will dedicate a portion of our session to boundary management techniques. Please review the 10-minute compassion fatigue guide in the hub if you have a moment.')
+ON DUPLICATE KEY UPDATE `message` = `message`;
+
+
+-- 25. Community Circles Table
+CREATE TABLE IF NOT EXISTS `community_circles` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `slug` VARCHAR(50) UNIQUE NOT NULL,
+    `name` VARCHAR(100) NOT NULL,
+    `description` TEXT NOT NULL,
+    `category` VARCHAR(50) NOT NULL,
+    `champion_name` VARCHAR(100) DEFAULT NULL,
+    `champion_avatar` VARCHAR(10) DEFAULT NULL,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+-- Seed default circles
+INSERT INTO `community_circles` (`id`, `slug`, `name`, `description`, `category`, `champion_name`, `champion_avatar`) VALUES
+(1, 'general', 'General Wellbeing Circle', 'A welcoming space for general discussions about mindfulness, work-life balance, and self-care.', 'general', 'Marcus Vance, LCSW', 'M'),
+(2, 'caregiver-respite', 'Respite & Carer Circle', 'For family and professional caregivers to share struggles, respite tips, and recovery strategies.', 'caregiver', 'Clara Green', 'C'),
+(3, 'mindfulness', 'Meditation & Peace Circle', 'Practice positive grounding, share breathing scripts, and explore daily mindfulness exercises.', 'mindfulness', 'Marcus Vance, LCSW', 'M'),
+(4, 'daily-wins', 'Positivity & Gratitude Log', 'Focus on the bright side. Post your daily micro-successes, small wins, and gratitude notes.', 'positivity', 'Clara Green', 'C'),
+(5, 'dementia-support', 'Dementia Carers Support Circle', 'Specialized safe space for clinical and home caregivers supporting individuals with dementia.', 'caregiver', 'Marcus Vance, LCSW', 'M'),
+(6, 'student-stress', 'Student Anxiety Resolution Circle', 'Peer support circle for nursing and clinical students coping with shift pressures and caseload stress.', 'student', 'Marcus Vance, LCSW', 'M')
+ON DUPLICATE KEY UPDATE `slug` = `slug`;
+
+-- 26. Community Circle Members Table (Seeded for Mark)
+CREATE TABLE IF NOT EXISTS `community_circle_members` (
+    `user_id` INT NOT NULL,
+    `circle_id` INT NOT NULL,
+    PRIMARY KEY (`user_id`, `circle_id`),
+    FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`circle_id`) REFERENCES `community_circles`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+INSERT INTO `community_circle_members` (`user_id`, `circle_id`) VALUES
+(1, 1),
+(1, 2),
+(1, 3),
+(1, 4)
+ON DUPLICATE KEY UPDATE `user_id` = `user_id`;
+
+-- 27. Community Replies Table
+CREATE TABLE IF NOT EXISTS `community_replies` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `post_id` INT NOT NULL,
+    `user_id` INT NOT NULL,
+    `author_name` VARCHAR(100) NOT NULL,
+    `content` TEXT NOT NULL,
+    `is_anonymous` TINYINT(1) DEFAULT 0,
+    `is_champion` TINYINT(1) DEFAULT 0,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (`post_id`) REFERENCES `community_posts`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- Seed default comments/replies
+INSERT INTO `community_replies` (`id`, `post_id`, `user_id`, `author_name`, `content`, `is_anonymous`, `is_champion`) VALUES
+(1, 1, 3, 'Marcus Vance, LCSW', 'Welcome, Mark! So glad to have you. Remember that taking even 5 minutes of mindful silence can recharge your clinical batteries.', 0, 1),
+(2, 2, 1, 'Mark', 'Thank you for sharing this. Seeing other caregivers prioritize respite helps ease my own guilt about taking a break.', 0, 0)
+ON DUPLICATE KEY UPDATE `content` = `content`;
+
+
+-- ============================================================
+-- PHASE 10: CORPORATE WELLNESS, SUBSCRIPTIONS & COMMISSIONS
+-- ============================================================
+-- PHASE 12: SECURE EMAIL VERIFICATION SYSTEM
+-- ============================================================
+-- (Note: ALTER TABLE statements handled gracefully in init_db.php)
+
+-- ============================================================
+
+-- 28. Add subscription_plan + corporate_org_id columns to users (ignore errors if already exist)
+-- (Note: ALTER TABLE statements handled gracefully in init_db.php)
+
+
+-- 29. Subscription Plans (catalogue)
+CREATE TABLE IF NOT EXISTS `subscription_plans` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `slug` VARCHAR(30) UNIQUE NOT NULL,
+    `name` VARCHAR(80) NOT NULL,
+    `price_monthly` DECIMAL(10,2) DEFAULT 0.00,
+    `features` TEXT,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+INSERT INTO `subscription_plans` (`slug`, `name`, `price_monthly`, `features`) VALUES
+('free',         'Free Starter',        0.00,  'AI Companion,Community Hub,1 Journal Entry/day,3 Streaming Tracks'),
+('professional', 'Professional',        29.00, 'Everything in Free,Unlimited Journal Entries,Full Streaming Library,Teletherapy Booking,Predictive Health Alerts,Digital Twin Access,Priority Support'),
+('corporate',    'Corporate Wellness',  199.00,'Everything in Professional,Corporate HR Portal,Bulk Session Credits (50),Staff Roster Management,Org Wellbeing Analytics,Dedicated Account Manager,White-label Reports')
+ON DUPLICATE KEY UPDATE `price_monthly` = VALUES(`price_monthly`);
+
+-- 30. Subscription Invoices
+CREATE TABLE IF NOT EXISTS `subscription_invoices` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `user_id` INT NOT NULL,
+    `plan_slug` VARCHAR(30) NOT NULL,
+    `amount` DECIMAL(10,2) DEFAULT 0.00,
+    `status` ENUM('pending','paid','cancelled') DEFAULT 'paid',
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+INSERT INTO `subscription_invoices` (`id`, `user_id`, `plan_slug`, `amount`, `status`) VALUES
+(1, 1, 'professional', 29.00, 'paid')
+ON DUPLICATE KEY UPDATE `status` = `status`;
+
+-- 31. Corporate Organisations
+CREATE TABLE IF NOT EXISTS `corporate_organisations` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `name` VARCHAR(150) NOT NULL,
+    `contact_email` VARCHAR(150),
+    `plan_credits` INT DEFAULT 50,
+    `used_credits` INT DEFAULT 0,
+    `hr_user_id` INT DEFAULT NULL,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+INSERT INTO `corporate_organisations` (`id`, `name`, `contact_email`, `plan_credits`, `used_credits`, `hr_user_id`) VALUES
+(1, 'NHS North Trust', 'hr@nhsnorthtrust.org', 50, 12, 99)
+ON DUPLICATE KEY UPDATE `name` = VALUES(`name`);
+
+-- 32. Corporate Staff Roster
+CREATE TABLE IF NOT EXISTS `corporate_staff` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `org_id` INT NOT NULL,
+    `user_email` VARCHAR(150) NOT NULL,
+    `user_id` INT DEFAULT NULL,
+    `invited_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `status` ENUM('invited','active','removed') DEFAULT 'invited',
+    UNIQUE KEY `uniq_org_email` (`org_id`,`user_email`)
+) ENGINE=InnoDB;
+
+INSERT INTO `corporate_staff` (`id`, `org_id`, `user_email`, `user_id`, `status`) VALUES
+(1, 1, 'mark@tetwellbeing.com',   1,   'active'),
+(2, 1, 'sarah@tetwellbeing.com',  101, 'active'),
+(3, 1, 'james@nhsnorthtrust.org', NULL,'invited')
+ON DUPLICATE KEY UPDATE `status` = VALUES(`status`);
+
+-- 33. Platform Commission Logs
+CREATE TABLE IF NOT EXISTS `platform_commission_logs` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `booking_id` INT NOT NULL,
+    `specialist_id` INT NOT NULL,
+    `specialist_name` VARCHAR(150) NOT NULL,
+    `gross_amount` DECIMAL(10,2) NOT NULL,
+    `commission_rate` DECIMAL(5,2) DEFAULT 15.00,
+    `commission_amount` DECIMAL(10,2) NOT NULL,
+    `net_payout` DECIMAL(10,2) NOT NULL,
+    `logged_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+INSERT INTO `platform_commission_logs` (`id`, `booking_id`, `specialist_id`, `specialist_name`, `gross_amount`, `commission_rate`, `commission_amount`, `net_payout`) VALUES
+(1, 1, 2, 'Dr. Evelyn Carter, PhD', 120.00, 15.00, 18.00, 102.00)
+ON DUPLICATE KEY UPDATE `gross_amount` = VALUES(`gross_amount`);
+
+
+
 
 
 

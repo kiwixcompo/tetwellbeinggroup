@@ -14,6 +14,10 @@ $db_user = 'tetwellb_tetwellbeinggroup';
 $db_pass = ',!PX7{%zy1-vgh.7';
 $db_name = 'tetwellb_tetwellbeinggroup';
 
+// API Configurations
+$gemini_api_key = ''; // Insert your free Google Gemini API key here
+
+
 $pdo = null;
 $db_connected = false;
 $db_error = '';
@@ -59,7 +63,8 @@ try {
         "escrow_balance DECIMAL(10,2) DEFAULT 0.00",
         "clearance_balance DECIMAL(10,2) DEFAULT 0.00",
         "is_suspended TINYINT(1) DEFAULT 0",
-        "crisis_state TINYINT(1) DEFAULT 0"
+        "crisis_state TINYINT(1) DEFAULT 0",
+        "is_champion TINYINT(1) DEFAULT 0"
     ];
     foreach ($cols_to_add as $col) {
         try {
@@ -130,6 +135,10 @@ try {
         hearts INT DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     ) ENGINE=InnoDB");
+
+    try {
+        $pdo->exec("ALTER TABLE community_posts ADD COLUMN is_pinned TINYINT(1) DEFAULT 0");
+    } catch (PDOException $ex) {}
 
     // Create therapist availability table
     $pdo->exec("CREATE TABLE IF NOT EXISTS therapist_availability (
@@ -359,7 +368,200 @@ try {
         $pdo->exec("INSERT INTO research_participants (id, user_id, study_id) VALUES (1, 1, 1)");
     }
 
+    // Seed default booking if empty
+    $b_count = $pdo->query("SELECT COUNT(*) FROM teletherapy_bookings")->fetchColumn();
+    if ($b_count == 0) {
+        $pdo->exec("INSERT INTO teletherapy_bookings (id, user_id, therapist_name, therapist_id, booking_date, booking_time, insurance_provider, amount_paid, payment_status, release_date) VALUES
+            (1, 1, 'Dr. Evelyn Carter, PhD', 2, DATE_ADD(CURDATE(), INTERVAL 1 DAY), '11:00 AM', 'Blue Shield', 120.00, 'escrow', DATE_ADD(NOW(), INTERVAL 8 DAY))");
+    }
+
+    // Create teletherapy chat logs table
+    $pdo->exec("CREATE TABLE IF NOT EXISTS teletherapy_chat_logs (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        booking_id INT NOT NULL,
+        sender_id INT NOT NULL,
+        message TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (booking_id) REFERENCES teletherapy_bookings(id) ON DELETE CASCADE,
+        FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB");
+
+    // Seed default chat messages
+    $chat_count = $pdo->query("SELECT COUNT(*) FROM teletherapy_chat_logs")->fetchColumn();
+    if ($chat_count == 0) {
+        $pdo->exec("INSERT INTO teletherapy_chat_logs (id, booking_id, sender_id, message) VALUES
+            (1, 1, 1, 'Hi Dr. Carter, I am looking forward to our session tomorrow. I wanted to ask if we will cover boundary setting coping strategies?'),
+            (2, 1, 2, 'Hi Mark, yes absolutely! We will dedicate a portion of our session to boundary management techniques. Please review the 10-minute compassion fatigue guide in the hub if you have a moment.')");
+    }
+
+    // Create community circles table
+    $pdo->exec("CREATE TABLE IF NOT EXISTS community_circles (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        slug VARCHAR(50) UNIQUE NOT NULL,
+        name VARCHAR(100) NOT NULL,
+        description TEXT NOT NULL,
+        category VARCHAR(50) NOT NULL,
+        champion_name VARCHAR(100) DEFAULT NULL,
+        champion_avatar VARCHAR(10) DEFAULT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB");
+
+    // Seed default circles
+    $circle_count = $pdo->query("SELECT COUNT(*) FROM community_circles")->fetchColumn();
+    if ($circle_count == 0) {
+        $pdo->exec("INSERT INTO community_circles (id, slug, name, description, category, champion_name, champion_avatar) VALUES
+            (1, 'general', 'General Wellbeing Circle', 'A welcoming space for general discussions about mindfulness, work-life balance, and self-care.', 'general', 'Marcus Vance, LCSW', 'M'),
+            (2, 'caregiver-respite', 'Respite & Carer Circle', 'For family and professional caregivers to share struggles, respite tips, and recovery strategies.', 'caregiver', 'Clara Green', 'C'),
+            (3, 'mindfulness', 'Meditation & Peace Circle', 'Practice positive grounding, share breathing scripts, and explore daily mindfulness exercises.', 'mindfulness', 'Marcus Vance, LCSW', 'M'),
+            (4, 'daily-wins', 'Positivity & Gratitude Log', 'Focus on the bright side. Post your daily micro-successes, small wins, and gratitude notes.', 'positivity', 'Clara Green', 'C'),
+            (5, 'dementia-support', 'Dementia Carers Support Circle', 'Specialized safe space for clinical and home caregivers supporting individuals with dementia.', 'caregiver', 'Marcus Vance, LCSW', 'M'),
+            (6, 'student-stress', 'Student Anxiety Resolution Circle', 'Peer support circle for nursing and clinical students coping with shift pressures and caseload stress.', 'student', 'Marcus Vance, LCSW', 'M')");
+    }
+
+    // Create community circle members table
+    $pdo->exec("CREATE TABLE IF NOT EXISTS community_circle_members (
+        user_id INT NOT NULL,
+        circle_id INT NOT NULL,
+        PRIMARY KEY (user_id, circle_id),
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (circle_id) REFERENCES community_circles(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB");
+
+    // Seed default memberships
+    $mem_count = $pdo->query("SELECT COUNT(*) FROM community_circle_members")->fetchColumn();
+    if ($mem_count == 0) {
+        $pdo->exec("INSERT INTO community_circle_members (user_id, circle_id) VALUES
+            (1, 1),
+            (1, 2),
+            (1, 3),
+            (1, 4)");
+    }
+
+    // Create community replies table
+    $pdo->exec("CREATE TABLE IF NOT EXISTS community_replies (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        post_id INT NOT NULL,
+        user_id INT NOT NULL,
+        author_name VARCHAR(100) NOT NULL,
+        content TEXT NOT NULL,
+        is_anonymous TINYINT(1) DEFAULT 0,
+        is_champion TINYINT(1) DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (post_id) REFERENCES community_posts(id) ON DELETE CASCADE,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB");
+
+    // Seed default replies
+    $reply_count = $pdo->query("SELECT COUNT(*) FROM community_replies")->fetchColumn();
+    if ($reply_count == 0) {
+        $pdo->exec("INSERT INTO community_replies (id, post_id, user_id, author_name, content, is_anonymous, is_champion) VALUES
+            (1, 1, 3, 'Marcus Vance, LCSW', 'Welcome, Mark! So glad to have you. Remember that taking even 5 minutes of mindful silence can recharge your clinical batteries.', 0, 1),
+            (2, 2, 1, 'Mark', 'Thank you for sharing this. Seeing other caregivers prioritize respite helps ease my own guilt about taking a break.', 0, 0)");
+    }
+
+    // Update Marcus Vance (user_id = 3) and Clara Mendoza (user_id = 4) to be Champions
+    $pdo->exec("UPDATE users SET is_champion = 1 WHERE id = 3 OR id = 4");
+
+    // ── PHASE 10: Subscription, Corporate & Commission ──────────────────────
+    // Add subscription_plan + corporate_org_id columns to users
+    foreach (["subscription_plan VARCHAR(20) DEFAULT 'free'", "corporate_org_id INT DEFAULT NULL"] as $col) {
+        try { $pdo->exec("ALTER TABLE users ADD COLUMN $col"); } catch (PDOException $ex) {}
+    }
+
+    // Subscription Plans table
+    $pdo->exec("CREATE TABLE IF NOT EXISTS subscription_plans (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        slug VARCHAR(30) UNIQUE NOT NULL,
+        name VARCHAR(80) NOT NULL,
+        price_monthly DECIMAL(10,2) DEFAULT 0.00,
+        features TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB");
+    $plan_count = $pdo->query("SELECT COUNT(*) FROM subscription_plans")->fetchColumn();
+    if ($plan_count == 0) {
+        $pdo->exec("INSERT INTO subscription_plans (slug, name, price_monthly, features) VALUES
+            ('free','Free Starter',0.00,'AI Companion,Community Hub,1 Journal Entry/day,3 Streaming Tracks'),
+            ('professional','Professional',29.00,'Everything in Free,Unlimited Journal Entries,Full Streaming Library,Teletherapy Booking,Predictive Health Alerts,Digital Twin Access,Priority Support'),
+            ('corporate','Corporate Wellness',199.00,'Everything in Professional,Corporate HR Portal,Bulk Session Credits (50),Staff Roster Management,Org Wellbeing Analytics,Dedicated Account Manager,White-label Reports')");
+    }
+
+    // Subscription Invoices table
+    $pdo->exec("CREATE TABLE IF NOT EXISTS subscription_invoices (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        plan_slug VARCHAR(30) NOT NULL,
+        amount DECIMAL(10,2) DEFAULT 0.00,
+        status ENUM('pending','paid','cancelled') DEFAULT 'paid',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB");
+
+    // Seed a demo invoice for Mark (id=1)
+    $inv_count = $pdo->query("SELECT COUNT(*) FROM subscription_invoices")->fetchColumn();
+    if ($inv_count == 0) {
+        $pdo->exec("INSERT INTO subscription_invoices (id, user_id, plan_slug, amount, status) VALUES
+            (1, 1, 'professional', 29.00, 'paid')");
+    }
+
+    // Mark user id=1 as professional subscriber
+    $pdo->exec("UPDATE users SET subscription_plan = 'professional' WHERE id = 1");
+    // Admin is corporate
+    $pdo->exec("UPDATE users SET subscription_plan = 'corporate' WHERE id = 99");
+
+    // Corporate Organisations table
+    $pdo->exec("CREATE TABLE IF NOT EXISTS corporate_organisations (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(150) NOT NULL,
+        contact_email VARCHAR(150),
+        plan_credits INT DEFAULT 50,
+        used_credits INT DEFAULT 0,
+        hr_user_id INT DEFAULT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB");
+    $org_count = $pdo->query("SELECT COUNT(*) FROM corporate_organisations")->fetchColumn();
+    if ($org_count == 0) {
+        $pdo->exec("INSERT INTO corporate_organisations (id, name, contact_email, plan_credits, used_credits, hr_user_id) VALUES
+            (1, 'NHS North Trust', 'hr@nhsnorthtrust.org', 50, 12, 99)");
+    }
+
+    // Corporate Staff table
+    $pdo->exec("CREATE TABLE IF NOT EXISTS corporate_staff (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        org_id INT NOT NULL,
+        user_email VARCHAR(150) NOT NULL,
+        user_id INT DEFAULT NULL,
+        invited_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        status ENUM('invited','active','removed') DEFAULT 'invited',
+        UNIQUE KEY uniq_org_email (org_id, user_email)
+    ) ENGINE=InnoDB");
+    $staff_count = $pdo->query("SELECT COUNT(*) FROM corporate_staff")->fetchColumn();
+    if ($staff_count == 0) {
+        $pdo->exec("INSERT INTO corporate_staff (id, org_id, user_email, user_id, status) VALUES
+            (1, 1, 'mark@tetwellbeing.com', 1, 'active'),
+            (2, 1, 'sarah@tetwellbeing.com', 101, 'active'),
+            (3, 1, 'james@nhsnorthtrust.org', NULL, 'invited')");
+    }
+
+    // Platform Commission Logs table
+    $pdo->exec("CREATE TABLE IF NOT EXISTS platform_commission_logs (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        booking_id INT NOT NULL,
+        specialist_id INT NOT NULL,
+        specialist_name VARCHAR(150) NOT NULL,
+        gross_amount DECIMAL(10,2) NOT NULL,
+        commission_rate DECIMAL(5,2) DEFAULT 15.00,
+        commission_amount DECIMAL(10,2) NOT NULL,
+        net_payout DECIMAL(10,2) NOT NULL,
+        logged_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB");
+    $comm_count = $pdo->query("SELECT COUNT(*) FROM platform_commission_logs")->fetchColumn();
+    if ($comm_count == 0) {
+        $pdo->exec("INSERT INTO platform_commission_logs (id, booking_id, specialist_id, specialist_name, gross_amount, commission_rate, commission_amount, net_payout) VALUES
+            (1, 1, 2, 'Dr. Evelyn Carter, PhD', 120.00, 15.00, 18.00, 102.00)");
+    }
+    // ────────────────────────────────────────────────────────────────────────
+
     // Seed departments & update Mark if empty
+
     $dept_count = $pdo->query("SELECT COUNT(*) FROM workplace_departments")->fetchColumn();
     if ($dept_count == 0) {
         $pdo->exec("INSERT INTO workplace_departments (id, name) VALUES 
@@ -552,6 +754,7 @@ if (!isset($_SESSION['mock_users'])) {
             'is_suspended' => 0,
             'escrow_balance' => 0.00,
             'clearance_balance' => 0.00,
+            'is_champion' => 1,
             'archetype' => NULL
         ],
         'clara@tetwellbeing.com' => [
@@ -567,6 +770,7 @@ if (!isset($_SESSION['mock_users'])) {
             'is_suspended' => 0,
             'escrow_balance' => 0.00,
             'clearance_balance' => 0.00,
+            'is_champion' => 1,
             'archetype' => NULL
         ],
         'sarah@tetwellbeing.com' => [
@@ -656,7 +860,39 @@ if (!isset($_SESSION['mock_community_posts'])) {
     ];
 }
 if (!isset($_SESSION['mock_bookings'])) {
-    $_SESSION['mock_bookings'] = [];
+    $_SESSION['mock_bookings'] = [
+        [
+            'id' => 1,
+            'user_id' => 1,
+            'therapist_name' => 'Dr. Evelyn Carter, PhD',
+            'therapist_id' => 2,
+            'booking_date' => date('Y-m-d', strtotime('+1 day')),
+            'booking_time' => '11:00 AM',
+            'insurance_provider' => 'Blue Shield',
+            'amount_paid' => 120.00,
+            'payment_status' => 'escrow',
+            'release_date' => date('Y-m-d H:i:s', strtotime('+8 days'))
+        ]
+    ];
+}
+
+if (!isset($_SESSION['mock_teletherapy_chat_logs'])) {
+    $_SESSION['mock_teletherapy_chat_logs'] = [
+        [
+            'id' => 1,
+            'booking_id' => 1,
+            'sender_id' => 1,
+            'message' => 'Hi Dr. Carter, I am looking forward to our session tomorrow. I wanted to ask if we will cover boundary setting coping strategies?',
+            'created_at' => date('Y-m-d H:i:s', strtotime('-1 hour'))
+        ],
+        [
+            'id' => 2,
+            'booking_id' => 1,
+            'sender_id' => 2,
+            'message' => 'Hi Mark, yes absolutely! We will dedicate a portion of our session to boundary management techniques. Please review the 10-minute compassion fatigue guide in the hub if you have a moment.',
+            'created_at' => date('Y-m-d H:i:s', strtotime('-50 minutes'))
+        ]
+    ];
 }
 
 if (!isset($_SESSION['mock_ai_chats'])) {
@@ -681,6 +917,99 @@ if (!isset($_SESSION['mock_availability'])) {
         ['therapist_name' => 'Clara Mendoza, LMFT', 'day_of_week' => 'Monday', 'time_slot' => '04:00 PM'],
         ['therapist_name' => 'Clara Mendoza, LMFT', 'day_of_week' => 'Thursday', 'time_slot' => '09:00 AM'],
         ['therapist_name' => 'Clara Mendoza, LMFT', 'day_of_week' => 'Thursday', 'time_slot' => '02:00 PM']
+    ];
+}
+
+if (!isset($_SESSION['mock_community_circles'])) {
+    $_SESSION['mock_community_circles'] = [
+        [
+            'id' => 1,
+            'slug' => 'general',
+            'name' => 'General Wellbeing Circle',
+            'description' => 'A welcoming space for general discussions about mindfulness, work-life balance, and self-care.',
+            'category' => 'general',
+            'champion_name' => 'Marcus Vance, LCSW',
+            'champion_avatar' => 'M'
+        ],
+        [
+            'id' => 2,
+            'slug' => 'caregiver-respite',
+            'name' => 'Respite & Carer Circle',
+            'description' => 'For family and professional caregivers to share struggles, respite tips, and recovery strategies.',
+            'category' => 'caregiver',
+            'champion_name' => 'Clara Green',
+            'champion_avatar' => 'C'
+        ],
+        [
+            'id' => 3,
+            'slug' => 'mindfulness',
+            'name' => 'Meditation & Peace Circle',
+            'description' => 'Practice positive grounding, share breathing scripts, and explore daily mindfulness exercises.',
+            'category' => 'mindfulness',
+            'champion_name' => 'Marcus Vance, LCSW',
+            'champion_avatar' => 'M'
+        ],
+        [
+            'id' => 4,
+            'slug' => 'daily-wins',
+            'name' => 'Positivity & Gratitude Log',
+            'description' => 'Focus on the bright side. Post your daily micro-successes, small wins, and gratitude notes.',
+            'category' => 'positivity',
+            'champion_name' => 'Clara Green',
+            'champion_avatar' => 'C'
+        ],
+        [
+            'id' => 5,
+            'slug' => 'dementia-support',
+            'name' => 'Dementia Carers Support Circle',
+            'description' => 'Specialized safe space for clinical and home caregivers supporting individuals with dementia.',
+            'category' => 'caregiver',
+            'champion_name' => 'Marcus Vance, LCSW',
+            'champion_avatar' => 'M'
+        ],
+        [
+            'id' => 6,
+            'slug' => 'student-stress',
+            'name' => 'Student Anxiety Resolution Circle',
+            'description' => 'Peer support circle for nursing and clinical students coping with shift pressures and caseload stress.',
+            'category' => 'student',
+            'champion_name' => 'Marcus Vance, LCSW',
+            'champion_avatar' => 'M'
+        ]
+    ];
+}
+
+if (!isset($_SESSION['mock_community_circle_members'])) {
+    $_SESSION['mock_community_circle_members'] = [
+        ['user_id' => 1, 'circle_id' => 1],
+        ['user_id' => 1, 'circle_id' => 2],
+        ['user_id' => 1, 'circle_id' => 3],
+        ['user_id' => 1, 'circle_id' => 4]
+    ];
+}
+
+if (!isset($_SESSION['mock_community_replies'])) {
+    $_SESSION['mock_community_replies'] = [
+        [
+            'id' => 1,
+            'post_id' => 1,
+            'user_id' => 3,
+            'author_name' => 'Marcus Vance, LCSW',
+            'content' => 'Welcome, Mark! So glad to have you. Remember that taking even 5 minutes of mindful silence can recharge your clinical batteries.',
+            'is_anonymous' => 0,
+            'is_champion' => 1,
+            'created_at' => date('Y-m-d H:i:s', strtotime('-1 hour'))
+        ],
+        [
+            'id' => 2,
+            'post_id' => 2,
+            'user_id' => 1,
+            'author_name' => 'Mark',
+            'content' => 'Thank you for sharing this. Seeing other caregivers prioritize respite helps ease my own guilt about taking a break.',
+            'is_anonymous' => 0,
+            'is_champion' => 0,
+            'created_at' => date('Y-m-d H:i:s', strtotime('-4 hours'))
+        ]
     ];
 }
 
@@ -829,7 +1158,40 @@ if (!isset($_SESSION['mock_research_participants'])) {
     ];
 }
 
+// ── PHASE 10 MOCK ARRAYS ─────────────────────────────────────────────────────
+if (!isset($_SESSION['mock_subscription_plans'])) {
+    $_SESSION['mock_subscription_plans'] = [
+        ['slug' => 'free',         'name' => 'Free Starter',       'price_monthly' => 0.00,   'features' => 'AI Companion,Community Hub,1 Journal Entry/day,3 Streaming Tracks'],
+        ['slug' => 'professional', 'name' => 'Professional',       'price_monthly' => 29.00,  'features' => 'Everything in Free,Unlimited Journal Entries,Full Streaming Library,Teletherapy Booking,Predictive Health Alerts,Digital Twin Access,Priority Support'],
+        ['slug' => 'corporate',    'name' => 'Corporate Wellness', 'price_monthly' => 199.00, 'features' => 'Everything in Professional,Corporate HR Portal,Bulk Session Credits (50),Staff Roster Management,Org Wellbeing Analytics,Dedicated Account Manager,White-label Reports']
+    ];
+}
+if (!isset($_SESSION['mock_subscription_invoices'])) {
+    $_SESSION['mock_subscription_invoices'] = [
+        ['id' => 1, 'user_id' => 1, 'plan_slug' => 'professional', 'amount' => 29.00, 'status' => 'paid', 'created_at' => date('Y-m-d H:i:s', strtotime('-30 days'))]
+    ];
+}
+if (!isset($_SESSION['mock_corporate_organisations'])) {
+    $_SESSION['mock_corporate_organisations'] = [
+        ['id' => 1, 'name' => 'NHS North Trust', 'contact_email' => 'hr@nhsnorthtrust.org', 'plan_credits' => 50, 'used_credits' => 12, 'hr_user_id' => 99, 'created_at' => '2026-01-15 09:00:00']
+    ];
+}
+if (!isset($_SESSION['mock_corporate_staff'])) {
+    $_SESSION['mock_corporate_staff'] = [
+        ['id' => 1, 'org_id' => 1, 'user_email' => 'mark@tetwellbeing.com',   'user_id' => 1,   'status' => 'active',  'invited_at' => '2026-01-16 09:00:00'],
+        ['id' => 2, 'org_id' => 1, 'user_email' => 'sarah@tetwellbeing.com',  'user_id' => 101, 'status' => 'active',  'invited_at' => '2026-01-17 10:00:00'],
+        ['id' => 3, 'org_id' => 1, 'user_email' => 'james@nhsnorthtrust.org', 'user_id' => null,'status' => 'invited', 'invited_at' => '2026-06-20 11:00:00']
+    ];
+}
+if (!isset($_SESSION['mock_platform_commission_logs'])) {
+    $_SESSION['mock_platform_commission_logs'] = [
+        ['id' => 1, 'booking_id' => 1, 'specialist_id' => 2, 'specialist_name' => 'Dr. Evelyn Carter, PhD', 'gross_amount' => 120.00, 'commission_rate' => 15.00, 'commission_amount' => 18.00, 'net_payout' => 102.00, 'logged_at' => date('Y-m-d H:i:s', strtotime('-2 days'))]
+    ];
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 // Global suspension check and crisis state synchronization
+
 $current_page = basename($_SERVER['PHP_SELF']);
 if (isset($_SESSION['user_id']) && !in_array($current_page, ['login.php', 'signup.php', 'logout.php'])) {
     $user_id = $_SESSION['user_id'];

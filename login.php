@@ -25,6 +25,42 @@ if (isset($_GET['signup_success'])) {
     $success = "Registration successful! You can now log in using your credentials.";
 }
 
+// Handle resend code request
+if (isset($_GET['resend'])) {
+    $resend_email = filter_var($_GET['resend'], FILTER_VALIDATE_EMAIL);
+    if ($resend_email) {
+        require_once __DIR__ . '/app/Helpers/EmailHelper.php';
+        $emailHelper = new \App\Helpers\EmailHelper();
+        
+        $verificationCode = sprintf('%06d', mt_rand(100000, 999999));
+        $verificationExpires = date('Y-m-d H:i:s', strtotime('+24 hours'));
+        
+        if ($db_connected && $pdo) {
+            try {
+                $upd = $pdo->prepare("UPDATE users SET verification_code = ?, verification_expires = ? WHERE email = ?");
+                $upd->execute([$verificationCode, $verificationExpires, $resend_email]);
+            } catch (PDOException $e) {}
+        } else {
+            if (isset($_SESSION['mock_users'][$resend_email])) {
+                $_SESSION['mock_users'][$resend_email]['verification_code'] = $verificationCode;
+                $_SESSION['mock_users'][$resend_email]['verification_expires'] = $verificationExpires;
+            }
+        }
+        
+        try {
+            $emailHelper->sendVerificationEmail($resend_email, $verificationCode);
+        } catch (\Exception $e) {}
+        
+        header('Location: verify-email.php?email=' . urlencode($resend_email) . '&resent=1');
+        exit;
+    }
+}
+
+// Check if verified successfully
+if (isset($_GET['verified'])) {
+    $success = "Email verified successfully! You can now log in.";
+}
+
 if (isset($_GET['suspended'])) {
     $error = "Your account has been suspended by an administrator. Please contact support.";
 }
@@ -83,6 +119,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // 3. COMPLETE AUTHENTICATION OR ERROR
         if ($authenticated && $user_data) {
+            // LOGIN GUARD: Check if email is verified
+            $email_verified = false;
+            
+            // Re-fetch from DB if available
+            if ($db_connected && $pdo) {
+                try {
+                    $stmt = $pdo->prepare("SELECT email_verified FROM users WHERE id = ?");
+                    $stmt->execute([$user_data['id']]);
+                    $email_verified = (bool) $stmt->fetchColumn();
+                } catch (PDOException $e) {}
+            } else {
+                if (isset($_SESSION['mock_users'][$email]['email_verified'])) {
+                    $email_verified = (bool) $_SESSION['mock_users'][$email]['email_verified'];
+                }
+            }
+
+            if (!$email_verified) {
+                // Generate fresh code and redirect
+                require_once __DIR__ . '/app/Helpers/EmailHelper.php';
+                $emailHelper = new \App\Helpers\EmailHelper();
+                
+                $verificationCode = sprintf('%06d', mt_rand(100000, 999999));
+                $verificationExpires = date('Y-m-d H:i:s', strtotime('+24 hours'));
+                
+                if ($db_connected && $pdo) {
+                    try {
+                        $upd = $pdo->prepare("UPDATE users SET verification_code = ?, verification_expires = ? WHERE id = ?");
+                        $upd->execute([$verificationCode, $verificationExpires, $user_data['id']]);
+                    } catch (PDOException $e) {}
+                } else {
+                    $_SESSION['mock_users'][$email]['verification_code'] = $verificationCode;
+                    $_SESSION['mock_users'][$email]['verification_expires'] = $verificationExpires;
+                }
+                
+                try {
+                    $emailHelper->sendVerificationEmail($email, $verificationCode);
+                } catch (\Exception $e) {}
+                
+                header('Location: verify-email.php?email=' . urlencode($email));
+                exit;
+            }
+
             $_SESSION['user_id'] = $user_data['id'];
             $_SESSION['user_name'] = $user_data['name'];
             $_SESSION['user_email'] = $user_data['email'];

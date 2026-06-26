@@ -13,7 +13,9 @@ $dropdown_pages = [
     'vr_resilience.php' => 'VR Centre',
     'workplace_safety.php' => 'Workplace Safety',
     'streaming_hub.php' => 'Streaming Hub',
-    'research_hub.php' => 'Research Centre'
+    'research_hub.php' => 'Research Centre',
+    'subscription.php' => 'Subscription & Billing',
+    'corporate_portal.php' => 'Corporate Portal'
 ];
 $is_more_active = array_key_exists($current_page, $dropdown_pages);
 
@@ -38,6 +40,8 @@ $dropdown_text = $is_dark ? 'text-gray-300' : 'text-gray-600';
     <a href="workplace_safety.php" class="md:hidden border-b-2 <?php echo $current_page === 'workplace_safety.php' ? 'border-brand-sage text-brand-sage' : 'border-transparent text-gray-400 ' . $text_inactive_hover; ?> pb-3 px-1 transition-all font-outfit">Workplace Safety</a>
     <a href="streaming_hub.php" class="md:hidden border-b-2 <?php echo $current_page === 'streaming_hub.php' ? 'border-brand-sage text-brand-sage' : 'border-transparent text-gray-400 ' . $text_inactive_hover; ?> pb-3 px-1 transition-all font-outfit">Streaming Hub</a>
     <a href="research_hub.php" class="md:hidden border-b-2 <?php echo $current_page === 'research_hub.php' ? 'border-brand-sage text-brand-sage' : 'border-transparent text-gray-400 ' . $text_inactive_hover; ?> pb-3 px-1 transition-all font-outfit">Research Centre</a>
+    <a href="subscription.php" class="md:hidden border-b-2 <?php echo $current_page === 'subscription.php' ? 'border-brand-sage text-brand-sage' : 'border-transparent text-gray-400 ' . $text_inactive_hover; ?> pb-3 px-1 transition-all font-outfit">Billing</a>
+    <a href="corporate_portal.php" class="md:hidden border-b-2 <?php echo $current_page === 'corporate_portal.php' ? 'border-brand-sage text-brand-sage' : 'border-transparent text-gray-400 ' . $text_inactive_hover; ?> pb-3 px-1 transition-all font-outfit">Corporate</a>
 
     <!-- "More Hubs" Dropdown (Visible only on desktop md and up) -->
     <div class="hidden md:inline-block relative group select-none">

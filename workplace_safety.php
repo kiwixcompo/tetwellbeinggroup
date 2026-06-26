@@ -187,14 +187,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $action_error = "Please fill out all fields before submitting.";
         } else {
             // Compute standard AI recommendation plans based on text analysis
-            $ai_plan = "1. Facilitate a 1-on-1 boundary alignment discussion.\n2. Leverage Peer Matching configurations.\n3. Recommend box breathing and micro-break resources in the Caregiver portal.";
-            $desc_lower = strtolower($description);
-            if (strpos($desc_lower, 'shift') !== false || strpos($desc_lower, 'handover') !== false || strpos($desc_lower, 'transition') !== false) {
-                $ai_plan = "Deploy the SBAR Cross-Shift Handover template in this department. Schedule a 15-minute briefing session to align cognitive boundaries.";
-            } elseif (strpos($desc_lower, 'schedule') !== false || strpos($desc_lower, 'hours') !== false || strpos($desc_lower, 'overtime') !== false) {
-                $ai_plan = "Initiate burnout vulnerability screenings for active biometrics logs. Advise management to distribute caseload templates using Caregiver matching metrics.";
-            } elseif (strpos($desc_lower, 'doctor') !== false || strpos($desc_lower, 'nurse') !== false || strpos($desc_lower, 'override') !== false) {
-                $ai_plan = "Organize a clinical mediation audit. Clarify nursing override rights and establish a safety review escalation dashboard.";
+            require_once 'AiIntegrationService.php';
+            $ai_plan = AiIntegrationService::generateConflictMitigationPlan($description, $severity);
+            
+            // Fallback to mock text if API fails or key is missing
+            if (!$ai_plan) {
+                $ai_plan = "1. Facilitate a 1-on-1 boundary alignment discussion.\n2. Leverage Peer Matching configurations.\n3. Recommend box breathing and micro-break resources in the Caregiver portal.";
+                $desc_lower = strtolower($description);
+                if (strpos($desc_lower, 'shift') !== false || strpos($desc_lower, 'handover') !== false || strpos($desc_lower, 'transition') !== false) {
+                    $ai_plan = "Deploy the SBAR Cross-Shift Handover template in this department. Schedule a 15-minute briefing session to align cognitive boundaries.";
+                } elseif (strpos($desc_lower, 'schedule') !== false || strpos($desc_lower, 'hours') !== false || strpos($desc_lower, 'overtime') !== false) {
+                    $ai_plan = "Initiate burnout vulnerability screenings for active biometrics logs. Advise management to distribute caseload templates using Caregiver matching metrics.";
+                } elseif (strpos($desc_lower, 'doctor') !== false || strpos($desc_lower, 'nurse') !== false || strpos($desc_lower, 'override') !== false) {
+                    $ai_plan = "Organize a clinical mediation audit. Clarify nursing override rights and establish a safety review escalation dashboard.";
+                }
             }
 
             if ($db_connected && $pdo) {

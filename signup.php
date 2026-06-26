@@ -79,7 +79,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             // 3. HANDLE REDIRECT ON SUCCESS
             if ($registered) {
-                header('Location: login.php?signup_success=1');
+                require_once __DIR__ . '/app/Helpers/EmailHelper.php';
+                $emailHelper = new \App\Helpers\EmailHelper();
+                
+                $verificationCode = sprintf('%06d', mt_rand(100000, 999999));
+                $verificationExpires = date('Y-m-d H:i:s', strtotime('+24 hours'));
+                
+                // Update DB or Session
+                if ($db_connected && $pdo) {
+                    try {
+                        $upd = $pdo->prepare("UPDATE users SET verification_code = ?, verification_expires = ?, account_status = 'pending' WHERE email = ?");
+                        $upd->execute([$verificationCode, $verificationExpires, $email]);
+                    } catch (PDOException $e) {}
+                } else {
+                    if (isset($_SESSION['mock_users'][$email])) {
+                        $_SESSION['mock_users'][$email]['verification_code'] = $verificationCode;
+                        $_SESSION['mock_users'][$email]['verification_expires'] = $verificationExpires;
+                        $_SESSION['mock_users'][$email]['account_status'] = 'pending';
+                        $_SESSION['mock_users'][$email]['email_verified'] = 0;
+                    }
+                }
+                
+                // Dispatch Email
+                try {
+                    $emailHelper->sendVerificationEmail($email, $verificationCode);
+                } catch (\Exception $e) {
+                    error_log("Email dispatch failed: " . $e->getMessage());
+                }
+                
+                header('Location: verify-email.php?email=' . urlencode($email));
                 exit;
             } elseif ($email_taken) {
                 $error = "An account is already registered with this email address.";

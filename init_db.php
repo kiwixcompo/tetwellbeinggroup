@@ -119,11 +119,26 @@ try {
     
     echo "✅ Loaded schema.sql (" . strlen($sql) . " bytes).\n\n";
 
-    // Ensure department_id column exists in users table before executing schema.sql
-    try {
-        $pdo->exec("ALTER TABLE `users` ADD COLUMN `department_id` INT DEFAULT NULL");
-    } catch (PDOException $e) {
-        // Column already exists, ignore
+    // Ensure graceful column additions for Phase 10 & 12
+    $alters = [
+        "ALTER TABLE `users` ADD COLUMN `department_id` INT DEFAULT NULL",
+        "ALTER TABLE `users` ADD COLUMN `subscription_plan` VARCHAR(20) DEFAULT 'free'",
+        "ALTER TABLE `users` ADD COLUMN `corporate_org_id` INT DEFAULT NULL",
+        "ALTER TABLE `users` ADD COLUMN `email_verified` TINYINT(1) DEFAULT 0",
+        "ALTER TABLE `users` ADD COLUMN `verification_code` VARCHAR(6) DEFAULT NULL",
+        "ALTER TABLE `users` ADD COLUMN `verification_expires` DATETIME DEFAULT NULL",
+        "ALTER TABLE `users` ADD COLUMN `account_status` VARCHAR(20) DEFAULT 'pending'",
+        "ALTER TABLE `users` ADD COLUMN `reset_token` VARCHAR(64) DEFAULT NULL",
+        "ALTER TABLE `users` ADD COLUMN `reset_token_expires` DATETIME DEFAULT NULL"
+    ];
+    
+    echo "⚙️ Applying graceful schema updates...\n";
+    foreach ($alters as $alter) {
+        try {
+            $pdo->exec($alter);
+        } catch (PDOException $e) {
+            // Column already exists or error, ignore
+        }
     }
 
     echo "⚙️ Executing SQL statements...\n";

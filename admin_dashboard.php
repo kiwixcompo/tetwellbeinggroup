@@ -205,25 +205,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     }
 
     elseif ($action === 'release_escrow' && $target_id) {
+        $commission_rate = 0.15;
         if ($db_connected && $pdo) {
             try {
                 $pdo->beginTransaction();
-                $stmt = $pdo->prepare("SELECT * FROM teletherapy_bookings WHERE id = ? AND payment_status = 'escrow'");
+                $stmt = $pdo->prepare("SELECT b.*, u.name as specialist_name FROM teletherapy_bookings b LEFT JOIN users u ON b.therapist_id = u.id WHERE b.id = ? AND b.payment_status = 'escrow'");
                 $stmt->execute([$target_id]);
                 $bk = $stmt->fetch(PDO::FETCH_ASSOC);
                 if ($bk) {
-                    $amount = $bk['amount_paid'];
-                    $t_id = $bk['therapist_id'];
-                    
-                    $stmt_up = $pdo->prepare("UPDATE teletherapy_bookings SET payment_status = 'released' WHERE id = ?");
-                    $stmt_up->execute([$target_id]);
-                    
+                    $gross     = (float)$bk['amount_paid'];
+                    $comm_amt  = round($gross * $commission_rate, 2);
+                    $net_pay   = round($gross - $comm_amt, 2);
+                    $t_id      = $bk['therapist_id'];
+                    $t_name    = $bk['specialist_name'] ?? 'Unknown Specialist';
+
+                    $pdo->prepare("UPDATE teletherapy_bookings SET payment_status = 'released' WHERE id = ?")->execute([$target_id]);
+
                     if ($t_id) {
-                        $stmt_bal = $pdo->prepare("UPDATE users SET escrow_balance = GREATEST(0, escrow_balance - ?), clearance_balance = clearance_balance + ? WHERE id = ?");
-                        $stmt_bal->execute([$amount, $amount, $t_id]);
+                        // Credit only 85% net to specialist
+                        $pdo->prepare("UPDATE users SET escrow_balance = GREATEST(0, escrow_balance - ?), clearance_balance = clearance_balance + ? WHERE id = ?")->execute([$gross, $net_pay, $t_id]);
                     }
+
+                    // Log commission
+                    $pdo->prepare("INSERT INTO platform_commission_logs (booking_id, specialist_id, specialist_name, gross_amount, commission_rate, commission_amount, net_payout) VALUES (?,?,?,?,?,?,?)")
+                        ->execute([$target_id, $t_id ?? 0, $t_name, $gross, $commission_rate * 100, $comm_amt, $net_pay]);
+
                     $pdo->commit();
-                    $action_success = "Escrow hold released and funds credited to specialist cleared balance.";
+                    $action_success = "Escrow released. Net £" . number_format($net_pay, 2) . " credited to specialist (15% platform fee of £" . number_format($comm_amt, 2) . " deducted).";
                 } else {
                     $pdo->rollBack();
                     $action_error = "Escrow booking not found or already released.";
@@ -236,21 +244,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         if (isset($_SESSION['mock_bookings'])) {
             foreach ($_SESSION['mock_bookings'] as $idx => &$bk) {
                 if (($bk['payment_status'] ?? '') === 'escrow' && ($idx + 1) == $target_id) {
+                    $gross    = (float)$bk['amount_paid'];
+                    $comm_amt = round($gross * $commission_rate, 2);
+                    $net_pay  = round($gross - $comm_amt, 2);
                     $bk['payment_status'] = 'released';
-                    $amount = $bk['amount_paid'];
                     $t_id = $bk['therapist_id'];
+                    $t_name = $bk['therapist_name'];
                     if ($t_id && isset($_SESSION['mock_users'])) {
                         foreach ($_SESSION['mock_users'] as $email => &$u) {
                             if ($u['id'] == $t_id) {
-                                $u['escrow_balance'] = max(0, ($u['escrow_balance'] ?? 0.00) - $amount);
-                                $u['clearance_balance'] = ($u['clearance_balance'] ?? 0.00) + $amount;
+                                $u['escrow_balance']  = max(0, ($u['escrow_balance'] ?? 0.00) - $gross);
+                                $u['clearance_balance'] = ($u['clearance_balance'] ?? 0.00) + $net_pay;
                             }
                         }
+                        unset($u);
                     }
-                    $action_success = "Escrow hold released (Session Mock).";
+                    // Log to session mock
+                    if (!isset($_SESSION['mock_platform_commission_logs'])) $_SESSION['mock_platform_commission_logs'] = [];
+                    $_SESSION['mock_platform_commission_logs'][] = [
+                        'id' => count($_SESSION['mock_platform_commission_logs']) + 1,
+                        'booking_id' => $idx + 1,
+                        'specialist_id' => $t_id ?? 0,
+                        'specialist_name' => $t_name,
+                        'gross_amount' => $gross,
+                        'commission_rate' => 15.00,
+                        'commission_amount' => $comm_amt,
+                        'net_payout' => $net_pay,
+                        'logged_at' => date('Y-m-d H:i:s')
+                    ];
+                    $action_success = "Escrow released (Session Mock). Net £" . number_format($net_pay, 2) . " credited (15% fee: £" . number_format($comm_amt, 2) . ").";
                     break;
                 }
             }
+            unset($bk);
         }
     }
 
@@ -394,6 +420,20 @@ foreach ($users as $u) {
     if (($u['is_suspended'] ?? 0) == 1) {
         $suspended_accounts++;
     }
+}
+
+// Fetch Commission Logs & Platform Revenue
+$commission_logs = [];
+$platform_revenue_total = 0.00;
+if ($db_connected && $pdo) {
+    try {
+        $stmt = $pdo->query("SELECT * FROM platform_commission_logs ORDER BY logged_at DESC LIMIT 50");
+        $commission_logs = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($commission_logs as $cl) { $platform_revenue_total += (float)$cl['commission_amount']; }
+    } catch (PDOException $e) {}
+} else {
+    $commission_logs = $_SESSION['mock_platform_commission_logs'] ?? [];
+    foreach ($commission_logs as $cl) { $platform_revenue_total += (float)($cl['commission_amount'] ?? 0); }
 }
 
 // Fetch Escrow bookings
@@ -667,7 +707,21 @@ if ($db_connected && $pdo) {
                 </div>
                 <div>
                     <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">System Escrow Holding</p>
-                    <h3 class="text-2xl font-bold font-outfit text-brand-slate mt-0.5">$<?php echo number_format($escrow_balance_total, 2); ?></h3>
+                    <h3 class="text-2xl font-bold font-outfit text-brand-slate mt-0.5">£<?php echo number_format($escrow_balance_total, 2); ?></h3>
+                </div>
+            </div>
+
+            <!-- Platform Commission Revenue -->
+            <div class="bg-gradient-to-br from-brand-sage to-brand-sageHover rounded-3xl p-6 shadow-soft border border-brand-sage/20 flex items-center gap-5">
+                <div class="h-12 w-12 rounded-2xl bg-white/20 text-white flex items-center justify-center shrink-0">
+                    <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+                    </svg>
+                </div>
+                <div>
+                    <p class="text-[10px] text-white/70 font-bold uppercase tracking-wider">Platform Commission Revenue</p>
+                    <h3 class="text-2xl font-bold font-outfit text-white mt-0.5">£<?php echo number_format($platform_revenue_total, 2); ?></h3>
+                    <p class="text-[10px] text-white/60 mt-0.5">15% on all cleared bookings</p>
                 </div>
             </div>
         </div>
@@ -963,6 +1017,55 @@ if ($db_connected && $pdo) {
                                     </button>
                                 </form>
                             </td>
+                        </tr>
+                        <?php endforeach; endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- COMMISSION LEDGER -->
+        <div class="bg-white rounded-3xl shadow-card border border-gray-100 overflow-hidden mb-10">
+            <div class="p-6 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                    <h2 class="text-lg font-bold font-outfit text-brand-slate">Platform Commission Ledger</h2>
+                    <p class="text-xs text-gray-500 mt-0.5">Automated 15% platform fee deducted on each escrow release. Net 85% credited to specialist.</p>
+                </div>
+                <div class="flex items-center gap-2 bg-brand-sageLight rounded-2xl px-4 py-2">
+                    <svg class="h-4 w-4 text-brand-sage" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+                    <span class="text-xs font-bold text-brand-sage">Total Commission: £<?php echo number_format($platform_revenue_total, 2); ?></span>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-brand-bg text-[10px] font-bold text-brand-slate uppercase tracking-wider border-b border-gray-100">
+                            <th class="p-4 pl-6">Booking #</th>
+                            <th class="p-4">Specialist</th>
+                            <th class="p-4">Gross Amount</th>
+                            <th class="p-4">Commission (15%)</th>
+                            <th class="p-4">Net Payout (85%)</th>
+                            <th class="p-4 pr-6">Date</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100 text-xs">
+                        <?php if (empty($commission_logs)): ?>
+                        <tr>
+                            <td colspan="6" class="p-8 text-center text-gray-500 font-medium">No commission records yet. Release an escrow hold to generate commission logs.</td>
+                        </tr>
+                        <?php else: foreach ($commission_logs as $cl): ?>
+                        <tr class="hover:bg-brand-bg/40 transition-colors">
+                            <td class="p-4 pl-6 font-mono text-brand-slate">#<?php echo htmlspecialchars($cl['booking_id']); ?></td>
+                            <td class="p-4 font-bold text-brand-slate"><?php echo htmlspecialchars($cl['specialist_name']); ?></td>
+                            <td class="p-4 font-bold text-gray-700">£<?php echo number_format((float)$cl['gross_amount'], 2); ?></td>
+                            <td class="p-4">
+                                <span class="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-brand-sageLight text-brand-sage font-bold text-[10px]">
+                                    £<?php echo number_format((float)$cl['commission_amount'], 2); ?>
+                                    <span class="text-brand-sage/60">(<?php echo number_format((float)$cl['commission_rate'], 0); ?>%)</span>
+                                </span>
+                            </td>
+                            <td class="p-4 font-bold text-brand-sage">£<?php echo number_format((float)$cl['net_payout'], 2); ?></td>
+                            <td class="p-4 pr-6 font-mono text-[10px] text-gray-400"><?php echo htmlspecialchars(substr($cl['logged_at'], 0, 16)); ?></td>
                         </tr>
                         <?php endforeach; endif; ?>
                     </tbody>

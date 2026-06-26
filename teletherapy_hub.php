@@ -12,6 +12,105 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 $user_id = $_SESSION['user_id'];
+
+// Load user's subscription plan (for access gating)
+$user_subscription_plan = 'free';
+if ($db_connected && $pdo) {
+    try {
+        $stmt = $pdo->prepare("SELECT subscription_plan FROM users WHERE id = ?");
+        $stmt->execute([$user_id]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($row) $user_subscription_plan = $row['subscription_plan'] ?? 'free';
+    } catch (PDOException $ex) {}
+} else {
+    $user_email = $_SESSION['user_email'] ?? '';
+    if (isset($_SESSION['mock_users'][$user_email])) {
+        $user_subscription_plan = $_SESSION['mock_users'][$user_email]['subscription_plan'] ?? 'free';
+    }
+}
+$can_book_teletherapy = ($user_subscription_plan !== 'free');
+
+// Handle AJAX Chat Inquiries
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+    if ($_POST['action'] === 'get_chat_messages') {
+        header('Content-Type: application/json');
+        $booking_id = intval($_POST['booking_id'] ?? 0);
+        $messages = [];
+        if ($booking_id > 0) {
+            if ($db_connected && $pdo) {
+                try {
+                    $stmt = $pdo->prepare("SELECT c.*, u.name as sender_name FROM teletherapy_chat_logs c JOIN users u ON c.sender_id = u.id WHERE c.booking_id = ? ORDER BY c.created_at ASC");
+                    $stmt->execute([$booking_id]);
+                    $messages = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                } catch (PDOException $e) {}
+            } else {
+                $mock_chats = $_SESSION['mock_teletherapy_chat_logs'] ?? [];
+                foreach ($mock_chats as $c) {
+                    if ($c['booking_id'] == $booking_id) {
+                        $sender_name = 'User';
+                        if (isset($_SESSION['mock_users'])) {
+                            foreach ($_SESSION['mock_users'] as $mu) {
+                                if ($mu['id'] == $c['sender_id']) {
+                                    $sender_name = $mu['name'];
+                                    break;
+                                }
+                            }
+                        }
+                        $messages[] = array_merge($c, ['sender_name' => $sender_name]);
+                    }
+                }
+            }
+        }
+        echo json_encode(['success' => true, 'messages' => $messages]);
+        exit;
+    }
+
+    if ($_POST['action'] === 'send_chat_message') {
+        header('Content-Type: application/json');
+        $booking_id = intval($_POST['booking_id'] ?? 0);
+        $message = trim($_POST['message'] ?? '');
+
+        if ($booking_id > 0 && !empty($message)) {
+            if ($db_connected && $pdo) {
+                try {
+                    $stmt = $pdo->prepare("INSERT INTO teletherapy_chat_logs (booking_id, sender_id, message) VALUES (?, ?, ?)");
+                    $stmt->execute([$booking_id, $user_id, $message]);
+                    $new_id = $pdo->lastInsertId();
+                    $created_at = date('Y-m-d H:i:s');
+                } catch (PDOException $e) {
+                    echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+                    exit;
+                }
+            } else {
+                $new_id = count($_SESSION['mock_teletherapy_chat_logs']) + 1;
+                $created_at = date('Y-m-d H:i:s');
+                $_SESSION['mock_teletherapy_chat_logs'][] = [
+                    'id' => $new_id,
+                    'booking_id' => $booking_id,
+                    'sender_id' => $user_id,
+                    'message' => $message,
+                    'created_at' => $created_at
+                ];
+            }
+            // Fetch name
+            $sender_name = $_SESSION['user_name'] ?? 'User';
+            echo json_encode([
+                'success' => true, 
+                'message' => [
+                    'id' => $new_id,
+                    'booking_id' => $booking_id,
+                    'sender_id' => $user_id,
+                    'sender_name' => $sender_name,
+                    'message' => $message,
+                    'created_at' => $created_at
+                ]
+            ]);
+        } else {
+            echo json_encode(['success' => false, 'error' => 'Empty message or invalid booking ID']);
+        }
+        exit;
+    }
+}
 $user_name = $_SESSION['user_name'];
 $user_initial = strtoupper(substr($user_name, 0, 1));
 
@@ -651,12 +750,19 @@ $today_date = date('l, F j, Y');
                         
                         <div class="pt-4 border-t border-gray-100 flex items-center justify-between">
                             <div>
-                                <span class="text-xs font-bold text-brand-slate">$<?php echo number_format($t_rate, 2); ?></span>
+                                <span class="text-xs font-bold text-brand-slate">&pound;<?php echo number_format($t_rate, 2); ?></span>
                                 <span class="text-[9px] text-gray-400">/ session</span>
                             </div>
+                            <?php if ($can_book_teletherapy): ?>
                             <button type="button" onclick="openBookingModal('<?php echo htmlspecialchars($t_name); ?>')" class="px-4 py-2 rounded-xl bg-brand-sage hover:bg-brand-sageHover text-white text-xs font-bold transition-all active:scale-95">
                                 Book Session
                             </button>
+                            <?php else: ?>
+                            <a href="subscription.php" class="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-brand-coralLight border border-brand-coral/20 text-brand-coral text-xs font-bold transition-all hover:bg-brand-coral hover:text-white">
+                                <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                                Upgrade to Book
+                            </a>
+                            <?php endif; ?>
                         </div>
                     </div>
                     
@@ -682,24 +788,34 @@ $today_date = date('l, F j, Y');
                 <?php else: ?>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <?php foreach ($bookings as $bk): ?>
-                            <div class="p-4 rounded-2xl bg-brand-bg border border-gray-100 flex items-start justify-between gap-4">
-                                <div class="space-y-1">
-                                    <h4 class="text-xs font-bold text-brand-slate"><?php echo htmlspecialchars($bk['therapist_name']); ?></h4>
-                                    <p class="text-[10px] text-gray-500 font-semibold flex items-center gap-1">
-                                        <span>📅</span>
-                                        <span><?php echo date('l, M j, Y', strtotime($bk['booking_date'])); ?></span>
-                                    </p>
-                                    <p class="text-[10px] text-gray-500 font-semibold flex items-center gap-1">
-                                        <span>⏰</span>
-                                        <span><?php echo htmlspecialchars($bk['booking_time']); ?></span>
-                                    </p>
-                                    <?php if (!empty($bk['insurance_provider'])): ?>
-                                        <p class="text-[9px] text-gray-400 uppercase font-bold bg-white px-2 py-0.5 rounded inline-block">
-                                            Insurance: <?php echo htmlspecialchars($bk['insurance_provider']); ?>
+                            <div class="p-4 rounded-2xl bg-brand-bg border border-gray-100 flex flex-col justify-between gap-3">
+                                <div class="flex items-start justify-between gap-4">
+                                    <div class="space-y-1">
+                                        <h4 class="text-xs font-bold text-brand-slate"><?php echo htmlspecialchars($bk['therapist_name']); ?></h4>
+                                        <p class="text-[10px] text-gray-500 font-semibold flex items-center gap-1">
+                                            <span>📅</span>
+                                            <span><?php echo date('l, M j, Y', strtotime($bk['booking_date'])); ?></span>
                                         </p>
-                                    <?php endif; ?>
+                                        <p class="text-[10px] text-gray-500 font-semibold flex items-center gap-1">
+                                            <span>⏰</span>
+                                            <span><?php echo htmlspecialchars($bk['booking_time']); ?></span>
+                                        </p>
+                                        <?php if (!empty($bk['insurance_provider'])): ?>
+                                            <p class="text-[9px] text-gray-400 uppercase font-bold bg-white px-2 py-0.5 rounded inline-block">
+                                                Insurance: <?php echo htmlspecialchars($bk['insurance_provider']); ?>
+                                            </p>
+                                        <?php endif; ?>
+                                    </div>
+                                    <span class="px-2.5 py-1 rounded bg-[#E8EFEA] text-[9px] font-bold text-brand-sage uppercase tracking-wider">Scheduled</span>
                                 </div>
-                                <span class="px-2.5 py-1 rounded bg-[#E8EFEA] text-[9px] font-bold text-brand-sage uppercase tracking-wider">Scheduled</span>
+                                <div class="flex gap-2 pt-2 border-t border-dashed border-gray-250">
+                                    <button onclick="openChatDrawer(<?php echo $bk['id']; ?>, '<?php echo addslashes($bk['therapist_name']); ?>')" class="flex-1 py-1.5 rounded-xl bg-white hover:bg-gray-50 border border-gray-200 text-brand-slate text-[10px] font-bold transition-all active:scale-95 flex items-center justify-center gap-1">
+                                        <span>💬</span> Open Chat
+                                    </button>
+                                    <button onclick="joinCall(<?php echo $bk['id']; ?>, '<?php echo addslashes($bk['therapist_name']); ?>')" class="flex-1 py-1.5 rounded-xl bg-brand-sage hover:bg-brand-sageHover text-white text-[10px] font-bold transition-all active:scale-95 flex items-center justify-center gap-1">
+                                        <span>📹</span> Join Call
+                                    </button>
+                                </div>
                             </div>
                         <?php endforeach; ?>
                     </div>
@@ -922,6 +1038,111 @@ $today_date = date('l, F j, Y');
     </div>
     <?php endif; ?>
 
+    <!-- CHAT DRAWER -->
+    <div id="chat-drawer" class="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-white shadow-2xl border-l border-gray-150 transform translate-x-full transition-transform duration-300 flex flex-col">
+        <!-- Header -->
+        <div class="p-4 border-b border-gray-100 flex items-center justify-between bg-brand-bg">
+            <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-full bg-brand-sageLight text-brand-sage flex items-center justify-center font-bold text-xs" id="chat-recipient-avatar">T</div>
+                <div>
+                    <h3 class="text-xs font-bold text-brand-slate" id="chat-recipient-name">Therapist Chat</h3>
+                    <p class="text-[9px] text-brand-sage font-bold flex items-center gap-1">
+                        <span class="w-1.5 h-1.5 rounded-full bg-brand-sage animate-ping"></span> Online
+                    </p>
+                </div>
+            </div>
+            <button onclick="closeChatDrawer()" class="p-1 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-all">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        
+        <!-- Messages Area -->
+        <div class="flex-1 overflow-y-auto p-4 bg-[#FAF9F6] space-y-3" id="chat-messages-container">
+            <!-- Messages are injected here -->
+        </div>
+        
+        <!-- Input Area -->
+        <form id="chat-message-form" onsubmit="sendChatMessage(event)" class="p-3.5 border-t border-gray-100 flex gap-2 bg-white">
+            <input type="hidden" id="chat-booking-id" value="">
+            <input type="text" id="chat-message-input" placeholder="Type a message..." required autocomplete="off" class="flex-1 px-4 py-2 text-xs rounded-xl bg-brand-bg border border-gray-200 focus:outline-none focus:border-brand-sage focus:ring-1 focus:ring-brand-sage">
+            <button type="submit" class="px-4 py-2 rounded-xl bg-brand-sage hover:bg-brand-sageHover text-white text-xs font-bold transition-all active:scale-95 flex items-center gap-1">
+                Send <span>➔</span>
+            </button>
+        </form>
+    </div>
+
+    <!-- SIMULATED LIVE CALL CONSOLE -->
+    <div id="call-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-all duration-300">
+        <!-- Backdrop -->
+        <div class="absolute inset-0 bg-brand-slate/85 backdrop-blur-md"></div>
+        
+        <!-- Main Console Window -->
+        <div class="relative bg-[#0d0f12] w-full max-w-4xl rounded-3xl overflow-hidden shadow-2xl border border-gray-800 flex flex-col h-[520px] transform scale-95 transition-transform duration-300">
+            <!-- Top Bar -->
+            <div class="absolute top-0 inset-x-0 p-4 flex items-center justify-between z-20 bg-gradient-to-b from-black/80 to-transparent">
+                <div class="flex items-center gap-2">
+                    <div class="w-2.5 h-2.5 rounded-full bg-brand-coral animate-pulse"></div>
+                    <span class="text-white text-[10px] uppercase font-bold tracking-wider font-outfit" id="call-status-label">Simulating Secure Call...</span>
+                </div>
+                <div class="text-gray-300 text-xs font-bold font-outfit" id="call-participant-title">Session Room</div>
+            </div>
+            
+            <!-- Video Stage -->
+            <div class="flex-1 relative bg-[#090b0d] flex items-center justify-center overflow-hidden">
+                <!-- Remote Stream (Animated Canvas) -->
+                <canvas id="call-canvas" class="w-full h-full absolute inset-0"></canvas>
+                
+                <!-- Remote Center Avatar & Label -->
+                <div class="relative flex flex-col items-center gap-3 z-10 text-center">
+                    <div class="w-20 h-20 rounded-full bg-gradient-to-tr from-brand-sage to-brand-sageLight text-white flex items-center justify-center text-3xl font-bold shadow-lg" id="call-remote-avatar">P</div>
+                    <div class="text-white text-xs font-bold tracking-wide" id="call-remote-name">Practitioner Feed</div>
+                    <div class="text-[10px] text-gray-400">Secure Feed Connected</div>
+                </div>
+                
+                <!-- Picture-in-Picture Local Video (Self) -->
+                <div class="absolute bottom-4 right-4 w-40 h-28 rounded-2xl overflow-hidden border border-white/20 shadow-xl bg-gray-900 z-20 flex items-center justify-center">
+                    <video id="call-local-video" autoplay playsinline muted class="w-full h-full object-cover hidden"></video>
+                    <!-- Local Avatar Fallback -->
+                    <div id="call-local-avatar" class="w-full h-full bg-brand-slate text-white flex flex-col items-center justify-center font-bold text-lg select-none">
+                        <span id="call-local-initial">U</span>
+                        <span class="text-[8px] text-gray-400 mt-1 uppercase font-normal">You</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Bottom Controls Bar -->
+            <div class="p-6 bg-gradient-to-t from-black to-[#0d0f12] border-t border-white/5 flex items-center justify-between z-20">
+                <div class="text-[10px] text-gray-450">
+                    🔐 AES-256 Encrypted Telehealth
+                </div>
+                
+                <!-- Center Actions -->
+                <div class="flex items-center gap-4">
+                    <!-- Toggle Audio Button -->
+                    <button id="btn-toggle-audio" onclick="toggleCallAudio()" class="w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all hover:scale-105 active:scale-95">
+                        <svg class="w-5 h-5" id="icon-audio-on" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+                        <svg class="w-5 h-5 hidden" id="icon-audio-off" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"></path></svg>
+                    </button>
+                    
+                    <!-- Toggle Video Button -->
+                    <button id="btn-toggle-video" onclick="toggleCallVideo()" class="w-11 h-11 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all hover:scale-105 active:scale-95">
+                        <svg class="w-5 h-5" id="icon-video-on" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                        <svg class="w-5 h-5 hidden" id="icon-video-off" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path></svg>
+                    </button>
+                    
+                    <!-- End Call Button -->
+                    <button onclick="leaveCall()" class="px-5 py-2.5 rounded-full bg-brand-coral hover:bg-brand-coralHover text-white text-xs font-bold tracking-wide flex items-center gap-2 hover:scale-105 active:scale-95 transition-all">
+                        🔴 End Session
+                    </button>
+                </div>
+                
+                <div class="text-white text-xs font-mono" id="call-timer">
+                    00:00
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- BOOKING MODAL -->
     <div id="booking-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-all duration-300">
         <!-- Backdrop -->
@@ -1114,6 +1335,376 @@ $today_date = date('l, F j, Y');
             checkboxes.forEach(chk => {
                 chk.checked = activeSlots.includes(chk.value);
             });
+        }
+
+        // 3.5. CHAT DRAWER & LIVE CALL CONSOLE
+        const currentUserId = <?php echo json_encode($user_id); ?>;
+        let chatInterval = null;
+        let localStream = null;
+        let callTimerInterval = null;
+        let callTimerSeconds = 0;
+        let canvasAnimationId = null;
+        let isAudioMuted = false;
+        let isVideoMuted = false;
+
+        // Chat Drawer Actions
+        function openChatDrawer(bookingId, recipientName) {
+            document.getElementById('chat-booking-id').value = bookingId;
+            document.getElementById('chat-recipient-name').innerText = recipientName;
+            document.getElementById('chat-recipient-avatar').innerText = recipientName.trim().charAt(0).toUpperCase();
+            
+            const drawer = document.getElementById('chat-drawer');
+            drawer.classList.remove('translate-x-full');
+            
+            // Fetch messages immediately and start polling
+            fetchChatMessages();
+            if (chatInterval) clearInterval(chatInterval);
+            chatInterval = setInterval(fetchChatMessages, 3000);
+        }
+
+        function closeChatDrawer() {
+            const drawer = document.getElementById('chat-drawer');
+            drawer.classList.add('translate-x-full');
+            if (chatInterval) {
+                clearInterval(chatInterval);
+                chatInterval = null;
+            }
+        }
+
+        function fetchChatMessages() {
+            const bookingId = document.getElementById('chat-booking-id').value;
+            if (!bookingId) return;
+            
+            const formData = new FormData();
+            formData.append('action', 'get_chat_messages');
+            formData.append('booking_id', bookingId);
+            
+            fetch('teletherapy_hub.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    const container = document.getElementById('chat-messages-container');
+                    const scrollAtBottom = (container.scrollHeight - container.clientHeight - container.scrollTop) < 50;
+                    
+                    container.innerHTML = '';
+                    if (data.messages.length === 0) {
+                        container.innerHTML = '<div class="text-center text-gray-400 text-[10px] py-4">No messages yet. Send a note to start the conversation!</div>';
+                    } else {
+                        data.messages.forEach(msg => {
+                            const isMe = msg.sender_id == currentUserId;
+                            const bubbleClass = isMe 
+                                ? 'bg-brand-sage text-white rounded-br-none ml-auto' 
+                                : 'bg-white text-brand-slate border border-gray-100 rounded-bl-none';
+                            const containerClass = isMe ? 'text-right' : 'text-left';
+                            
+                            const div = document.createElement('div');
+                            div.className = `max-w-[80%] p-3 rounded-2xl text-xs ${bubbleClass}`;
+                            
+                            const senderSpan = document.createElement('span');
+                            senderSpan.className = 'block text-[8px] font-extrabold uppercase tracking-wider mb-1 opacity-75';
+                            senderSpan.innerText = isMe ? 'You' : msg.sender_name;
+                            
+                            const msgContent = document.createElement('p');
+                            msgContent.className = 'leading-relaxed break-words';
+                            msgContent.innerText = msg.message;
+                            
+                            const timeSpan = document.createElement('span');
+                            timeSpan.className = 'block text-[8px] mt-1 opacity-60 text-right font-mono';
+                            // Format HH:MM
+                            try {
+                                const dt = new Date(msg.created_at);
+                                timeSpan.innerText = dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                            } catch(e) {
+                                timeSpan.innerText = msg.created_at;
+                            }
+                            
+                            div.appendChild(senderSpan);
+                            div.appendChild(msgContent);
+                            div.appendChild(timeSpan);
+                            
+                            const wrapper = document.createElement('div');
+                            wrapper.className = `mb-3 ${containerClass}`;
+                            wrapper.appendChild(div);
+                            container.appendChild(wrapper);
+                        });
+                    }
+                    
+                    if (scrollAtBottom || container.scrollTop === 0) {
+                        container.scrollTop = container.scrollHeight;
+                    }
+                }
+            })
+            .catch(err => console.error("Error fetching chats:", err));
+        }
+
+        function sendChatMessage(event) {
+            event.preventDefault();
+            const bookingId = document.getElementById('chat-booking-id').value;
+            const input = document.getElementById('chat-message-input');
+            const message = input.value.trim();
+            if (!bookingId || !message) return;
+            
+            input.value = '';
+            
+            const formData = new FormData();
+            formData.append('action', 'send_chat_message');
+            formData.append('booking_id', bookingId);
+            formData.append('message', message);
+            
+            fetch('teletherapy_hub.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    fetchChatMessages();
+                } else {
+                    alert("Failed to send message: " + (data.error || "Unknown error"));
+                }
+            })
+            .catch(err => console.error("Error sending chat:", err));
+        }
+
+        // Live Call Console Actions
+        function playJoinChime() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const now = ctx.currentTime;
+                const playTone = (freq, time, duration) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.frequency.setValueAtTime(freq, time);
+                    gain.gain.setValueAtTime(0, time);
+                    gain.gain.linearRampToValueAtTime(0.12, time + 0.04);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, time + duration);
+                    osc.start(time);
+                    osc.stop(time + duration);
+                };
+                playTone(392.00, now, 0.5); // G4
+                playTone(523.25, now + 0.12, 0.5); // C5
+                playTone(659.25, now + 0.24, 0.6); // E5
+                playTone(783.99, now + 0.36, 0.8); // G5
+            } catch(e) { console.warn("Audio context not allowed or supported yet", e); }
+        }
+
+        function playLeaveChime() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const now = ctx.currentTime;
+                const playTone = (freq, time, duration) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.frequency.setValueAtTime(freq, time);
+                    gain.gain.setValueAtTime(0, time);
+                    gain.gain.linearRampToValueAtTime(0.12, time + 0.04);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, time + duration);
+                    osc.start(time);
+                    osc.stop(time + duration);
+                };
+                playTone(587.33, now, 0.4); // D5
+                playTone(440.00, now + 0.12, 0.4); // A4
+                playTone(349.23, now + 0.24, 0.6); // F4
+            } catch(e) { console.warn("Audio context not supported", e); }
+        }
+
+        function joinCall(bookingId, participantName) {
+            playJoinChime();
+            
+            document.getElementById('call-participant-title').innerText = `Session with ${participantName}`;
+            document.getElementById('call-remote-name').innerText = participantName;
+            document.getElementById('call-remote-avatar').innerText = participantName.trim().charAt(0).toUpperCase();
+            document.getElementById('call-local-initial').innerText = "<?php echo addslashes(substr($user_name, 0, 1)); ?>";
+            
+            const modal = document.getElementById('call-modal');
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            modal.querySelector('.relative').classList.remove('scale-95');
+            modal.querySelector('.relative').classList.add('scale-100');
+            
+            // Get local camera/mic stream
+            navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+                .then(stream => {
+                    localStream = stream;
+                    const video = document.getElementById('call-local-video');
+                    video.srcObject = stream;
+                    video.classList.remove('hidden');
+                    document.getElementById('call-local-avatar').classList.add('hidden');
+                    
+                    isAudioMuted = false;
+                    isVideoMuted = false;
+                    updateControlButtons();
+                })
+                .catch(err => {
+                    console.warn("Could not access camera/mic: ", err);
+                    document.getElementById('call-local-video').classList.add('hidden');
+                    document.getElementById('call-local-avatar').classList.remove('hidden');
+                });
+            
+            // Start call timer
+            callTimerSeconds = 0;
+            const timerEl = document.getElementById('call-timer');
+            timerEl.innerText = "00:00";
+            if (callTimerInterval) clearInterval(callTimerInterval);
+            callTimerInterval = setInterval(() => {
+                callTimerSeconds++;
+                const mins = String(Math.floor(callTimerSeconds / 60)).padStart(2, '0');
+                const secs = String(callTimerSeconds % 60).padStart(2, '0');
+                timerEl.innerText = `${mins}:${secs}`;
+            }, 1000);
+            
+            // Start remote feed animation on Canvas
+            startCanvasAnimation();
+        }
+
+        function leaveCall() {
+            playLeaveChime();
+            
+            const modal = document.getElementById('call-modal');
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            modal.querySelector('.relative').classList.remove('scale-100');
+            modal.querySelector('.relative').classList.add('scale-95');
+            
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+                localStream = null;
+            }
+            
+            if (callTimerInterval) {
+                clearInterval(callTimerInterval);
+                callTimerInterval = null;
+            }
+            
+            if (canvasAnimationId) {
+                cancelAnimationFrame(canvasAnimationId);
+                canvasAnimationId = null;
+            }
+        }
+
+        function toggleCallAudio() {
+            if (!localStream) return;
+            isAudioMuted = !isAudioMuted;
+            localStream.getAudioTracks().forEach(track => {
+                track.enabled = !isAudioMuted;
+            });
+            updateControlButtons();
+        }
+
+        function toggleCallVideo() {
+            if (!localStream) return;
+            isVideoMuted = !isVideoMuted;
+            localStream.getVideoTracks().forEach(track => {
+                track.enabled = !isVideoMuted;
+            });
+            
+            const video = document.getElementById('call-local-video');
+            const avatar = document.getElementById('call-local-avatar');
+            if (isVideoMuted) {
+                video.classList.add('hidden');
+                avatar.classList.remove('hidden');
+            } else {
+                video.classList.remove('hidden');
+                avatar.classList.add('hidden');
+            }
+            updateControlButtons();
+        }
+
+        function updateControlButtons() {
+            const btnAudio = document.getElementById('btn-toggle-audio');
+            const iconAudioOn = document.getElementById('icon-audio-on');
+            const iconAudioOff = document.getElementById('icon-audio-off');
+            
+            if (isAudioMuted) {
+                btnAudio.classList.remove('bg-white/10', 'hover:bg-white/20');
+                btnAudio.classList.add('bg-brand-coral/20', 'hover:bg-brand-coral/30', 'text-brand-coral');
+                iconAudioOn.classList.add('hidden');
+                iconAudioOff.classList.remove('hidden');
+            } else {
+                btnAudio.classList.add('bg-white/10', 'hover:bg-white/20');
+                btnAudio.classList.remove('bg-brand-coral/20', 'hover:bg-brand-coral/30', 'text-brand-coral');
+                iconAudioOn.classList.remove('hidden');
+                iconAudioOff.classList.add('hidden');
+            }
+            
+            const btnVideo = document.getElementById('btn-toggle-video');
+            const iconVideoOn = document.getElementById('icon-video-on');
+            const iconVideoOff = document.getElementById('icon-video-off');
+            
+            if (isVideoMuted) {
+                btnVideo.classList.remove('bg-white/10', 'hover:bg-white/20');
+                btnVideo.classList.add('bg-brand-coral/20', 'hover:bg-brand-coral/30', 'text-brand-coral');
+                iconVideoOn.classList.add('hidden');
+                iconVideoOff.classList.remove('hidden');
+            } else {
+                btnVideo.classList.add('bg-white/10', 'hover:bg-white/20');
+                btnVideo.classList.remove('bg-brand-coral/20', 'hover:bg-brand-coral/30', 'text-brand-coral');
+                iconVideoOn.classList.remove('hidden');
+                iconVideoOff.classList.add('hidden');
+            }
+        }
+
+        function startCanvasAnimation() {
+            const canvas = document.getElementById('call-canvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const waves = [
+                { amplitude: 35, frequency: 0.012, speed: 0.04, color: 'rgba(94, 140, 113, 0.25)' }, // Sage
+                { amplitude: 20, frequency: 0.025, speed: 0.06, color: 'rgba(142, 202, 230, 0.2)' }, // Sky
+                { amplitude: 45, frequency: 0.006, speed: 0.02, color: 'rgba(38, 70, 83, 0.1)' }    // Slate
+            ];
+            let phase = 0;
+            
+            function animate() {
+                if (canvas.width !== canvas.clientWidth || canvas.height !== canvas.clientHeight) {
+                    canvas.width = canvas.clientWidth;
+                    canvas.height = canvas.clientHeight;
+                }
+                
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // Draw background gradient
+                const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+                grad.addColorStop(0, '#0d0f12');
+                grad.addColorStop(1, '#07080a');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                const centerY = canvas.height / 2;
+                
+                // Draw decorative ambient glow in center
+                const pulseGlow = 100 + Math.sin(phase * 0.03) * 15;
+                const radialGrad = ctx.createRadialGradient(canvas.width/2, centerY, 10, canvas.width/2, centerY, pulseGlow);
+                radialGrad.addColorStop(0, 'rgba(94, 140, 113, 0.15)');
+                radialGrad.addColorStop(1, 'rgba(0,0,0,0)');
+                ctx.fillStyle = radialGrad;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                waves.forEach(w => {
+                    ctx.beginPath();
+                    ctx.strokeStyle = w.color;
+                    ctx.lineWidth = w.amplitude === 20 ? 1.5 : 2.5;
+                    
+                    for (let x = 0; x < canvas.width; x++) {
+                        const noise = Math.sin(phase * 1.5 + x * 0.03) * 1.5;
+                        const y = centerY + Math.sin(x * w.frequency + phase * w.speed) * w.amplitude + noise;
+                        if (x === 0) ctx.moveTo(x, y);
+                        else ctx.lineTo(x, y);
+                    }
+                    ctx.stroke();
+                });
+                
+                phase += 0.4;
+                canvasAnimationId = requestAnimationFrame(animate);
+            }
+            
+            if (canvasAnimationId) cancelAnimationFrame(canvasAnimationId);
+            canvasAnimationId = requestAnimationFrame(animate);
         }
 
         // 4. EMERGENCY MODAL ACTIONS

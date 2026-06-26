@@ -339,30 +339,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         ];
     }
 
-    // C. Determine AI Response based on NLP Keywords
-    $intent = 'default';
-    $lowercase_msg = strtolower($user_msg);
+    // C. Determine AI Response based on NLP Keywords OR Real AI API
+    require_once 'AiIntegrationService.php';
     
-    // Quick intent parser
-    if ($is_distressed) {
-        $intent = 'crisis';
-    } elseif (preg_match('/(hello|hi|hey|sannu|jambo|bonjour|مرحبا)/i', $lowercase_msg)) {
-        $intent = 'hi';
-    } elseif (preg_match('/(anxious|anxiety|panic|fear|scared|worry|worrying|damuwa|aibalẹ|nchegbu|angoisse|قلق|wasiwasi)/i', $lowercase_msg)) {
-        $intent = 'anxious';
-    } elseif (preg_match('/(sad|depressed|crying|hopeless|lonely|down|wute|banin maraya|banin ciki|ibanujẹ|obi mgbawa|triste|حزين|huzuni)/i', $lowercase_msg)) {
-        $intent = 'sad';
-    } elseif (preg_match('/(stress|exhausted|tired|burnout|strain|overwhelmed|gajiya|aare|ike ọgwụgwụ|fatigue|تعب|إرhaق|choka)/i', $lowercase_msg)) {
-        $intent = 'stress';
-    } elseif (preg_match('/(cbt|reframe|distortion|thought|tunanin|ero odi|echiche ọjọọ|recadrage|صياغة|upotoshaji)/i', $lowercase_msg)) {
-        $intent = 'cbt';
+    // Fetch recent history to provide context
+    $chat_history = [];
+    if ($db_connected && $pdo) {
+        try {
+            $stmt = $pdo->prepare("SELECT sender, message FROM ai_chat_logs WHERE user_id = ? ORDER BY id DESC LIMIT 5");
+            $stmt->execute([$user_id]);
+            $chat_history = array_reverse($stmt->fetchAll());
+        } catch (PDOException $ex) {}
+    } else {
+        $mock_chats = $_SESSION['mock_ai_chats'] ?? [];
+        $user_chats = array_filter($mock_chats, fn($c) => $c['user_id'] == $user_id);
+        $chat_history = array_slice(array_values($user_chats), -5);
     }
 
-    // Select response based on intent and language
-    if ($intent === 'crisis') {
-        $ai_msg = $translations[$selected_lang]['crisis_warning'];
-    } else {
-        $ai_msg = $ai_responses[$selected_lang][$intent] ?? $ai_responses[$selected_lang]['default'];
+    // Attempt to generate response with Gemini API
+    $ai_msg = AiIntegrationService::generateChatResponse($user_msg, $selected_lang, $chat_history);
+
+    // Fallback to mock parser if API key is not set or fails
+    if (!$ai_msg) {
+        $intent = 'default';
+        $lowercase_msg = strtolower($user_msg);
+        
+        if ($is_distressed) {
+            $intent = 'crisis';
+        } elseif (preg_match('/(hello|hi|hey|sannu|jambo|bonjour|مرحبا)/i', $lowercase_msg)) {
+            $intent = 'hi';
+        } elseif (preg_match('/(anxious|anxiety|panic|fear|scared|worry|worrying|damuwa|aibalẹ|nchegbu|angoisse|قلق|wasiwasi)/i', $lowercase_msg)) {
+            $intent = 'anxious';
+        } elseif (preg_match('/(sad|depressed|crying|hopeless|lonely|down|wute|banin maraya|banin ciki|ibanujẹ|obi mgbawa|triste|حزين|huzuni)/i', $lowercase_msg)) {
+            $intent = 'sad';
+        } elseif (preg_match('/(stress|exhausted|tired|burnout|strain|overwhelmed|gajiya|aare|ike ọgwụgwụ|fatigue|تعب|إرhaق|choka)/i', $lowercase_msg)) {
+            $intent = 'stress';
+        } elseif (preg_match('/(cbt|reframe|distortion|thought|tunanin|ero odi|echiche ọjọọ|recadrage|صياغة|upotoshaji)/i', $lowercase_msg)) {
+            $intent = 'cbt';
+        }
+
+        if ($intent === 'crisis') {
+            $ai_msg = $translations[$selected_lang]['crisis_warning'];
+        } else {
+            $ai_msg = $ai_responses[$selected_lang][$intent] ?? $ai_responses[$selected_lang]['default'];
+        }
     }
 
     // D. Save AI Response
