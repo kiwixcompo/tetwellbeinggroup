@@ -409,7 +409,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             }
 
             if ($booking_saved) {
-                header("Location: teletherapy_hub.php?booking_success=1&rate=" . urlencode($therapist_rate));
+                $therapist_email = null;
+                if ($db_connected && $pdo) {
+                    try {
+                        $st = $pdo->prepare("SELECT email FROM users WHERE id = ?");
+                        $st->execute([$therapist_id]);
+                        $therapist_email = $st->fetchColumn();
+                        
+                        $notif = $pdo->prepare("INSERT INTO notifications (user_id, type, message) VALUES (?, 'booking', ?)");
+                        $notif->execute([$therapist_id, "New booking from {$_SESSION['user_name']} on {$booking_date} at {$booking_time}."]);
+                    } catch (PDOException $e) {}
+                } else {
+                    if (isset($_SESSION['mock_users'])) {
+                        foreach ($_SESSION['mock_users'] as $em => $u) {
+                            if ($u['id'] == $therapist_id) {
+                                $therapist_email = $em;
+                                break;
+                            }
+                        }
+                    }
+                    if (!isset($_SESSION['mock_notifications'])) {
+                        $_SESSION['mock_notifications'] = [];
+                    }
+                    $_SESSION['mock_notifications'][] = [
+                        'user_id' => $therapist_id,
+                        'type' => 'booking',
+                        'message' => "New booking from {$_SESSION['user_name']} on {$booking_date} at {$booking_time}.",
+                        'is_read' => 0,
+                        'created_at' => date('Y-m-d H:i:s')
+                    ];
+                }
+
+                if ($therapist_email) {
+                    require_once __DIR__ . '/app/Helpers/EmailHelper.php';
+                    $emailHelper = new \App\Helpers\EmailHelper();
+                    try {
+                        $msg = "<p>Hello {$therapist_name},</p><p>You have a new teletherapy booking.</p>";
+                        $msg .= "<ul><li>Client: {$_SESSION['user_name']}</li><li>Date: {$booking_date}</li><li>Time: {$booking_time}</li></ul>";
+                        $emailHelper->sendRawEmail($therapist_email, "New Booking Notification", $msg);
+                    } catch (\Exception $e) {}
+                }
+
+                header("Location: teletherapy_hub.php?booking_success=1&rate=" . urlencode((string)$therapist_rate));
                 exit;
             }
         }
@@ -428,6 +469,38 @@ if (isset($_GET['availability_success'])) {
 }
 if (isset($_GET['availability_error']) && $_GET['availability_error'] === 'unauthorized') {
     $action_error = "Access denied: Client users are not permitted to edit practitioner availability.";
+}
+if (isset($_GET['feedback_success'])) {
+    $action_success = "Your feedback has been submitted successfully.";
+}
+
+// 5. POST ACTION: SUBMIT FEEDBACK
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $action = $_POST['action'] ?? '';
+    if ($action === 'submit_client_feedback') {
+        $booking_id = filter_input(INPUT_POST, 'booking_id', FILTER_VALIDATE_INT);
+        $feedback = filter_input(INPUT_POST, 'feedback', FILTER_DEFAULT);
+        if ($booking_id && $feedback) {
+            if ($db_connected && $pdo) {
+                try {
+                    $upd = $pdo->prepare("UPDATE teletherapy_bookings SET client_feedback = ? WHERE id = ? AND user_id = ?");
+                    $upd->execute([$feedback, $booking_id, $user_id]);
+                } catch (PDOException $e) {}
+            } else {
+                if (isset($_SESSION['mock_bookings'])) {
+                    foreach ($_SESSION['mock_bookings'] as &$bk) {
+                        if (($bk['id'] ?? 0) == $booking_id && ($bk['user_id'] ?? 0) == $user_id) {
+                            $bk['client_feedback'] = $feedback;
+                            break;
+                        }
+                    }
+                    unset($bk);
+                }
+            }
+            header("Location: teletherapy_hub.php?feedback_success=1");
+            exit;
+        }
+    }
 }
 
 // 3. READ ACTIVE BOOKINGS FOR USER
@@ -806,7 +879,32 @@ $today_date = date('l, F j, Y');
                                             </p>
                                         <?php endif; ?>
                                     </div>
+                                    </div>
                                     <span class="px-2.5 py-1 rounded bg-[#E8EFEA] text-[9px] font-bold text-brand-sage uppercase tracking-wider">Scheduled</span>
+                                </div>
+                                
+                                <!-- Feedback Block -->
+                                <div class="mt-2 pt-2 border-t border-dashed border-gray-200">
+                                    <?php if (!empty($bk['consultant_feedback'])): ?>
+                                        <div class="mb-2 p-2 rounded-lg bg-brand-sageLight/30 border border-brand-sage/10">
+                                            <div class="text-[9px] font-bold text-brand-sage uppercase mb-0.5">Therapist Notes:</div>
+                                            <div class="text-xs text-brand-slate">"<?php echo htmlspecialchars($bk['consultant_feedback']); ?>"</div>
+                                        </div>
+                                    <?php endif; ?>
+                                    
+                                    <?php if (!empty($bk['client_feedback'])): ?>
+                                        <div class="p-2 rounded-lg bg-white border border-gray-100">
+                                            <div class="text-[9px] font-bold text-gray-400 uppercase mb-0.5">Your Feedback:</div>
+                                            <div class="text-xs text-gray-600 italic">"<?php echo htmlspecialchars($bk['client_feedback']); ?>"</div>
+                                        </div>
+                                    <?php else: ?>
+                                        <form method="POST" action="teletherapy_hub.php" class="flex gap-2 items-center mt-1">
+                                            <input type="hidden" name="action" value="submit_client_feedback">
+                                            <input type="hidden" name="booking_id" value="<?php echo $bk['id'] ?? ''; ?>">
+                                            <input type="text" name="feedback" required placeholder="Leave feedback about this session..." class="flex-1 text-xs px-2 py-1.5 rounded-lg border border-gray-200 focus:border-brand-sage focus:ring-1 focus:ring-brand-sage outline-none">
+                                            <button type="submit" class="text-[10px] font-bold text-brand-sage bg-brand-sageLight px-3 py-1.5 rounded-lg hover:bg-brand-sage/20 transition-colors">Submit</button>
+                                        </form>
+                                    <?php endif; ?>
                                 </div>
                                 <div class="flex gap-2 pt-2 border-t border-dashed border-gray-250">
                                     <button onclick="openChatDrawer(<?php echo $bk['id']; ?>, '<?php echo addslashes($bk['therapist_name']); ?>')" class="flex-1 py-1.5 rounded-xl bg-white hover:bg-gray-50 border border-gray-200 text-brand-slate text-[10px] font-bold transition-all active:scale-95 flex items-center justify-center gap-1">
@@ -853,7 +951,11 @@ $today_date = date('l, F j, Y');
                         <div class="grid grid-cols-1 sm:grid-cols-5 gap-4" id="availability-checkboxes-grid">
                             <?php
                             $days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
-                            $slots = ['09:00 AM', '11:00 AM', '02:00 PM', '04:00 PM'];
+                            $slots = [];
+                            for ($h = 0; $h < 24; $h++) {
+                                $time_str = sprintf('%02d:00', $h);
+                                $slots[] = date('h:i A', strtotime($time_str));
+                            }
                             
                             // Fetch all availability
                             $current_avail = [];

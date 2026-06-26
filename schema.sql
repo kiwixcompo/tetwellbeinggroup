@@ -65,6 +65,8 @@ CREATE TABLE IF NOT EXISTS `teletherapy_bookings` (
     `payment_status` VARCHAR(20) DEFAULT 'escrow',
     `release_date` DATETIME DEFAULT NULL,
     `therapist_id` INT DEFAULT NULL,
+    `client_feedback` TEXT DEFAULT NULL,
+    `consultant_feedback` TEXT DEFAULT NULL,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 
@@ -98,6 +100,17 @@ CREATE TABLE IF NOT EXISTS `ai_chat_logs` (
     `message` TEXT NOT NULL,
     `language` VARCHAR(10) DEFAULT 'en',
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+-- 9. Notifications Table
+CREATE TABLE IF NOT EXISTS `notifications` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `user_id` INT NOT NULL,
+    `type` VARCHAR(50) DEFAULT 'info',
+    `message` TEXT NOT NULL,
+    `is_read` TINYINT(1) DEFAULT 0,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 -- =========================================================

@@ -252,14 +252,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 unset($u);
             }
             
-            if ($saved) {
-                $success_message = "Your professional profile has been updated successfully.";
-            }
+            if ($saved) $success_message = "Profile updated successfully.";
         } else {
-            $error_message = "Please complete all profile fields with valid values.";
+            $error_message = "Please fill in all profile fields correctly.";
         }
     }
 
+    // Action 3.3: Submit Feedback
+    if ($action === 'submit_feedback') {
+        $booking_id = filter_input(INPUT_POST, 'booking_id', FILTER_VALIDATE_INT);
+        $feedback = filter_input(INPUT_POST, 'feedback', FILTER_DEFAULT);
+        
+        if ($booking_id && $feedback) {
+            if ($db_connected && $pdo) {
+                try {
+                    $upd = $pdo->prepare("UPDATE teletherapy_bookings SET consultant_feedback = ? WHERE id = ?");
+                    $upd->execute([$feedback, $booking_id]);
+                    $success_message = "Feedback submitted successfully.";
+                } catch (PDOException $e) {}
+            } else {
+                if (isset($_SESSION['mock_bookings'])) {
+                    foreach ($_SESSION['mock_bookings'] as &$bk) {
+                        if (($bk['id'] ?? 0) == $booking_id) {
+                            $bk['consultant_feedback'] = $feedback;
+                            $success_message = "Feedback submitted successfully.";
+                            break;
+                        }
+                    }
+                    unset($bk);
+                }
+            }
+        }
+    }
+    }
     // Action 3.2: Save availability slots
     if ($action === 'save_availability') {
         $selected_slots = $_POST['slots'] ?? [];
@@ -411,6 +436,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             $error_message = "Invalid member ID specified.";
         }
+    }
+
+
+// Fetch Notifications
+$notifications = [];
+if ($db_connected && $pdo) {
+    try {
+        $st = $pdo->prepare("SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT 5");
+        $st->execute([$user_id]);
+        $notifications = $st->fetchAll();
+    } catch (PDOException $e) {}
+} else {
+    if (isset($_SESSION['mock_notifications'])) {
+        foreach ($_SESSION['mock_notifications'] as $n) {
+            if ($n['user_id'] == $user_id) {
+                $notifications[] = $n;
+            }
+        }
+        usort($notifications, function($a, $b) { return strtotime($b['created_at']) - strtotime($a['created_at']); });
+        $notifications = array_slice($notifications, 0, 5);
     }
 }
 
@@ -579,6 +624,19 @@ if (empty($current_avail_periods) && isset($_SESSION['mock_availability'])) {
     <!-- MAIN BODY CONTENT -->
     <main class="flex-grow mx-auto w-full max-w-4xl px-4 py-8 pb-24 md:pb-8 fade-in">
         
+        <!-- Notifications Block -->
+        <?php if (!empty($notifications)): ?>
+        <div class="mb-6 space-y-2">
+            <h4 class="text-xs font-bold text-brand-slate uppercase tracking-wider">Recent Notifications</h4>
+            <?php foreach ($notifications as $n): ?>
+            <div class="p-3 rounded-xl border <?php echo $n['is_read'] ? 'bg-white border-gray-100 text-gray-500' : 'bg-brand-sageLight/50 border-brand-sage/20 text-brand-slate font-medium'; ?> text-xs flex justify-between items-center">
+                <div><?php echo htmlspecialchars($n['message']); ?></div>
+                <div class="text-[9px] text-gray-400 font-mono"><?php echo date('M j, g:i A', strtotime($n['created_at'])); ?></div>
+            </div>
+            <?php endforeach; ?>
+        </div>
+        <?php endif; ?>
+
         <!-- Header Banner Card -->
         <div class="mb-8 relative overflow-hidden rounded-3xl bg-white border border-[#EBE8E0] shadow-soft p-6 md:p-8 flex flex-col sm:flex-row items-center justify-between gap-6">
             <div class="space-y-3 z-10 max-w-lg">
@@ -753,6 +811,31 @@ if (empty($current_avail_periods) && isset($_SESSION['mock_availability'])) {
                                             </span>
                                         </div>
                                     </div>
+
+                                    <!-- Feedback Block -->
+                                    <div class="mt-2 pt-2 border-t border-dashed border-gray-200">
+                                        <?php if (!empty($bk['client_feedback'])): ?>
+                                            <div class="mb-2 p-2 rounded-lg bg-white border border-gray-100">
+                                                <div class="text-[9px] font-bold text-gray-400 uppercase mb-0.5">Client Feedback:</div>
+                                                <div class="text-xs text-gray-600 italic">"<?php echo htmlspecialchars($bk['client_feedback']); ?>"</div>
+                                            </div>
+                                        <?php endif; ?>
+                                        
+                                        <?php if (!empty($bk['consultant_feedback'])): ?>
+                                            <div class="p-2 rounded-lg bg-brand-sageLight/30 border border-brand-sage/10">
+                                                <div class="text-[9px] font-bold text-brand-sage uppercase mb-0.5">Your Notes:</div>
+                                                <div class="text-xs text-brand-slate">"<?php echo htmlspecialchars($bk['consultant_feedback']); ?>"</div>
+                                            </div>
+                                        <?php else: ?>
+                                            <form method="POST" action="specialist_dashboard.php" class="flex gap-2 items-center mt-1">
+                                                <input type="hidden" name="action" value="submit_feedback">
+                                                <input type="hidden" name="booking_id" value="<?php echo $bk['id']; ?>">
+                                                <input type="text" name="feedback" required placeholder="Add private notes or feedback..." class="flex-1 text-xs px-2 py-1.5 rounded-lg border border-gray-200 focus:border-brand-sage focus:ring-1 focus:ring-brand-sage outline-none">
+                                                <button type="submit" class="text-[10px] font-bold text-white bg-brand-sage px-3 py-1.5 rounded-lg hover:bg-brand-sageHover transition-colors">Save</button>
+                                            </form>
+                                        <?php endif; ?>
+                                    </div>
+
                                     <div class="flex gap-2 pt-2 border-t border-dashed border-gray-250">
                                         <button onclick="openChatDrawer(<?php echo $bk['id']; ?>, '<?php echo addslashes($bk['client_name']); ?>')" class="flex-1 py-1.5 rounded-xl bg-white hover:bg-gray-50 border border-gray-200 text-brand-slate text-[10px] font-bold transition-all active:scale-95 flex items-center justify-center gap-1">
                                             <span>💬</span> Open Chat

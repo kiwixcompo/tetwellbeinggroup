@@ -129,7 +129,9 @@ try {
         "ALTER TABLE `users` ADD COLUMN `verification_expires` DATETIME DEFAULT NULL",
         "ALTER TABLE `users` ADD COLUMN `account_status` VARCHAR(20) DEFAULT 'pending'",
         "ALTER TABLE `users` ADD COLUMN `reset_token` VARCHAR(64) DEFAULT NULL",
-        "ALTER TABLE `users` ADD COLUMN `reset_token_expires` DATETIME DEFAULT NULL"
+        "ALTER TABLE `users` ADD COLUMN `reset_token_expires` DATETIME DEFAULT NULL",
+        "ALTER TABLE `teletherapy_bookings` ADD COLUMN `client_feedback` TEXT DEFAULT NULL",
+        "ALTER TABLE `teletherapy_bookings` ADD COLUMN `consultant_feedback` TEXT DEFAULT NULL"
     ];
     
     echo "⚙️ Applying graceful schema updates...\n";

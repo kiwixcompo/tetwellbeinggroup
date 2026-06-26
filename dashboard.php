@@ -102,7 +102,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    // Action 3: Log Daily Check-in
+    // Action 3: Submit Client Feedback
+    if ($action === 'submit_feedback') {
+        $booking_id = filter_input(INPUT_POST, 'booking_id', FILTER_VALIDATE_INT);
+        $feedback = filter_input(INPUT_POST, 'feedback', FILTER_DEFAULT);
+        
+        if ($booking_id && $feedback) {
+            if ($db_connected && $pdo) {
+                try {
+                    $upd = $pdo->prepare("UPDATE teletherapy_bookings SET client_feedback = ? WHERE id = ? AND user_id = ?");
+                    $upd->execute([$feedback, $booking_id, $user_id]);
+                    $success_message = "Feedback submitted successfully.";
+                } catch (PDOException $e) {}
+            } else {
+                if (isset($_SESSION['mock_bookings'])) {
+                    foreach ($_SESSION['mock_bookings'] as &$bk) {
+                        if (($bk['id'] ?? 0) == $booking_id && ($bk['user_id'] ?? 0) == $user_id) {
+                            $bk['client_feedback'] = $feedback;
+                            $success_message = "Feedback submitted successfully.";
+                            break;
+                        }
+                    }
+                    unset($bk);
+                }
+            }
+        }
+    }
+
+    // Action 4: Log Daily Check-in
     if (empty($action) && isset($_POST['mood_value'])) {
         $submitted_mood = filter_input(INPUT_POST, 'mood_value', FILTER_DEFAULT);
         $submitted_notes = filter_input(INPUT_POST, 'mood_notes', FILTER_DEFAULT);
