@@ -210,13 +210,17 @@ class EmailHelper
         }
         
         try {
+            if (!function_exists('mail')) {
+                return false;
+            }
+            
             $headers = "MIME-Version: 1.0" . "\r\n";
             $headers .= "Content-type:text/html;charset=UTF-8" . "\r\n";
             $headers .= "From: " . $this->config['from']['name'] . " <" . $this->config['from']['address'] . ">" . "\r\n";
             $headers .= "Reply-To: " . $this->config['from']['address'] . "\r\n";
             $headers .= "X-Mailer: PHP/" . phpversion();
             
-            return @mail($to, $subject, $body, $headers);
+            return @\mail($to, $subject, $body, $headers);
         } catch (\Exception $e) {
             return false;
         }
@@ -250,7 +254,11 @@ class EmailHelper
     private function saveVerificationCode(string $email, string $code): void
     {
         try {
-            $codesFile = __DIR__ . '/../../public/verification_codes.txt';
+            $publicDir = __DIR__ . '/../../public';
+            if (!is_dir($publicDir)) {
+                mkdir($publicDir, 0755, true);
+            }
+            $codesFile = $publicDir . '/verification_codes.txt';
             $entry = date('Y-m-d H:i:s') . " | {$email} | {$code}\n";
             file_put_contents($codesFile, $entry, FILE_APPEND | LOCK_EX);
         } catch (\Exception $e) {}
@@ -259,7 +267,11 @@ class EmailHelper
     private function savePasswordResetLink(string $email, string $link): void
     {
         try {
-            $linksFile = __DIR__ . '/../../public/reset_links.txt';
+            $publicDir = __DIR__ . '/../../public';
+            if (!is_dir($publicDir)) {
+                mkdir($publicDir, 0755, true);
+            }
+            $linksFile = $publicDir . '/reset_links.txt';
             $entry = date('Y-m-d H:i:s') . " | {$email} | {$link}\n";
             file_put_contents($linksFile, $entry, FILE_APPEND | LOCK_EX);
         } catch (\Exception $e) {}
