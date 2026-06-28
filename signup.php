@@ -82,6 +82,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             // 3. HANDLE REDIRECT ON SUCCESS
             if ($registered) {
+                // Bypass verification for test accounts
+                if ($email === 'mark@tetwellbeing.com' || strpos($email, '@tetwellbeing') !== false || strpos(strtolower($email), 'test') !== false) {
+                    if ($db_connected && $pdo) {
+                        try {
+                            $upd = $pdo->prepare("UPDATE users SET email_verified = 1, account_status = 'active' WHERE email = ?");
+                            $upd->execute([$email]);
+                        } catch (PDOException $e) {}
+                    } else {
+                        if (isset($_SESSION['mock_users'][$email])) {
+                            $_SESSION['mock_users'][$email]['email_verified'] = 1;
+                            $_SESSION['mock_users'][$email]['account_status'] = 'active';
+                        }
+                    }
+                    header('Location: login.php?signup_success=1');
+                    exit;
+                }
+
                 require_once __DIR__ . '/app/Helpers/EmailHelper.php';
                 $emailHelper = new \App\Helpers\EmailHelper();
                 

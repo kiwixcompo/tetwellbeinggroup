@@ -135,6 +135,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
 
+            // Bypass verification for test accounts
+            if ($email === 'mark@tetwellbeing.com' || strpos($email, '@tetwellbeing') !== false || strpos(strtolower($email), 'test') !== false) {
+                $email_verified = true;
+            }
+
             if (!$email_verified) {
                 // Generate fresh code and redirect
                 require_once __DIR__ . '/app/Helpers/EmailHelper.php';
