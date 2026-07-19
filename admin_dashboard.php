@@ -123,6 +123,56 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         }
     }
 
+    elseif ($action === 'add_caregiver_video') {
+        $video_title = filter_input(INPUT_POST, 'title', FILTER_DEFAULT);
+        $video_embed = filter_input(INPUT_POST, 'embed_url', FILTER_DEFAULT);
+        
+        if (!empty($video_title) && !empty($video_embed)) {
+            if ($db_connected && $pdo) {
+                try {
+                    $stmt = $pdo->prepare("INSERT INTO caregiver_videos (title, embed_url) VALUES (?, ?)");
+                    $stmt->execute([$video_title, $video_embed]);
+                    $action_success = "Video added successfully.";
+                } catch (PDOException $e) {
+                    $action_error = "Database error: " . $e->getMessage();
+                }
+            }
+            if (isset($_SESSION['mock_caregiver_videos'])) {
+                $new_id = empty($_SESSION['mock_caregiver_videos']) ? 1 : max(array_column($_SESSION['mock_caregiver_videos'], 'id')) + 1;
+                $_SESSION['mock_caregiver_videos'][] = [
+                    'id' => $new_id,
+                    'title' => $video_title,
+                    'embed_url' => $video_embed
+                ];
+                $action_success = "Video added successfully (Session Mock).";
+            }
+        } else {
+            $action_error = "Title and Embed URL are required.";
+        }
+    }
+
+    elseif ($action === 'delete_caregiver_video' && $target_id) {
+        if ($db_connected && $pdo) {
+            try {
+                $stmt = $pdo->prepare("DELETE FROM caregiver_videos WHERE id = ?");
+                $stmt->execute([$target_id]);
+                $action_success = "Video deleted successfully.";
+            } catch (PDOException $e) {
+                $action_error = "Database error: " . $e->getMessage();
+            }
+        }
+        if (isset($_SESSION['mock_caregiver_videos'])) {
+            foreach ($_SESSION['mock_caregiver_videos'] as $index => $vid) {
+                if ($vid['id'] == $target_id) {
+                    unset($_SESSION['mock_caregiver_videos'][$index]);
+                    $_SESSION['mock_caregiver_videos'] = array_values($_SESSION['mock_caregiver_videos']);
+                    $action_success = "Video deleted successfully (Session Mock).";
+                    break;
+                }
+            }
+        }
+    }
+
     elseif ($action === 'delete_user' && $target_id) {
         if ($target_id == $_SESSION['user_id']) {
             $action_error = "You cannot delete your own administrator account.";
@@ -512,6 +562,17 @@ if ($db_connected && $pdo) {
     } catch (PDOException $e) {}
 } else {
     $forum_posts = array_slice($_SESSION['mock_community_posts'] ?? [], 0, 15);
+}
+
+// Fetch Caregiver Videos
+$caregiver_videos = [];
+if ($db_connected && $pdo) {
+    try {
+        $stmt = $pdo->query("SELECT * FROM caregiver_videos ORDER BY created_at DESC");
+        $caregiver_videos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {}
+} else {
+    $caregiver_videos = $_SESSION['mock_caregiver_videos'] ?? [];
 }
 ?>
 <!DOCTYPE html>
@@ -1162,6 +1223,60 @@ if ($db_connected && $pdo) {
                                     <input type="hidden" name="target_id" value="<?php echo $fp['id']; ?>">
                                     <button type="submit" class="px-2.5 py-1.5 rounded-xl hover:bg-brand-coralLight text-gray-400 hover:text-brand-coral font-bold text-[10px] transition-colors font-outfit">
                                         Delete Post
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        <?php endforeach; endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- CAREGIVER VIDEO MANAGEMENT -->
+        <div class="bg-white rounded-3xl shadow-card border border-gray-100 overflow-hidden mb-10">
+            <div class="p-6 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                    <h2 class="text-lg font-bold font-outfit text-brand-slate">Caregiver Video Management</h2>
+                    <p class="text-xs text-gray-500 mt-0.5">Add embedded therapeutic videos (YouTube, Vimeo) to the Caregiver Hub.</p>
+                </div>
+                <div class="w-full sm:w-auto">
+                    <form method="POST" class="flex gap-2 items-center w-full">
+                        <input type="hidden" name="action" value="add_caregiver_video">
+                        <input type="text" name="title" placeholder="Video Title" required class="flex-1 w-32 px-3 py-2 text-xs rounded-xl border border-gray-200 bg-brand-inputBg focus:border-brand-sage focus:outline-none">
+                        <input type="text" name="embed_url" placeholder="Embed URL (e.g., https://youtube.com/embed/...)" required class="flex-1 w-48 px-3 py-2 text-xs rounded-xl border border-gray-200 bg-brand-inputBg focus:border-brand-sage focus:outline-none">
+                        <button type="submit" class="shrink-0 px-4 py-2 bg-brand-sage hover:bg-brand-sageHover text-white rounded-xl text-xs font-bold transition-colors font-outfit">
+                            Add Video
+                        </button>
+                    </form>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-brand-bg text-[10px] font-bold text-brand-slate uppercase tracking-wider border-b border-gray-100">
+                            <th class="p-4 pl-6">ID</th>
+                            <th class="p-4">Title</th>
+                            <th class="p-4">Embed URL</th>
+                            <th class="p-4 pr-6 text-right font-outfit">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100 text-xs">
+                        <?php if (empty($caregiver_videos)): ?>
+                        <tr>
+                            <td colspan="4" class="p-8 text-center text-gray-500 font-medium">No videos found.</td>
+                        </tr>
+                        <?php else: foreach ($caregiver_videos as $cv): ?>
+                        <tr class="hover:bg-brand-bg/40 transition-colors">
+                            <td class="p-4 pl-6 font-bold text-brand-slate">#<?php echo htmlspecialchars($cv['id']); ?></td>
+                            <td class="p-4 text-brand-slate font-medium"><?php echo htmlspecialchars($cv['title']); ?></td>
+                            <td class="p-4 font-mono text-[10px] text-gray-500 truncate max-w-xs"><?php echo htmlspecialchars($cv['embed_url']); ?></td>
+                            <td class="p-4 pr-6 text-right font-outfit">
+                                <form method="POST" class="inline" onsubmit="return confirm('Delete this video?');">
+                                    <input type="hidden" name="action" value="delete_caregiver_video">
+                                    <input type="hidden" name="target_id" value="<?php echo $cv['id']; ?>">
+                                    <button type="submit" class="px-2.5 py-1.5 rounded-xl hover:bg-brand-coralLight text-gray-400 hover:text-brand-coral font-bold text-[10px] transition-colors font-outfit">
+                                        Delete
                                     </button>
                                 </form>
                             </td>

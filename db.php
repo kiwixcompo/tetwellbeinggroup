@@ -226,6 +226,14 @@ try {
         UNIQUE KEY uniq_user_course (user_id, course_id)
     ) ENGINE=InnoDB");
 
+    // Create Caregiver Videos Table
+    $pdo->exec("CREATE TABLE IF NOT EXISTS caregiver_videos (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        embed_url TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB");
+
     // Create User Telemetry Logs table
     $pdo->exec("CREATE TABLE IF NOT EXISTS user_telemetry_logs (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -1168,6 +1176,12 @@ if (!isset($_SESSION['mock_streaming_content'])) {
         ['id' => 8, 'category_id' => 2, 'title' => 'Rainfall over Forest Sanctuary', 'description' => 'Natural rain sounds layered with standing wind noise to mask thoughts.', 'duration_seconds' => 1200, 'plays_count' => 310]
     ];
 }
+if (!isset($_SESSION['mock_caregiver_videos'])) {
+    $_SESSION['mock_caregiver_videos'] = [
+        ['id' => 1, 'title' => 'Understanding Caregiver Fatigue', 'embed_url' => 'https://www.youtube.com/embed/dQw4w9WgXcQ'],
+        ['id' => 2, 'title' => 'Therapeutic Boundaries', 'embed_url' => 'https://www.youtube.com/embed/dQw4w9WgXcQ']
+    ];
+}
 if (!isset($_SESSION['mock_research_studies'])) {
     $_SESSION['mock_research_studies'] = [
         ['id' => 1, 'title' => 'VR Resilience Efficacy Trial', 'description' => 'Clinical study analyzing the physiological and emotional effects of VR mindfulness simulations on active frontline care coordinators.', 'status' => 'active', 'target_participants' => 50],
@@ -1211,7 +1225,21 @@ if (!isset($_SESSION['mock_platform_commission_logs'])) {
         ['id' => 1, 'booking_id' => 1, 'specialist_id' => 2, 'specialist_name' => 'Dr. Evelyn Carter, PhD', 'gross_amount' => 120.00, 'commission_rate' => 15.00, 'commission_amount' => 18.00, 'net_payout' => 102.00, 'logged_at' => date('Y-m-d H:i:s', strtotime('-2 days'))]
     ];
 }
+
+if (!isset($_SESSION['mock_befrienders'])) {
+    $_SESSION['mock_befrienders'] = [
+        ['id' => 1, 'user_id' => 101, 'name' => 'Sarah Jenkins', 'languages' => 'English, Spanish', 'shared_experiences' => 'Caregiving, Student Life', 'status' => 'active', 'rating' => 4.9],
+        ['id' => 2, 'user_id' => 102, 'name' => 'David O.', 'languages' => 'English, Mandarin', 'shared_experiences' => 'Bereavement, Veteran', 'status' => 'active', 'rating' => 4.8],
+        ['id' => 3, 'user_id' => 103, 'name' => 'Fatima A.', 'languages' => 'English, Urdu', 'shared_experiences' => 'Caregiving, New Parent', 'status' => 'active', 'rating' => 5.0]
+    ];
+}
+if (!isset($_SESSION['mock_befriender_sessions'])) {
+    $_SESSION['mock_befriender_sessions'] = [
+        ['id' => 1, 'user_id' => 1, 'befriender_id' => 1, 'befriender_name' => 'Sarah Jenkins', 'scheduled_at' => date('Y-m-d H:i:s', strtotime('+2 days')), 'status' => 'scheduled', 'mode' => 'chat']
+    ];
+}
 // ─────────────────────────────────────────────────────────────────────────────
+
 
 // Global suspension check and crisis state synchronization
 

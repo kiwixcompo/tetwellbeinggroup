@@ -486,6 +486,17 @@ if (empty($daily_goals)) {
     }
 }
 
+// Fetch Caregiver Videos
+$caregiver_videos = [];
+if ($db_connected && $pdo) {
+    try {
+        $stmt = $pdo->query("SELECT * FROM caregiver_videos ORDER BY created_at DESC");
+        $caregiver_videos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {}
+} else {
+    $caregiver_videos = $_SESSION['mock_caregiver_videos'] ?? [];
+}
+
 $sub_tab = filter_input(INPUT_GET, 'tab', FILTER_DEFAULT);
 if (!in_array($sub_tab, ['respite', 'resilience', 'recovery', 'academy', 'matching'])) {
     $sub_tab = 'respite';
@@ -1581,6 +1592,32 @@ $today_date = date('l, F j, Y');
                         </div>
                     </div>
                 </div>
+
+                <!-- Therapeutic Video Library -->
+                <div class="bg-white rounded-3xl p-6 md:p-8 shadow-soft border border-[#EBE8E0] relative overflow-hidden mt-8">
+                    <div class="absolute top-0 left-0 w-2 h-full bg-brand-coral"></div>
+                    <div class="mb-6">
+                        <h2 class="text-xl md:text-2xl font-bold font-outfit text-brand-slate">Therapeutic Video Library</h2>
+                        <p class="text-sm text-gray-500 mt-0.5">Explore our collection of expert-led videos designed to provide visual guidance and support.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <?php if (empty($caregiver_videos)): ?>
+                        <div class="col-span-full p-8 text-center bg-gray-50 rounded-2xl border border-gray-100">
+                            <p class="text-sm text-gray-500">No videos available at the moment. Please check back later.</p>
+                        </div>
+                        <?php else: foreach ($caregiver_videos as $vid): ?>
+                        <div class="rounded-2xl overflow-hidden bg-brand-bg border border-gray-150 shadow-sm flex flex-col">
+                            <div class="aspect-w-16 aspect-h-9 w-full bg-gray-200" style="padding-bottom: 56.25%; position: relative;">
+                                <iframe src="<?php echo htmlspecialchars($vid['embed_url']); ?>" class="absolute top-0 left-0 w-full h-full border-0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                            </div>
+                            <div class="p-4">
+                                <h4 class="font-bold text-brand-slate text-sm font-outfit leading-snug"><?php echo htmlspecialchars($vid['title']); ?></h4>
+                            </div>
+                        </div>
+                        <?php endforeach; endif; ?>
+                    </div>
+                </div>
             </div>
 
             <!-- Course Modal overlay -->
@@ -1837,40 +1874,77 @@ $today_date = date('l, F j, Y');
                         const selected = document.querySelector(`input[name="question-${qIndex}"]:checked`);
                         if (!selected) {
                             complete = false;
-                            return;
-                        }
-                        const val = parseInt(selected.value);
-                        answersSelected.push(val);
-                        if (val === q.answer) {
-                            score++;
                         }
                     });
 
                     if (!complete) {
-                        alert('Please answer all 3 questions first.');
+                        alert('Please answer all questions first.');
                         return;
                     }
 
-                    const formData = new FormData();
-                    formData.append('action', 'complete_course');
-                    formData.append('course_id', activeCourseId);
-                    formData.append('score', score);
+                    activeCourseData.quiz.forEach((q, qIndex) => {
+                        const selected = document.querySelector(`input[name="question-${qIndex}"]:checked`);
+                        const val = parseInt(selected.value);
+                        answersSelected.push(val);
+                        
+                        // Disable all inputs for this question to prevent changes after submission
+                        const allInputs = document.querySelectorAll(`input[name="question-${qIndex}"]`);
+                        allInputs.forEach(input => input.disabled = true);
 
-                    fetch('caregiver_hub.php', {
-                        method: 'POST',
-                        body: formData
-                    })
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.status === 'success') {
-                            alert(`🎉 Quiz Completed!\nScore: ${score}/3\nCourse progress logged successfully.`);
-                            closeCourseModal();
-                            window.location.reload();
+                        const selectedLabel = selected.closest('label');
+                        const correctInput = document.querySelector(`input[name="question-${qIndex}"][value="${q.answer}"]`);
+                        const correctLabel = correctInput.closest('label');
+
+                        if (val === q.answer) {
+                            score++;
+                            selectedLabel.classList.remove('bg-brand-bg', 'border-gray-150');
+                            selectedLabel.classList.add('bg-brand-sageLight', 'border-brand-sage');
+                            if (!selectedLabel.querySelector('.result-badge')) {
+                                selectedLabel.innerHTML += '<span class="ml-auto text-[10px] font-bold text-brand-sage uppercase result-badge">✓ Correct</span>';
+                            }
                         } else {
-                            alert('Could not submit quiz progress.');
+                            selectedLabel.classList.remove('bg-brand-bg', 'border-gray-150');
+                            selectedLabel.classList.add('bg-brand-coralLight', 'border-brand-coral');
+                            if (!selectedLabel.querySelector('.result-badge')) {
+                                selectedLabel.innerHTML += '<span class="ml-auto text-[10px] font-bold text-brand-coral uppercase result-badge">✗ Incorrect</span>';
+                            }
+                            
+                            correctLabel.classList.remove('bg-brand-bg', 'border-gray-150');
+                            correctLabel.classList.add('bg-green-50', 'border-green-400');
+                            if (!correctLabel.querySelector('.result-badge')) {
+                                correctLabel.innerHTML += '<span class="ml-auto text-[10px] font-bold text-green-600 uppercase result-badge">✓ Correct Answer</span>';
+                            }
                         }
-                    })
-                    .catch(err => console.error('Error submitting quiz:', err));
+                    });
+
+                    // Update Submit button to Finalize button
+                    const submitBtn = document.querySelector('button[onclick="submitQuiz()"]');
+                    submitBtn.textContent = 'Finish & Complete Course';
+                    submitBtn.classList.remove('bg-brand-sage', 'hover:bg-brand-sageHover');
+                    submitBtn.classList.add('bg-brand-slate', 'hover:bg-brand-slate/90');
+                    
+                    submitBtn.onclick = function() {
+                        const formData = new FormData();
+                        formData.append('action', 'complete_course');
+                        formData.append('course_id', activeCourseId);
+                        formData.append('score', score);
+
+                        fetch('caregiver_hub.php', {
+                            method: 'POST',
+                            body: formData
+                        })
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.status === 'success') {
+                                alert(`🎉 Course Completed!\nScore: ${score}/${activeCourseData.quiz.length}\nCourse progress logged successfully.`);
+                                closeCourseModal();
+                                window.location.reload();
+                            } else {
+                                alert('Could not submit quiz progress.');
+                            }
+                        })
+                        .catch(err => console.error('Error submitting quiz:', err));
+                    };
                 }
 
                 function closeCourseModal() {

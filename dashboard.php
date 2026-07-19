@@ -682,90 +682,132 @@ $today_date = date('l, F j, Y');
                 <p class="text-sm text-gray-500 mt-1">Expanding services to provide continuous, high-quality care layers.</p>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 
-                <!-- Card 1: Caregiver Hub -->
-                <div class="relative group bg-white rounded-3xl p-6 shadow-card border border-[#EBE8E0]/70 overflow-hidden transition-all duration-300 hover:shadow-soft hover:-translate-y-1">
-                    <div class="absolute top-4 right-4 flex items-center gap-1.5 rounded-full bg-[#E8EFEA] px-2.5 py-1 text-[10px] font-bold text-brand-sage uppercase">
-                        <span class="h-1.5 w-1.5 rounded-full bg-brand-sage"></span>
-                        <span>Active Portal</span>
+                <!-- Befriender Network -->
+                <a href="befriender_network.php" class="group flex flex-col sm:flex-row bg-white rounded-3xl overflow-hidden shadow-card hover:shadow-soft transition-all duration-300 border border-[#EBE8E0]/70 hover:-translate-y-1">
+                    <div class="sm:w-2/5 h-48 sm:h-auto relative overflow-hidden border-r border-[#EBE8E0]/50">
+                        <img src="images/hub_befriender.png" alt="Befriender Network" class="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
                     </div>
-                    <div class="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-sage/10 text-brand-sage">
-                        <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21a9.01 9.01 0 0 0 2.42-17.5M12 21a9.01 9.01 0 0 1-2.42-17.5M12 21c-1.2 0-2.5-1.7-2.5-5.5S10.8 5 12 5s2.5 1.7 2.5 5.5-1.3 5.5-2.5 5.5z"/><path d="M12 2v2M12 20v2"/></svg>
+                    <div class="sm:w-3/5 p-6 flex flex-col justify-center bg-brand-bg/30">
+                        <div class="mb-2 flex items-center gap-2">
+                            <span class="px-2 py-1 rounded-md bg-brand-coralLight text-brand-coral font-bold text-[9px] uppercase tracking-wider">New Core</span>
+                            <h4 class="text-xl font-bold font-outfit text-brand-slate">Befriender Network</h4>
+                        </div>
+                        <p class="text-xs text-gray-500 leading-relaxed mb-4">Connect instantly with trained volunteers and peers for emotional support and companionship before crises escalate.</p>
+                        <span class="text-xs font-semibold text-brand-coral flex items-center mt-auto">
+                            Explore Network <svg class="ml-1 h-3.5 w-3.5 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
+                        </span>
                     </div>
-                    <h4 class="text-lg font-bold font-outfit text-brand-slate">Caregiver Wellbeing Hub</h4>
-                    <p class="text-xs text-gray-500 mt-2 leading-relaxed">Dedicated respite toolsets, burnout trackers, and expert-led support structures for family caregivers holding up their loved ones.</p>
-                    <a href="caregiver_hub.php" class="mt-6 flex items-center text-xs font-semibold text-brand-sage hover:text-brand-sageHover transition-colors">
-                        <span>Enter Caregiver Hub</span>
-                        <svg class="ml-1 h-3.5 w-3.5 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
-                    </a>
-                </div>
+                </a>
 
-                <!-- Card 2: Community Support -->
-                <div class="relative group bg-white rounded-3xl p-6 shadow-card border border-[#EBE8E0]/70 overflow-hidden transition-all duration-300 hover:shadow-soft hover:-translate-y-1">
-                    <div class="absolute top-4 right-4 flex items-center gap-1.5 rounded-full bg-[#E8EFEA] px-2.5 py-1 text-[10px] font-bold text-brand-sage uppercase">
-                        <span class="h-1.5 w-1.5 rounded-full bg-brand-sage"></span>
-                        <span>Active Portal</span>
+                <!-- Caregiver Hub -->
+                <a href="caregiver_hub.php" class="group flex flex-col sm:flex-row bg-white rounded-3xl overflow-hidden shadow-card hover:shadow-soft transition-all duration-300 border border-[#EBE8E0]/70 hover:-translate-y-1">
+                    <div class="sm:w-2/5 h-48 sm:h-auto relative overflow-hidden border-r border-[#EBE8E0]/50">
+                        <img src="images/hub_caregiver.png" alt="Caregiver Hub" class="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
                     </div>
-                    <div class="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-sage/10 text-brand-sage">
-                        <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    <div class="sm:w-3/5 p-6 flex flex-col justify-center">
+                        <div class="mb-2">
+                            <h4 class="text-xl font-bold font-outfit text-brand-slate">Caregiver Wellbeing</h4>
+                        </div>
+                        <p class="text-xs text-gray-500 leading-relaxed mb-4">Dedicated toolsets, burnout trackers, and expert-led support structures for family caregivers holding up their loved ones.</p>
+                        <span class="text-xs font-semibold text-brand-sage flex items-center mt-auto">
+                            Enter Hub <svg class="ml-1 h-3.5 w-3.5 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
+                        </span>
                     </div>
-                    <h4 class="text-lg font-bold font-outfit text-brand-slate">Community & Peer Support</h4>
-                    <p class="text-xs text-gray-500 mt-2 leading-relaxed">Safe, fully-moderated sharing circles, thematic interest boards, and anonymous forums ensuring mutual care and social solidarity.</p>
-                    <a href="community_hub.php" class="mt-6 flex items-center text-xs font-semibold text-brand-sage hover:text-brand-sageHover transition-colors">
-                        <span>Enter Community Hub</span>
-                        <svg class="ml-1 h-3.5 w-3.5 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
-                    </a>
-                </div>
+                </a>
 
-                <!-- Card 3: Teletherapy Marketplace -->
-                <div class="relative group bg-white rounded-3xl p-6 shadow-card border border-[#EBE8E0]/70 overflow-hidden transition-all duration-300 hover:shadow-soft hover:-translate-y-1">
-                    <div class="absolute top-4 right-4 flex items-center gap-1.5 rounded-full bg-[#E8EFEA] px-2.5 py-1 text-[10px] font-bold text-brand-sage uppercase">
-                        <span class="h-1.5 w-1.5 rounded-full bg-brand-sage"></span>
-                        <span>Active Portal</span>
+                <!-- AI Companion -->
+                <a href="ai_companion.php" class="group flex flex-col sm:flex-row bg-white rounded-3xl overflow-hidden shadow-card hover:shadow-soft transition-all duration-300 border border-[#EBE8E0]/70 hover:-translate-y-1">
+                    <div class="sm:w-2/5 h-48 sm:h-auto relative overflow-hidden border-r border-[#EBE8E0]/50">
+                        <img src="images/hub_ai.png" alt="AI Companion" class="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
                     </div>
-                    <div class="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-sage/10 text-brand-sage">
-                        <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+                    <div class="sm:w-3/5 p-6 flex flex-col justify-center">
+                        <div class="mb-2">
+                            <h4 class="text-xl font-bold font-outfit text-brand-slate">AI Companion</h4>
+                        </div>
+                        <p class="text-xs text-gray-500 leading-relaxed mb-4">Your 24/7 digital mental health coach. Practice CBT exercises, vent anxiety, or just chat securely.</p>
+                        <span class="text-xs font-semibold text-brand-sage flex items-center mt-auto">
+                            Start Chatting <svg class="ml-1 h-3.5 w-3.5 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
+                        </span>
                     </div>
-                    <h4 class="text-lg font-bold font-outfit text-brand-slate">Teletherapy Marketplace</h4>
-                    <p class="text-xs text-gray-500 mt-2 leading-relaxed">Connect with qualified, licensed specialists tailored to your demographic, with direct booking mechanisms and insurance compatibility checkups.</p>
-                    <a href="teletherapy_hub.php" class="mt-6 flex items-center text-xs font-semibold text-brand-sage hover:text-brand-sageHover transition-colors">
-                        <span>Enter Marketplace</span>
-                        <svg class="ml-1 h-3.5 w-3.5 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
-                    </a>
-                </div>
+                </a>
 
-                <!-- Card 4: Breathing Exercises -->
-                <div class="relative group bg-white rounded-3xl p-6 shadow-card border border-[#EBE8E0]/70 overflow-hidden transition-all duration-300 hover:shadow-soft hover:-translate-y-1">
-                    <div class="absolute top-4 right-4 flex items-center gap-1.5 rounded-full bg-brand-sky/10 px-2.5 py-1 text-[10px] font-bold text-brand-sky uppercase">
-                        <span class="h-1.5 w-1.5 rounded-full bg-brand-sky"></span>
-                        <span>Micro-Task</span>
+                <!-- Teletherapy Marketplace -->
+                <a href="teletherapy_hub.php" class="group flex flex-col sm:flex-row bg-white rounded-3xl overflow-hidden shadow-card hover:shadow-soft transition-all duration-300 border border-[#EBE8E0]/70 hover:-translate-y-1">
+                    <div class="sm:w-2/5 h-48 sm:h-auto relative overflow-hidden border-r border-[#EBE8E0]/50">
+                        <img src="images/hub_teletherapy.png" alt="Teletherapy Hub" class="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
                     </div>
-                    <div class="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-sky/10 text-brand-sky">
-                        <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
+                    <div class="sm:w-3/5 p-6 flex flex-col justify-center">
+                        <div class="mb-2">
+                            <h4 class="text-xl font-bold font-outfit text-brand-slate">Teletherapy</h4>
+                        </div>
+                        <p class="text-xs text-gray-500 leading-relaxed mb-4">Connect with qualified, licensed specialists tailored to your demographic. Book secure video sessions instantly.</p>
+                        <span class="text-xs font-semibold text-brand-sage flex items-center mt-auto">
+                            Find a Specialist <svg class="ml-1 h-3.5 w-3.5 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
+                        </span>
                     </div>
-                    <h4 class="text-lg font-bold font-outfit text-brand-slate">Breathing Tool</h4>
-                    <p class="text-xs text-gray-500 mt-2 leading-relaxed">Quick guided breathing exercises (Box Breathing, 4-7-8) to regulate your nervous system and relieve immediate stress.</p>
-                    <a href="breathing_exercises.php" class="mt-6 flex items-center text-xs font-semibold text-brand-sky hover:text-blue-500 transition-colors">
-                        <span>Start Breathing</span>
-                        <svg class="ml-1 h-3.5 w-3.5 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
-                    </a>
-                </div>
+                </a>
 
-                <!-- Card 5: Ambient Sound Mixer -->
-                <div class="relative group bg-white rounded-3xl p-6 shadow-card border border-[#EBE8E0]/70 overflow-hidden transition-all duration-300 hover:shadow-soft hover:-translate-y-1">
-                    <div class="absolute top-4 right-4 flex items-center gap-1.5 rounded-full bg-brand-sageLight px-2.5 py-1 text-[10px] font-bold text-brand-sage uppercase">
-                        <span class="h-1.5 w-1.5 rounded-full bg-brand-sage"></span>
-                        <span>Soundscape</span>
+                <!-- Community Support -->
+                <a href="community_hub.php" class="group flex flex-col sm:flex-row bg-white rounded-3xl overflow-hidden shadow-card hover:shadow-soft transition-all duration-300 border border-[#EBE8E0]/70 hover:-translate-y-1">
+                    <div class="sm:w-2/5 h-48 sm:h-auto relative overflow-hidden border-r border-[#EBE8E0]/50">
+                        <img src="images/hub_community.png" alt="Community Hub" class="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
                     </div>
-                    <div class="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-sageLight/50 text-brand-sage">
-                        <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12h4l3-9 5 18 3-9h5"/></svg>
+                    <div class="sm:w-3/5 p-6 flex flex-col justify-center">
+                        <div class="mb-2">
+                            <h4 class="text-xl font-bold font-outfit text-brand-slate">Community Forums</h4>
+                        </div>
+                        <p class="text-xs text-gray-500 leading-relaxed mb-4">Safe, moderated sharing circles and anonymous forums ensuring mutual care and social solidarity.</p>
+                        <span class="text-xs font-semibold text-brand-sage flex items-center mt-auto">
+                            Join Discussion <svg class="ml-1 h-3.5 w-3.5 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
+                        </span>
                     </div>
-                    <h4 class="text-lg font-bold font-outfit text-brand-slate">Ambient Mixer</h4>
-                    <p class="text-xs text-gray-500 mt-2 leading-relaxed">Blend procedural rain, fire, and binaural beats into the perfect background noise for focus or deep sleep.</p>
-                    <a href="ambient_mixer.php" class="mt-6 flex items-center text-xs font-semibold text-brand-sage hover:text-brand-sageHover transition-colors">
-                        <span>Open Mixer</span>
-                        <svg class="ml-1 h-3.5 w-3.5 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
+                </a>
+
+                <!-- VR Resilience -->
+                <a href="vr_resilience.php" class="group flex flex-col sm:flex-row bg-white rounded-3xl overflow-hidden shadow-card hover:shadow-soft transition-all duration-300 border border-[#EBE8E0]/70 hover:-translate-y-1">
+                    <div class="sm:w-2/5 h-48 sm:h-auto relative overflow-hidden border-r border-[#EBE8E0]/50">
+                        <img src="images/hub_vr.png" alt="VR Centre" class="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
+                    </div>
+                    <div class="sm:w-3/5 p-6 flex flex-col justify-center">
+                        <div class="mb-2 flex items-center gap-2">
+                            <span class="px-2 py-1 rounded-md bg-purple-100 text-purple-600 font-bold text-[9px] uppercase tracking-wider">Immersive</span>
+                            <h4 class="text-xl font-bold font-outfit text-brand-slate">VR Centre</h4>
+                        </div>
+                        <p class="text-xs text-gray-500 leading-relaxed mb-4">Immersive psychological resilience training, exposure therapy, and guided meditation environments.</p>
+                        <span class="text-xs font-semibold text-purple-600 flex items-center mt-auto">
+                            Enter VR <svg class="ml-1 h-3.5 w-3.5 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
+                        </span>
+                    </div>
+                </a>
+
+                <!-- Ambient & Breathing Tools -->
+                <div class="col-span-1 lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <a href="ambient_mixer.php" class="group relative bg-white rounded-3xl overflow-hidden shadow-card hover:shadow-soft transition-all duration-300 border border-[#EBE8E0]/70 hover:-translate-y-1 h-32 flex items-center">
+                        <img src="images/hub_ambient.png" alt="Ambient" class="absolute right-0 top-0 bottom-0 w-1/2 object-cover opacity-20 transition-opacity duration-500 group-hover:opacity-40">
+                        <div class="relative z-10 p-6 w-full flex items-center justify-between">
+                            <div>
+                                <h4 class="text-lg font-bold font-outfit text-brand-slate">Ambient Mixer</h4>
+                                <p class="text-xs text-gray-500 mt-1 max-w-[200px]">Blend binaural beats and nature sounds.</p>
+                            </div>
+                            <div class="h-10 w-10 rounded-full bg-brand-sageLight text-brand-sage flex items-center justify-center shrink-0">
+                                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
+                            </div>
+                        </div>
+                    </a>
+                    
+                    <a href="breathing_exercises.php" class="group relative bg-white rounded-3xl overflow-hidden shadow-card hover:shadow-soft transition-all duration-300 border border-[#EBE8E0]/70 hover:-translate-y-1 h-32 flex items-center">
+                        <img src="images/hub_breathing.png" alt="Breathing" class="absolute right-0 top-0 bottom-0 w-1/2 object-cover opacity-20 transition-opacity duration-500 group-hover:opacity-40">
+                        <div class="relative z-10 p-6 w-full flex items-center justify-between">
+                            <div>
+                                <h4 class="text-lg font-bold font-outfit text-brand-slate">Breathing Tool</h4>
+                                <p class="text-xs text-gray-500 mt-1 max-w-[200px]">Quick box-breathing to regulate anxiety.</p>
+                            </div>
+                            <div class="h-10 w-10 rounded-full bg-brand-sageLight text-brand-sage flex items-center justify-center shrink-0">
+                                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
+                            </div>
+                        </div>
                     </a>
                 </div>
 

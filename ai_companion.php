@@ -167,6 +167,111 @@ $translations = [
         'cbt_reframe_btn' => 'Rekebisha Wazo',
         'gratitude_btn' => 'Tengeneza Swali la Shukrani',
         'gratitude_placeholder' => 'Bonyeza kitufe hapa chini ili kutengeneza swali...'
+    ],
+    'es' => [
+        'title' => 'Asistente de Bienestar de IA',
+        'subtitle' => 'Tu Coach de Salud Mental 24/7',
+        'welcome' => 'Hola ' . htmlspecialchars($user_name) . '. Soy tu Asistente de Bienestar de IA. Estoy aquí para ayudarte a practicar TCC, manejar la ansiedad o simplemente escucharte. ¿Cómo te sientes hoy?',
+        'placeholder' => 'Escribe tu mensaje...',
+        'send' => 'Enviar',
+        'breathing_title' => 'Guía de Respiración Cuadrada',
+        'breathing_desc' => 'Alivia la ansiedad física a través de un ciclo de respiración 4-4-4-4.',
+        'reframer_title' => 'Reestructuración Cognitiva TCC',
+        'reframer_desc' => 'Identifica pensamientos negativos y reestructúralos racionalmente.',
+        'gratitude_title' => 'Diario de Gratitud',
+        'gratitude_desc' => 'Invierte en psicología positiva con reflexiones diarias.',
+        'crisis_warning' => '🚨 ¡Señal de crisis detectada! Por favor, busca atención clínica o contacta nuestro soporte de emergencia.',
+        'cbt_thought_lbl' => 'Pensamiento Negativo Automático',
+        'cbt_distortion_lbl' => 'Tipo de Distorsión Cognitiva',
+        'cbt_distortion_placeholder' => 'Selecciona una distorsión...',
+        'cbt_reframing_lbl' => 'Pensamiento Racional Reestructurado',
+        'cbt_reframe_btn' => 'Reestructurar Pensamiento',
+        'gratitude_btn' => 'Generar Pregunta de Reflexión',
+        'gratitude_placeholder' => 'Haz clic en el botón de abajo para generar una pregunta...'
+    ],
+    'ur' => [
+        'title' => 'اے آئی ویل بینگ اسسٹنٹ',
+        'subtitle' => 'آپ کا 24/7 مینٹل ہیلتھ کوچ',
+        'welcome' => 'ہیلو ' . htmlspecialchars($user_name) . '. میں آپ کا اے آئی ویل بینگ اسسٹنٹ ہوں۔ میں یہاں آپ کی مدد کے لئے ہوں۔ آج آپ کیسا محسوس کر رہے ہیں؟',
+        'placeholder' => 'اپنا پیغام یہاں لکھیں...',
+        'send' => 'بھیجیں',
+        'breathing_title' => 'باکس بریتھنگ گائیڈ',
+        'breathing_desc' => '4-4-4-4 سانس کے سائیکل کے ذریعے اضطراب کو کم کریں۔',
+        'reframer_title' => 'سی بی ٹی تھاٹ ری فریم',
+        'reframer_desc' => 'منفی خیالات کی شناخت کریں اور انہیں منطقی طور پر دوبارہ ترتیب دیں۔',
+        'gratitude_title' => 'شکر گزاری کا جرنل',
+        'gratitude_desc' => 'روزانہ مثبت عکاسی کے سوالات۔',
+        'crisis_warning' => '🚨 بحران کی علامت! براہ کرم کلینیکل مدد حاصل کریں یا ہماری ایمرجنسی سپورٹ سے رابطہ کریں۔',
+        'cbt_thought_lbl' => 'خودکار منفی خیال',
+        'cbt_distortion_lbl' => 'علمی تحریف کی قسم',
+        'cbt_distortion_placeholder' => 'تحریف کا انتخاب کریں...',
+        'cbt_reframing_lbl' => 'منطقی ری فریم کیا گیا خیال',
+        'cbt_reframe_btn' => 'خیال کو ری فریم کریں',
+        'gratitude_btn' => 'مثبت سوال بنائیں',
+        'gratitude_placeholder' => 'سوال بنانے کے لئے نیچے بٹن پر کلک کریں...'
+    ],
+    'zh' => [
+        'title' => 'AI 健康助手',
+        'subtitle' => '您的全天候心理健康教练',
+        'welcome' => '你好 ' . htmlspecialchars($user_name) . '。我是您的 AI 健康助手。我在这里帮助您练习认知行为疗法，缓解焦虑或倾听您的心声。今天感觉如何？',
+        'placeholder' => '输入您的信息...',
+        'send' => '发送',
+        'breathing_title' => '箱式呼吸指南',
+        'breathing_desc' => '通过 4-4-4-4 的呼吸循环缓解身体焦虑。',
+        'reframer_title' => 'CBT 思想重构',
+        'reframer_desc' => '识别负面思想并进行理性重构。',
+        'gratitude_title' => '感恩日记',
+        'gratitude_desc' => '通过每日反思投资积极心理学。',
+        'crisis_warning' => '🚨 发现危机信号！请寻求临床帮助或联系我们的紧急支持。',
+        'cbt_thought_lbl' => '自动负面思想',
+        'cbt_distortion_lbl' => '认知扭曲类型',
+        'cbt_distortion_placeholder' => '选择一种扭曲...',
+        'cbt_reframing_lbl' => '重构后的理性思想',
+        'cbt_reframe_btn' => '重构思想',
+        'gratitude_btn' => '生成积极反思问题',
+        'gratitude_placeholder' => '点击下方按钮生成问题...'
+    ],
+    'pt' => [
+        'title' => 'Assistente de Bem-Estar IA',
+        'subtitle' => 'Seu Coach de Saúde Mental 24/7',
+        'welcome' => 'Olá ' . htmlspecialchars($user_name) . '. Sou seu Assistente de Bem-Estar IA. Estou aqui para ajudar a praticar TCC, gerenciar a ansiedade ou apenas ouvir. Como você está se sentindo hoje?',
+        'placeholder' => 'Digite sua mensagem...',
+        'send' => 'Enviar',
+        'breathing_title' => 'Guia de Respiração em Caixa',
+        'breathing_desc' => 'Alivie a ansiedade física com um ciclo 4-4-4-4.',
+        'reframer_title' => 'Reestruturação Cognitiva TCC',
+        'reframer_desc' => 'Identifique pensamentos negativos e os reestruture racionalmente.',
+        'gratitude_title' => 'Diário de Gratidão',
+        'gratitude_desc' => 'Invista na psicologia positiva com perguntas reflexivas.',
+        'crisis_warning' => '🚨 Sinal de crise detectado! Por favor, busque ajuda clínica ou contate nosso suporte de emergência.',
+        'cbt_thought_lbl' => 'Pensamento Negativo Automático',
+        'cbt_distortion_lbl' => 'Tipo de Distorção Cognitiva',
+        'cbt_distortion_placeholder' => 'Selecione uma distorção...',
+        'cbt_reframing_lbl' => 'Pensamento Racional Reestruturado',
+        'cbt_reframe_btn' => 'Reestruturar Pensamento',
+        'gratitude_btn' => 'Gerar Pergunta de Reflexão',
+        'gratitude_placeholder' => 'Clique no botão abaixo para gerar uma pergunta...'
+    ],
+    'pa' => [
+        'title' => 'ਏਆਈ ਵੈਲਬੀਇੰਗ ਅਸਿਸਟੈਂਟ',
+        'subtitle' => 'ਤੁਹਾਡਾ 24/7 ਮੈਂਟਲ ਹੈਲਥ ਕੋਚ',
+        'welcome' => 'ਸਤਿ ਸ੍ਰੀ ਅਕਾਲ ' . htmlspecialchars($user_name) . '. ਮੈਂ ਤੁਹਾਡਾ ਏਆਈ ਵੈਲਬੀਇੰਗ ਅਸਿਸਟੈਂਟ ਹਾਂ. ਮੈਂ ਇੱਥੇ ਤੁਹਾਡੀ ਮਦਦ ਕਰਨ ਲਈ ਹਾਂ. ਅੱਜ ਤੁਸੀਂ ਕਿਵੇਂ ਮਹਿਸੂਸ ਕਰ ਰਹੇ ਹੋ?',
+        'placeholder' => 'ਆਪਣਾ ਸੁਨੇਹਾ ਇੱਥੇ ਲਿਖੋ...',
+        'send' => 'ਭੇਜੋ',
+        'breathing_title' => 'ਬਾਕਸ ਬ੍ਰੀਥਿੰਗ ਗਾਈਡ',
+        'breathing_desc' => '4-4-4-4 ਸਾਹ ਚੱਕਰ ਰਾਹੀਂ ਚਿੰਤਾ ਨੂੰ ਘਟਾਓ.',
+        'reframer_title' => 'ਸੀਬੀਟੀ ਥਾਟ ਰੀਫ੍ਰੇਮ',
+        'reframer_desc' => 'ਨਕਾਰਾਤਮਕ ਵਿਚਾਰਾਂ ਦੀ ਪਛਾਣ ਕਰੋ ਅਤੇ ਉਹਨਾਂ ਨੂੰ ਤਰਕਪੂਰਨ ਢੰਗ ਨਾਲ ਦੁਬਾਰਾ ਬਣਾਓ.',
+        'gratitude_title' => 'ਗ੍ਰੈਟੀਟਿਊਡ ਜਰਨਲ',
+        'gratitude_desc' => 'ਰੋਜ਼ਾਨਾ ਸਕਾਰਾਤਮਕ ਪ੍ਰਤੀਬਿੰਬ ਸਵਾਲ.',
+        'crisis_warning' => '🚨 ਸੰਕਟ ਦਾ ਸੰਕੇਤ! ਕਿਰਪਾ ਕਰਕੇ ਕਲੀਨਿਕਲ ਮਦਦ ਲਓ.',
+        'cbt_thought_lbl' => 'ਆਟੋਮੈਟਿਕ ਨਕਾਰਾਤਮਕ ਵਿਚਾਰ',
+        'cbt_distortion_lbl' => 'ਬੋਧਾਤਮਕ ਵਿਗਾੜ ਦੀ ਕਿਸਮ',
+        'cbt_distortion_placeholder' => 'ਵਿਗਾੜ ਚੁਣੋ...',
+        'cbt_reframing_lbl' => 'ਤਰਕਪੂਰਨ ਰੀਫ੍ਰੇਮ ਕੀਤਾ ਵਿਚਾਰ',
+        'cbt_reframe_btn' => 'ਵਿਚਾਰ ਨੂੰ ਰੀਫ੍ਰੇਮ ਕਰੋ',
+        'gratitude_btn' => 'ਸਕਾਰਾਤਮਕ ਸਵਾਲ ਬਣਾਓ',
+        'gratitude_placeholder' => 'ਸਵਾਲ ਬਣਾਉਣ ਲਈ ਹੇਠਾਂ ਦਿੱਤੇ ਬਟਨ ਤੇ ਕਲਿੱਕ ਕਰੋ...'
     ]
 ];
 
@@ -595,6 +700,11 @@ if (!$loaded_from_db && isset($_SESSION['mock_ai_chats'])) {
                     <option value="fr" <?php if ($lang === 'fr') echo 'selected'; ?>>Français</option>
                     <option value="ar" <?php if ($lang === 'ar') echo 'selected'; ?>>العربية (Arabic)</option>
                     <option value="sw" <?php if ($lang === 'sw') echo 'selected'; ?>>Kiswahili (Swahili)</option>
+                    <option value="es" <?php if ($lang === 'es') echo 'selected'; ?>>Español (Spanish)</option>
+                    <option value="ur" <?php if ($lang === 'ur') echo 'selected'; ?>>اردو (Urdu)</option>
+                    <option value="zh" <?php if ($lang === 'zh') echo 'selected'; ?>>中文 (Mandarin Chinese)</option>
+                    <option value="pt" <?php if ($lang === 'pt') echo 'selected'; ?>>Português (Portuguese)</option>
+                    <option value="pa" <?php if ($lang === 'pa') echo 'selected'; ?>>ਪੰਜਾਬੀ (Punjabi)</option>
                 </select>
             </div>
         </div>
@@ -629,8 +739,11 @@ if (!$loaded_from_db && isset($_SESSION['mock_ai_chats'])) {
                         <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-brand-sageLight text-brand-sage text-xs">
                             🤖
                         </div>
-                        <div class="rounded-2xl rounded-tl-none bg-brand-bg px-4 py-3 text-sm text-brand-slate leading-relaxed shadow-sm">
+                        <div class="rounded-2xl rounded-tl-none bg-brand-bg px-4 py-3 text-sm text-brand-slate leading-relaxed shadow-sm relative group">
                             <?php echo $t['welcome']; ?>
+                            <button onclick="speakText(this.dataset.text)" data-text="<?php echo htmlspecialchars($t['welcome'], ENT_QUOTES, 'UTF-8'); ?>" class="absolute top-2 right-2 text-gray-400 hover:text-brand-sage transition-colors opacity-0 group-hover:opacity-100" title="Listen">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072M18.364 5.636a9 9 0 010 12.728M11 19L5 13H2V7h3l6-6v18z"></path></svg>
+                            </button>
                         </div>
                     </div>
 
@@ -647,8 +760,11 @@ if (!$loaded_from_db && isset($_SESSION['mock_ai_chats'])) {
                                 <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-brand-sageLight text-brand-sage text-xs">
                                     🤖
                                 </div>
-                                <div class="rounded-2xl rounded-tl-none bg-brand-bg px-4 py-3 text-sm text-brand-slate leading-relaxed shadow-sm">
+                                <div class="rounded-2xl rounded-tl-none bg-brand-bg px-4 py-3 text-sm text-brand-slate leading-relaxed shadow-sm relative group">
                                     <?php echo htmlspecialchars($c['message']); ?>
+                                    <button onclick="speakText(this.dataset.text)" data-text="<?php echo htmlspecialchars($c['message'], ENT_QUOTES, 'UTF-8'); ?>" class="absolute top-2 right-2 text-gray-400 hover:text-brand-sage transition-colors opacity-0 group-hover:opacity-100" title="Listen">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072M18.364 5.636a9 9 0 010 12.728M11 19L5 13H2V7h3l6-6v18z"></path></svg>
+                                    </button>
                                 </div>
                             </div>
                         <?php endif; ?>
@@ -883,6 +999,32 @@ if (!$loaded_from_db && isset($_SESSION['mock_ai_chats'])) {
             }
         }
 
+        // Text-To-Speech (TTS) Integration
+        function speakText(text) {
+            if (!('speechSynthesis' in window)) {
+                alert("Text-to-Speech is not supported in this browser.");
+                return;
+            }
+            window.speechSynthesis.cancel(); // Stop current speech
+            const utterance = new SpeechSynthesisUtterance(text);
+            const localeMap = {
+                'en': 'en-US',
+                'fr': 'fr-FR',
+                'ar': 'ar-SA',
+                'sw': 'sw-KE',
+                'ha': 'en-US',
+                'yo': 'en-US',
+                'ig': 'en-US',
+                'es': 'es-ES',
+                'ur': 'ur-PK',
+                'zh': 'zh-CN',
+                'pt': 'pt-PT',
+                'pa': 'hi-IN' // pa-IN might not be universally supported, fallback
+            };
+            utterance.lang = localeMap[currentLang] || 'en-US';
+            window.speechSynthesis.speak(utterance);
+        }
+
         // Send Message via AJAX
         function sendMessage(event) {
             event.preventDefault();
@@ -930,13 +1072,19 @@ if (!$loaded_from_db && isset($_SESSION['mock_ai_chats'])) {
                             <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-brand-sageLight text-brand-sage text-xs">
                                 🤖
                             </div>
-                            <div class="rounded-2xl rounded-tl-none bg-brand-bg px-4 py-3 text-sm text-brand-slate leading-relaxed shadow-sm">
+                            <div class="rounded-2xl rounded-tl-none bg-brand-bg px-4 py-3 text-sm text-brand-slate leading-relaxed shadow-sm relative group">
                                 ${escapeHtml(data.ai_message)}
+                                <button onclick="speakText(this.dataset.text)" data-text="${escapeHtml(data.ai_message)}" class="absolute top-2 right-2 text-gray-400 hover:text-brand-sage transition-colors opacity-0 group-hover:opacity-100" title="Listen">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072M18.364 5.636a9 9 0 010 12.728M11 19L5 13H2V7h3l6-6v18z"></path></svg>
+                                </button>
                             </div>
                         </div>
                     `;
                     container.insertAdjacentHTML('beforeend', aiHtml);
                     container.scrollTop = container.scrollHeight;
+
+                    // Automatically play the response
+                    speakText(data.ai_message);
 
                     // If crisis flagged
                     if (data.is_crisis) {

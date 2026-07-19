@@ -113,6 +113,14 @@ CREATE TABLE IF NOT EXISTS `notifications` (
     FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
+-- 10. Caregiver Videos Table
+CREATE TABLE IF NOT EXISTS `caregiver_videos` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `title` VARCHAR(255) NOT NULL,
+    `embed_url` TEXT NOT NULL,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
 -- =========================================================
 -- SEED DATA
 -- =========================================================
