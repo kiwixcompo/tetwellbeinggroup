@@ -226,3 +226,95 @@
 [19-Jul-2026 01:06:35 UTC] PHP Stack trace:
 [19-Jul-2026 01:06:35 UTC] PHP   1. {main}() C:\wamp64\www\TetWellbeingGroup\befriender_network.php:0
 [19-Jul-2026 01:06:35 UTC] PHP   2. strtotime($datetime = NULL) C:\wamp64\www\TetWellbeingGroup\befriender_network.php:340
+[20-Jul-2026 23:54:28 UTC] [2026-07-20 23:54:28] ERROR [2]: Undefined array key "bio" in C:\wamp64\www\TetWellbeingGroup\befriender_network.php on line 287
+[20-Jul-2026 23:54:28 UTC] PHP Warning:  Undefined array key "bio" in C:\wamp64\www\TetWellbeingGroup\befriender_network.php on line 287
+[20-Jul-2026 23:54:28 UTC] PHP Stack trace:
+[20-Jul-2026 23:54:28 UTC] PHP   1. {main}() C:\wamp64\www\TetWellbeingGroup\befriender_network.php:0
+[20-Jul-2026 23:54:28 UTC] [2026-07-20 23:54:28] ERROR [8192]: htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in C:\wamp64\www\TetWellbeingGroup\befriender_network.php on line 287
+[20-Jul-2026 23:54:28 UTC] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in C:\wamp64\www\TetWellbeingGroup\befriender_network.php on line 287
+[20-Jul-2026 23:54:28 UTC] PHP Stack trace:
+[20-Jul-2026 23:54:28 UTC] PHP   1. {main}() C:\wamp64\www\TetWellbeingGroup\befriender_network.php:0
+[20-Jul-2026 23:54:28 UTC] PHP   2. htmlspecialchars($string = NULL) C:\wamp64\www\TetWellbeingGroup\befriender_network.php:287
+[20-Jul-2026 23:54:28 UTC] [2026-07-20 23:54:28] ERROR [2]: Undefined array key "experiences" in C:\wamp64\www\TetWellbeingGroup\befriender_network.php on line 289
+[20-Jul-2026 23:54:28 UTC] PHP Warning:  Undefined array key "experiences" in C:\wamp64\www\TetWellbeingGroup\befriender_network.php on line 289
+[20-Jul-2026 23:54:28 UTC] PHP Stack trace:
+[20-Jul-2026 23:54:28 UTC] PHP   1. {main}() C:\wamp64\www\TetWellbeingGroup\befriender_network.php:0
+[20-Jul-2026 23:54:28 UTC] [2026-07-20 23:54:28] ERROR [2]: foreach() argument must be of type array|object, null given in C:\wamp64\www\TetWellbeingGroup\befriender_network.php on line 289
+[20-Jul-2026 23:54:28 UTC] PHP Warning:  foreach() argument must be of type array|object, null given in C:\wamp64\www\TetWellbeingGroup\befriender_network.php on line 289
+[20-Jul-2026 23:54:28 UTC] PHP Stack trace:
+[20-Jul-2026 23:54:28 UTC] PHP   1. {main}() C:\wamp64\www\TetWellbeingGroup\befriender_network.php:0
+[20-Jul-2026 23:54:28 UTC] [2026-07-20 23:54:28] ERROR [2]: foreach() argument must be of type array|object, string given in C:\wamp64\www\TetWellbeingGroup\befriender_network.php on line 292
+[20-Jul-2026 23:54:28 UTC] PHP Warning:  foreach() argument must be of type array|object, string given in C:\wamp64\www\TetWellbeingGroup\befriender_network.php on line 292
+[20-Jul-2026 23:54:28 UTC] PHP Stack trace:
+[20-Jul-2026 23:54:28 UTC] PHP   1. {main}() C:\wamp64\www\TetWellbeingGroup\befriender_network.php:0
+[20-Jul-2026 23:54:28 UTC] [2026-07-20 23:54:28] ERROR [2]: Undefined array key "bio" in C:\wamp64\www\TetWellbeingGroup\befriender_network.php on line 287
+[20-Jul-2026 23:54:28 UTC] PHP Warning:  Undefined array key "bio" in C:\wamp64\www\TetWellbeingGroup\befriender_network.php on line 287
+[20-Jul-2026 23:54:28 UTC] PHP Stack trace:
+[20-Jul-2026 23:54:28 UTC] PHP   1. {main}() C:\wamp64\www\TetWellbeingGroup\befriender_network.php:0
+[20-Jul-2026 23:54:28 UTC] [2026-07-20 23:54:28] ERROR [8192]: htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in C:\wamp64\www\TetWellbeingGroup\befriender_network.php on line 287
+[20-Jul-2026 23:54:28 UTC] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in C:\wamp64\www\TetWellbeingGroup\befriender_network.php on line 287
+[20-Jul-2026 23:54:28 UTC] PHP Stack trace:
+[20-Jul-2026 23:54:28 UTC] PHP   1. {main}() C:\wamp64\www\TetWellbeingGroup\befriender_network.php:0
+[20-Jul-2026 23:54:28 UTC] PHP   2. htmlspecialchars($string = NULL) C:\wamp64\www\TetWellbeingGroup\befriender_network.php:287
+[20-Jul-2026 23:54:28 UTC] [2026-07-20 23:54:28] ERROR [2]: Undefined array key "experiences" in C:\wamp64\www\TetWellbeingGroup\befriender_network.php on line 289
+[20-Jul-2026 23:54:28 UTC] PHP Warning:  Undefined array key "experiences" in C:\wamp64\www\TetWellbeingGroup\befriender_network.php on line 289
+[20-Jul-2026 23:54:28 UTC] PHP Stack trace:
+[20-Jul-2026 23:54:28 UTC] PHP   1. {main}() C:\wamp64\www\TetWellbeingGroup\befriender_network.php:0
+[20-Jul-2026 23:54:28 UTC] [2026-07-20 23:54:28] ERROR [2]: foreach() argument must be of type array|object, null given in C:\wamp64\www\TetWellbeingGroup\befriender_network.php on line 289
+[20-Jul-2026 23:54:28 UTC] PHP Warning:  foreach() argument must be of type array|object, null given in C:\wamp64\www\TetWellbeingGroup\befriender_network.php on line 289
+[20-Jul-2026 23:54:28 UTC] PHP Stack trace:
+[20-Jul-2026 23:54:28 UTC] PHP   1. {main}() C:\wamp64\www\TetWellbeingGroup\befriender_network.php:0
+[20-Jul-2026 23:54:28 UTC] [2026-07-20 23:54:28] ERROR [2]: foreach() argument must be of type array|object, string given in C:\wamp64\www\TetWellbeingGroup\befriender_network.php on line 292
+[20-Jul-2026 23:54:28 UTC] PHP Warning:  foreach() argument must be of type array|object, string given in C:\wamp64\www\TetWellbeingGroup\befriender_network.php on line 292
+[20-Jul-2026 23:54:28 UTC] PHP Stack trace:
+[20-Jul-2026 23:54:28 UTC] PHP   1. {main}() C:\wamp64\www\TetWellbeingGroup\befriender_network.php:0
+[20-Jul-2026 23:54:28 UTC] [2026-07-20 23:54:28] ERROR [2]: Undefined array key "bio" in C:\wamp64\www\TetWellbeingGroup\befriender_network.php on line 287
+[20-Jul-2026 23:54:28 UTC] PHP Warning:  Undefined array key "bio" in C:\wamp64\www\TetWellbeingGroup\befriender_network.php on line 287
+[20-Jul-2026 23:54:28 UTC] PHP Stack trace:
+[20-Jul-2026 23:54:28 UTC] PHP   1. {main}() C:\wamp64\www\TetWellbeingGroup\befriender_network.php:0
+[20-Jul-2026 23:54:28 UTC] [2026-07-20 23:54:28] ERROR [8192]: htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in C:\wamp64\www\TetWellbeingGroup\befriender_network.php on line 287
+[20-Jul-2026 23:54:28 UTC] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in C:\wamp64\www\TetWellbeingGroup\befriender_network.php on line 287
+[20-Jul-2026 23:54:28 UTC] PHP Stack trace:
+[20-Jul-2026 23:54:28 UTC] PHP   1. {main}() C:\wamp64\www\TetWellbeingGroup\befriender_network.php:0
+[20-Jul-2026 23:54:28 UTC] PHP   2. htmlspecialchars($string = NULL) C:\wamp64\www\TetWellbeingGroup\befriender_network.php:287
+[20-Jul-2026 23:54:28 UTC] [2026-07-20 23:54:28] ERROR [2]: Undefined array key "experiences" in C:\wamp64\www\TetWellbeingGroup\befriender_network.php on line 289
+[20-Jul-2026 23:54:28 UTC] PHP Warning:  Undefined array key "experiences" in C:\wamp64\www\TetWellbeingGroup\befriender_network.php on line 289
+[20-Jul-2026 23:54:28 UTC] PHP Stack trace:
+[20-Jul-2026 23:54:28 UTC] PHP   1. {main}() C:\wamp64\www\TetWellbeingGroup\befriender_network.php:0
+[20-Jul-2026 23:54:28 UTC] [2026-07-20 23:54:28] ERROR [2]: foreach() argument must be of type array|object, null given in C:\wamp64\www\TetWellbeingGroup\befriender_network.php on line 289
+[20-Jul-2026 23:54:28 UTC] PHP Warning:  foreach() argument must be of type array|object, null given in C:\wamp64\www\TetWellbeingGroup\befriender_network.php on line 289
+[20-Jul-2026 23:54:28 UTC] PHP Stack trace:
+[20-Jul-2026 23:54:28 UTC] PHP   1. {main}() C:\wamp64\www\TetWellbeingGroup\befriender_network.php:0
+[20-Jul-2026 23:54:28 UTC] [2026-07-20 23:54:28] ERROR [2]: foreach() argument must be of type array|object, string given in C:\wamp64\www\TetWellbeingGroup\befriender_network.php on line 292
+[20-Jul-2026 23:54:28 UTC] PHP Warning:  foreach() argument must be of type array|object, string given in C:\wamp64\www\TetWellbeingGroup\befriender_network.php on line 292
+[20-Jul-2026 23:54:28 UTC] PHP Stack trace:
+[20-Jul-2026 23:54:28 UTC] PHP   1. {main}() C:\wamp64\www\TetWellbeingGroup\befriender_network.php:0
+[20-Jul-2026 23:54:28 UTC] [2026-07-20 23:54:28] ERROR [2]: Undefined array key "date" in C:\wamp64\www\TetWellbeingGroup\befriender_network.php on line 345
+[20-Jul-2026 23:54:28 UTC] PHP Warning:  Undefined array key "date" in C:\wamp64\www\TetWellbeingGroup\befriender_network.php on line 345
+[20-Jul-2026 23:54:28 UTC] PHP Stack trace:
+[20-Jul-2026 23:54:28 UTC] PHP   1. {main}() C:\wamp64\www\TetWellbeingGroup\befriender_network.php:0
+[20-Jul-2026 23:54:28 UTC] [2026-07-20 23:54:28] ERROR [8192]: strtotime(): Passing null to parameter #1 ($datetime) of type string is deprecated in C:\wamp64\www\TetWellbeingGroup\befriender_network.php on line 345
+[20-Jul-2026 23:54:28 UTC] PHP Deprecated:  strtotime(): Passing null to parameter #1 ($datetime) of type string is deprecated in C:\wamp64\www\TetWellbeingGroup\befriender_network.php on line 345
+[20-Jul-2026 23:54:28 UTC] PHP Stack trace:
+[20-Jul-2026 23:54:28 UTC] PHP   1. {main}() C:\wamp64\www\TetWellbeingGroup\befriender_network.php:0
+[20-Jul-2026 23:54:28 UTC] PHP   2. strtotime($datetime = NULL) C:\wamp64\www\TetWellbeingGroup\befriender_network.php:345
+[20-Jul-2026 23:54:56 UTC] [2026-07-20 23:54:56] ERROR [8]: session_start(): Ignoring session_start() because a session is already active (started from C:\wamp64\www\TetWellbeingGroup\db.php on line 8) in C:\wamp64\www\TetWellbeingGroup\wellbeing_passport.php on line 3
+[20-Jul-2026 23:54:56 UTC] PHP Notice:  session_start(): Ignoring session_start() because a session is already active (started from C:\wamp64\www\TetWellbeingGroup\db.php on line 8) in C:\wamp64\www\TetWellbeingGroup\wellbeing_passport.php on line 3
+[20-Jul-2026 23:54:56 UTC] PHP Stack trace:
+[20-Jul-2026 23:54:56 UTC] PHP   1. {main}() C:\wamp64\www\TetWellbeingGroup\wellbeing_passport.php:0
+[20-Jul-2026 23:54:56 UTC] PHP   2. session_start() C:\wamp64\www\TetWellbeingGroup\wellbeing_passport.php:3
+[20-Jul-2026 23:59:19 UTC] [2026-07-20 23:59:19] ERROR [8]: session_start(): Ignoring session_start() because a session is already active (started from C:\wamp64\www\TetWellbeingGroup\db.php on line 8) in C:\wamp64\www\TetWellbeingGroup\wellbeing_passport.php on line 3
+[20-Jul-2026 23:59:19 UTC] PHP Notice:  session_start(): Ignoring session_start() because a session is already active (started from C:\wamp64\www\TetWellbeingGroup\db.php on line 8) in C:\wamp64\www\TetWellbeingGroup\wellbeing_passport.php on line 3
+[20-Jul-2026 23:59:19 UTC] PHP Stack trace:
+[20-Jul-2026 23:59:19 UTC] PHP   1. {main}() C:\wamp64\www\TetWellbeingGroup\wellbeing_passport.php:0
+[20-Jul-2026 23:59:19 UTC] PHP   2. session_start() C:\wamp64\www\TetWellbeingGroup\wellbeing_passport.php:3
+[21-Jul-2026 21:09:57 UTC] [2026-07-21 21:09:57] EXCEPTION: syntax error, unexpected token "<", expecting end of file in C:\wamp64\www\TetWellbeingGroup\nav_menu.php on line 35
+#0 {main}
+[21-Jul-2026 21:10:02 UTC] [2026-07-21 21:10:02] EXCEPTION: syntax error, unexpected token "<", expecting end of file in C:\wamp64\www\TetWellbeingGroup\nav_menu.php on line 35
+#0 {main}
+[21-Jul-2026 21:10:42 UTC] [2026-07-21 21:10:42] EXCEPTION: syntax error, unexpected token "<", expecting end of file in C:\wamp64\www\TetWellbeingGroup\nav_menu.php on line 35
+#0 {main}
+[21-Jul-2026 21:12:58 UTC] [2026-07-21 21:12:58] EXCEPTION: syntax error, unexpected token "<", expecting end of file in C:\wamp64\www\TetWellbeingGroup\nav_menu.php on line 35
+#0 {main}
+[21-Jul-2026 21:13:01 UTC] [2026-07-21 21:13:01] EXCEPTION: syntax error, unexpected token "<", expecting end of file in C:\wamp64\www\TetWellbeingGroup\nav_menu.php on line 35
+#0 {main}

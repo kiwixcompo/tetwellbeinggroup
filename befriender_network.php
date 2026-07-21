@@ -233,8 +233,13 @@ if (isset($_GET['joined'])) $success_msg = "Successfully RSVP'd/Joined the virtu
                                         <option>Any Language</option>
                                         <option>English</option>
                                         <option>Spanish</option>
-                                        <option>Mandarin</option>
                                         <option>Urdu</option>
+                                        <option>Mandarin</option>
+                                        <option>Portuguese</option>
+                                        <option>Punjabi</option>
+                                        <option>French</option>
+                                        <option>Arabic</option>
+                                        <option>Hindi</option>
                                     </select>
                                 </div>
                                 <div>

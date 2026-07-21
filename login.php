@@ -266,16 +266,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <span>Demo Account Details</span>
                 </div>
                 <p class="text-gray-500 leading-relaxed">
-                    We've set up a mock/demo account so you can evaluate the platform instantly. Click below to autofill or type:
+                    We've set up mock accounts so you can evaluate the platform instantly. Click below to autofill or type:
                 </p>
-                <div class="bg-white p-2.5 rounded-xl border border-gray-100 flex items-center justify-between">
-                    <div>
-                        <div>Email: <code class="font-semibold text-brand-sage">mark@tetwellbeing.com</code></div>
-                        <div class="mt-0.5">Password: <code class="font-semibold text-brand-sage">password123</code></div>
+                <div class="bg-white p-2.5 rounded-xl border border-gray-100 flex flex-col gap-2">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Client Account</div>
+                            <div>Email: <code class="font-semibold text-brand-sage">mark@tetwellbeing.com</code></div>
+                            <div class="mt-0.5">Password: <code class="font-semibold text-brand-sage">password123</code></div>
+                        </div>
+                        <button type="button" onclick="autofillDemo('mark@tetwellbeing.com', 'password123')" class="px-2.5 py-1.5 rounded-lg bg-brand-sage text-white text-[10px] font-bold shadow-sm hover:bg-brand-sageHover transition-all">
+                            Autofill
+                        </button>
                     </div>
-                    <button type="button" onclick="autofillDemo()" class="px-2.5 py-1.5 rounded-lg bg-brand-sage text-white text-[10px] font-bold shadow-sm hover:bg-brand-sageHover transition-all">
-                        Autofill
-                    </button>
+                    <div class="w-full h-px bg-gray-100 my-1"></div>
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Admin Account</div>
+                            <div>Email: <code class="font-semibold text-brand-sage">admin@tetwellbeinggroup.com</code></div>
+                            <div class="mt-0.5">Password: <code class="font-semibold text-brand-sage">Admin123!</code></div>
+                        </div>
+                        <button type="button" onclick="autofillDemo('admin@tetwellbeinggroup.com', 'Admin123!')" class="px-2.5 py-1.5 rounded-lg bg-brand-sage text-white text-[10px] font-bold shadow-sm hover:bg-brand-sageHover transition-all">
+                            Autofill
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -348,9 +362,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <!-- Scripts -->
     <script>
-        function autofillDemo() {
-            document.getElementById('email').value = 'mark@tetwellbeing.com';
-            document.getElementById('password').value = 'password123';
+        function autofillDemo(email, password) {
+            document.getElementById('email').value = email;
+            document.getElementById('password').value = password;
         }
 
         function togglePassword(inputId, iconId) {

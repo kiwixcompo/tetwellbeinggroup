@@ -38,7 +38,15 @@ $db_pass = ',!PX7{%zy1-vgh.7';
 $db_name = 'tetwellb_tetwellbeinggroup';
 
 // API Configurations
-$gemini_api_key = ''; // Insert your free Google Gemini API key here
+$gemini_api_key = ''; // Default provided key (removed for security)
+
+$settings_file = __DIR__ . '/storage/settings.json';
+if (file_exists($settings_file)) {
+    $settings = json_decode(file_get_contents($settings_file), true);
+    if (isset($settings['gemini_api_key']) && !empty($settings['gemini_api_key'])) {
+        $gemini_api_key = $settings['gemini_api_key'];
+    }
+}
 
 
 $pdo = null;

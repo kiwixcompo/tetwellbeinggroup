@@ -5,7 +5,7 @@
  */
 
 class AiIntegrationService {
-    private static $api_url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=';
+    private static $api_url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent';
 
     /**
      * Helper to make API calls to Gemini using cURL
@@ -17,7 +17,7 @@ class AiIntegrationService {
             return false;
         }
 
-        $url = self::$api_url . $gemini_api_key;
+        $url = self::$api_url;
         $data = [
             'contents' => [
                 [
@@ -35,7 +35,10 @@ class AiIntegrationService {
         $ch = curl_init($url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'Content-Type: application/json',
+            'X-goog-api-key: ' . $gemini_api_key
+        ]);
         curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // Disabled for local WAMP testing
 

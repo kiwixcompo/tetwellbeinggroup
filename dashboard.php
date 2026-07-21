@@ -508,78 +508,55 @@ $today_date = date('l, F j, Y');
                         <form method="POST" id="checkin-form" class="space-y-6">
                             <input type="hidden" name="mood_value" id="mood-value" value="">
 
-                            <!-- Mood Grid -->
-                            <div class="grid grid-cols-5 gap-2.5 sm:gap-4">
+                            <!-- Mood Grid (8 Options) -->
+                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
                                 
-                                <!-- Terrible -->
-                                <button type="button" data-mood="terrible" class="mood-btn flex flex-col items-center justify-between p-3 sm:p-4 rounded-2xl border-2 border-gray-100 bg-[#FAF9F6] text-gray-400 hover:border-gray-300 hover:bg-gray-50 hover:text-brand-slate focus:outline-none transition-all">
-                                    <div class="mood-svg-container text-gray-400">
-                                        <svg class="w-10 h-10 sm:w-12 sm:h-12 transition-transform duration-300" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                            <circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="2.5" class="svg-face-outline"/>
-                                            <path d="M15 16L21 19" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
-                                            <path d="M33 16L27 19" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
-                                            <circle cx="18" cy="23" r="2.5" fill="currentColor"/>
-                                            <circle cx="30" cy="23" r="2.5" fill="currentColor"/>
-                                            <path d="M18 26C18 28 16.5 29 16.5 30C16.5 31 18 31 18 31" stroke="#8ECAE6" stroke-width="2" stroke-linecap="round"/>
-                                            <path d="M17 34C20 30 28 30 31 34" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
-                                        </svg>
-                                    </div>
-                                    <span class="text-[10px] sm:text-xs font-semibold mt-3">Terrible</span>
+                                <button type="button" data-mood="overwhelmed" class="mood-btn flex flex-col items-center justify-center p-4 rounded-2xl border border-gray-100 bg-[#FAF9F6] text-gray-500 hover:border-gray-300 hover:bg-white hover:shadow-sm focus:outline-none transition-all">
+                                    <span class="text-3xl mb-2">😟</span>
+                                    <span class="text-xs font-semibold">Overwhelmed</span>
                                 </button>
 
-                                <!-- Bad -->
-                                <button type="button" data-mood="bad" class="mood-btn flex flex-col items-center justify-between p-3 sm:p-4 rounded-2xl border-2 border-gray-100 bg-[#FAF9F6] text-gray-400 hover:border-gray-300 hover:bg-gray-50 hover:text-brand-slate focus:outline-none transition-all">
-                                    <div class="mood-svg-container text-gray-400">
-                                        <svg class="w-10 h-10 sm:w-12 sm:h-12 transition-transform duration-300" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                            <circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="2.5" class="svg-face-outline"/>
-                                            <path d="M16 18L21 19.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                                            <path d="M32 18L27 19.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                                            <circle cx="18" cy="23" r="2.5" fill="currentColor"/>
-                                            <circle cx="30" cy="23" r="2.5" fill="currentColor"/>
-                                            <path d="M18 33C21 31 27 31 30 33" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
-                                        </svg>
-                                    </div>
-                                    <span class="text-[10px] sm:text-xs font-semibold mt-3">Bad</span>
+                                <button type="button" data-mood="low" class="mood-btn flex flex-col items-center justify-center p-4 rounded-2xl border border-gray-100 bg-[#FAF9F6] text-gray-500 hover:border-gray-300 hover:bg-white hover:shadow-sm focus:outline-none transition-all">
+                                    <span class="text-3xl mb-2">😔</span>
+                                    <span class="text-xs font-semibold">Low</span>
                                 </button>
 
-                                <!-- Okay -->
-                                <button type="button" data-mood="okay" class="mood-btn flex flex-col items-center justify-between p-3 sm:p-4 rounded-2xl border-2 border-gray-100 bg-[#FAF9F6] text-gray-400 hover:border-gray-300 hover:bg-gray-50 hover:text-brand-slate focus:outline-none transition-all">
-                                    <div class="mood-svg-container text-gray-400">
-                                        <svg class="w-10 h-10 sm:w-12 sm:h-12 transition-transform duration-300" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                            <circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="2.5" class="svg-face-outline"/>
-                                            <circle cx="18" cy="23" r="2.5" fill="currentColor"/>
-                                            <circle cx="30" cy="23" r="2.5" fill="currentColor"/>
-                                            <path d="M17 32H31" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
-                                        </svg>
-                                    </div>
-                                    <span class="text-[10px] sm:text-xs font-semibold mt-3">Okay</span>
+                                <button type="button" data-mood="anxious" class="mood-btn flex flex-col items-center justify-center p-4 rounded-2xl border border-gray-100 bg-[#FAF9F6] text-gray-500 hover:border-gray-300 hover:bg-white hover:shadow-sm focus:outline-none transition-all">
+                                    <span class="text-3xl mb-2">😰</span>
+                                    <span class="text-xs font-semibold">Anxious</span>
                                 </button>
 
-                                <!-- Good -->
-                                <button type="button" data-mood="good" class="mood-btn flex flex-col items-center justify-between p-3 sm:p-4 rounded-2xl border-2 border-gray-100 bg-[#FAF9F6] text-gray-400 hover:border-gray-300 hover:bg-gray-50 hover:text-brand-slate focus:outline-none transition-all">
-                                    <div class="mood-svg-container text-gray-400">
-                                        <svg class="w-10 h-10 sm:w-12 sm:h-12 transition-transform duration-300" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                            <circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="2.5" class="svg-face-outline"/>
-                                            <circle cx="18" cy="22" r="2.5" fill="currentColor"/>
-                                            <circle cx="30" cy="22" r="2.5" fill="currentColor"/>
-                                            <path d="M17 30C20 34 28 34 31 30" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
-                                        </svg>
-                                    </div>
-                                    <span class="text-[10px] sm:text-xs font-semibold mt-3">Good</span>
+                                <button type="button" data-mood="exhausted" class="mood-btn flex flex-col items-center justify-center p-4 rounded-2xl border border-gray-100 bg-[#FAF9F6] text-gray-500 hover:border-gray-300 hover:bg-white hover:shadow-sm focus:outline-none transition-all">
+                                    <span class="text-3xl mb-2">😴</span>
+                                    <span class="text-xs font-semibold">Exhausted</span>
                                 </button>
 
-                                <!-- Great -->
-                                <button type="button" data-mood="great" class="mood-btn flex flex-col items-center justify-between p-3 sm:p-4 rounded-2xl border-2 border-gray-100 bg-[#FAF9F6] text-gray-400 hover:border-gray-300 hover:bg-gray-50 hover:text-brand-slate focus:outline-none transition-all">
-                                    <div class="mood-svg-container text-gray-400">
-                                        <svg class="w-10 h-10 sm:w-12 sm:h-12 transition-transform duration-300" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                            <circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="2.5" class="svg-face-outline"/>
-                                            <path d="M15 22C16 20 20 20 21 22" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
-                                            <path d="M27 22C28 20 32 20 33 22" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
-                                            <path d="M16 29C17.5 35.5 30.5 35.5 32 29H16Z" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-                                        </svg>
-                                    </div>
-                                    <span class="text-[10px] sm:text-xs font-semibold mt-3">Great</span>
+                                <button type="button" data-mood="frustrated" class="mood-btn flex flex-col items-center justify-center p-4 rounded-2xl border border-gray-100 bg-[#FAF9F6] text-gray-500 hover:border-gray-300 hover:bg-white hover:shadow-sm focus:outline-none transition-all">
+                                    <span class="text-3xl mb-2">😡</span>
+                                    <span class="text-xs font-semibold">Frustrated</span>
                                 </button>
+
+                                <button type="button" data-mood="okay" class="mood-btn flex flex-col items-center justify-center p-4 rounded-2xl border border-gray-100 bg-[#FAF9F6] text-gray-500 hover:border-gray-300 hover:bg-white hover:shadow-sm focus:outline-none transition-all">
+                                    <span class="text-3xl mb-2">🙂</span>
+                                    <span class="text-xs font-semibold">Okay</span>
+                                </button>
+
+                                <button type="button" data-mood="grow" class="mood-btn flex flex-col items-center justify-center p-4 rounded-2xl border border-gray-100 bg-[#FAF9F6] text-gray-500 hover:border-gray-300 hover:bg-white hover:shadow-sm focus:outline-none transition-all">
+                                    <span class="text-3xl mb-2">🌱</span>
+                                    <span class="text-xs font-semibold">Grow</span>
+                                </button>
+
+                                <button type="button" data-mood="talk" class="mood-btn flex flex-col items-center justify-center p-4 rounded-2xl border border-gray-100 bg-[#FAF9F6] text-gray-500 hover:border-gray-300 hover:bg-white hover:shadow-sm focus:outline-none transition-all">
+                                    <span class="text-3xl mb-2">🤝</span>
+                                    <span class="text-xs font-semibold">Talk</span>
+                                </button>
+                            </div>
+                            
+                            <!-- Dynamic Recommendation Card (hidden by default) -->
+                            <div id="recommendation-card" class="hidden mt-4 p-5 rounded-2xl bg-brand-sageLight/30 border border-brand-sage/20 text-center animate-fade-in">
+                                <h4 class="font-bold text-brand-slate text-sm mb-2">Today's Recommendation</h4>
+                                <p id="recommendation-text" class="text-xs text-brand-slate leading-relaxed mb-4"></p>
+                                <a href="#" id="recommendation-link" class="inline-block px-5 py-2 bg-brand-sage hover:bg-brand-sageHover text-white text-xs font-bold rounded-xl shadow-sm transition-colors">Go</a>
                             </div>
 
                             <!-- Conditional notes area -->
@@ -675,142 +652,122 @@ $today_date = date('l, F j, Y');
             </div>
         </div>
 
-        <!-- ECOSYSTEM LAYERS -->
+        <!-- TET ECOSYSTEM (Image Cards Grid) -->
         <section class="mt-16">
-            <div class="mb-6">
-                <h3 class="text-2xl font-bold font-outfit text-brand-slate tracking-tight">Our Core Ecosystem</h3>
-                <p class="text-sm text-gray-500 mt-1">Expanding services to provide continuous, high-quality care layers.</p>
+            <div class="mb-8">
+                <h2 class="text-2xl font-bold font-outfit text-brand-slate">Explore the TET Ecosystem</h2>
+                <p class="text-sm text-gray-500 mt-1">Your dedicated spaces for reflection, growth, and connection.</p>
+            </div>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <?php
+                $dashboard_pillars = [
+                    'mindbloom.php' => ['title' => 'MindBloom', 'img' => 'images/nav_mindbloom2.png', 'desc' => 'Micro-activities for grounding and journaling'],
+                    'truevent.php' => ['title' => 'TrueVent', 'img' => 'images/nav_truevent2.png', 'desc' => 'An anonymous safe space to vocalize your thoughts'],
+                    'tet_academy.php' => ['title' => 'TET Academy', 'img' => 'images/nav_academy2.png', 'desc' => 'Bite-sized emotional intelligence lessons'],
+                    'tet_circle.php' => ['title' => 'TET Circle', 'img' => 'images/circle_hero.png', 'desc' => 'Community groups and human connection'],
+                    'wellbeing_passport.php' => ['title' => 'Wellbeing Passport', 'img' => 'images/passport_hero.png', 'desc' => 'Gamified tracking of your personal growth'],
+                    'befriender_network.php' => ['title' => 'Befriender Network', 'img' => 'images/hub_befriender.png', 'desc' => 'Match with a supportive peer 1-on-1']
+                ];
+                foreach ($dashboard_pillars as $url => $data):
+                ?>
+                <a href="<?php echo $url; ?>" class="group flex flex-col rounded-3xl bg-white overflow-hidden shadow-sm hover:shadow-md border border-[#EBE8E0] hover:border-brand-sage transition-all">
+                    <!-- Image Area -->
+                    <div class="h-36 sm:h-44 w-full overflow-hidden shrink-0 relative border-b border-[#EBE8E0]">
+                        <img src="<?php echo $data['img']; ?>" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" alt="<?php echo $data['title']; ?>">
+                    </div>
+                    <!-- Text Content Area -->
+                    <div class="p-6 flex-grow flex flex-col justify-center">
+                        <h3 class="text-xl font-bold font-outfit text-brand-slate mb-1 group-hover:text-brand-sage transition-colors"><?php echo $data['title']; ?></h3>
+                        <p class="text-gray-500 text-sm font-medium leading-relaxed"><?php echo $data['desc']; ?></p>
+                        <div class="w-8 h-1 bg-brand-sage/20 group-hover:bg-brand-sage rounded-full mt-4 transition-colors duration-300"></div>
+                    </div>
+                </a>
+                <?php endforeach; ?>
+            </div>
+        </section>
+
+        <!-- PERSONAL WELLBEING JOURNEY & DAILY TET -->
+        <section class="mt-16 grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Daily TET Habit Builder -->
+            <div class="bg-white rounded-3xl p-6 md:p-8 shadow-soft border border-[#EBE8E0]">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h3 class="text-xl font-bold font-outfit text-brand-slate">Daily TET</h3>
+                        <p class="text-sm text-gray-500 mt-1">A simple moment for you.</p>
+                    </div>
+                    <div class="h-12 w-12 rounded-2xl bg-brand-sageLight text-brand-sage flex items-center justify-center text-xl shadow-sm">
+                        <?php 
+                        $day = date('l'); 
+                        if($day == 'Monday') echo '🧠';
+                        elseif($day == 'Tuesday') echo '💪';
+                        elseif($day == 'Wednesday') echo '🤝';
+                        elseif($day == 'Thursday') echo '🎯';
+                        elseif($day == 'Friday') echo '✨';
+                        else echo '☕';
+                        ?>
+                    </div>
+                </div>
+                
+                <div class="p-6 rounded-2xl bg-[#FAF9F6] border border-gray-100 relative overflow-hidden">
+                    <div class="absolute top-0 right-0 p-4 opacity-5">
+                        <svg class="h-24 w-24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 22h20L12 2z"/></svg>
+                    </div>
+                    <h4 class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Today: <?php echo date('l'); ?></h4>
+                    <p class="text-lg font-bold font-outfit text-brand-slate leading-snug mb-6">
+                        <?php 
+                        if($day == 'Monday') echo '"What has been taking up most of your mental space today?"';
+                        elseif($day == 'Tuesday') echo '"How is your body responding to stress today?"';
+                        elseif($day == 'Wednesday') echo '"Who could you connect with today?"';
+                        elseif($day == 'Thursday') echo '"What is one thing that matters to you right now?"';
+                        elseif($day == 'Friday') echo '"What did you manage this week that you should give yourself credit for?"';
+                        else echo '"What would help you feel restored this weekend?"';
+                        ?>
+                    </p>
+                    <a href="truevent.php" class="inline-block px-5 py-2.5 bg-brand-slate hover:bg-gray-800 text-white rounded-xl text-xs font-bold shadow-sm transition-all">Reflect in TrueVent</a>
+                </div>
             </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Personal Wellbeing Journey -->
+            <div class="bg-white rounded-3xl p-6 md:p-8 shadow-soft border border-[#EBE8E0]">
+                <h3 class="text-xl font-bold font-outfit text-brand-slate mb-1">Your Journey</h3>
+                <p class="text-sm text-gray-500 mb-6">Your progress and patterns at a glance.</p>
                 
-                <!-- Befriender Network -->
-                <a href="befriender_network.php" class="group flex flex-col sm:flex-row bg-white rounded-3xl overflow-hidden shadow-card hover:shadow-soft transition-all duration-300 border border-[#EBE8E0]/70 hover:-translate-y-1">
-                    <div class="sm:w-2/5 h-48 sm:h-auto relative overflow-hidden border-r border-[#EBE8E0]/50">
-                        <img src="images/hub_befriender.png" alt="Befriender Network" class="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
-                    </div>
-                    <div class="sm:w-3/5 p-6 flex flex-col justify-center bg-brand-bg/30">
-                        <div class="mb-2 flex items-center gap-2">
-                            <span class="px-2 py-1 rounded-md bg-brand-coralLight text-brand-coral font-bold text-[9px] uppercase tracking-wider">New Core</span>
-                            <h4 class="text-xl font-bold font-outfit text-brand-slate">Befriender Network</h4>
+                <div class="space-y-4">
+                    <!-- Stat Card 1 -->
+                    <div class="flex items-center p-4 rounded-2xl border border-gray-100 bg-[#FAF9F6]">
+                        <div class="h-10 w-10 rounded-xl bg-brand-sageLight text-brand-sage flex items-center justify-center shrink-0 mr-4">
+                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                         </div>
-                        <p class="text-xs text-gray-500 leading-relaxed mb-4">Connect instantly with trained volunteers and peers for emotional support and companionship before crises escalate.</p>
-                        <span class="text-xs font-semibold text-brand-coral flex items-center mt-auto">
-                            Explore Network <svg class="ml-1 h-3.5 w-3.5 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
-                        </span>
-                    </div>
-                </a>
-
-                <!-- Caregiver Hub -->
-                <a href="caregiver_hub.php" class="group flex flex-col sm:flex-row bg-white rounded-3xl overflow-hidden shadow-card hover:shadow-soft transition-all duration-300 border border-[#EBE8E0]/70 hover:-translate-y-1">
-                    <div class="sm:w-2/5 h-48 sm:h-auto relative overflow-hidden border-r border-[#EBE8E0]/50">
-                        <img src="images/hub_caregiver.png" alt="Caregiver Hub" class="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
-                    </div>
-                    <div class="sm:w-3/5 p-6 flex flex-col justify-center">
-                        <div class="mb-2">
-                            <h4 class="text-xl font-bold font-outfit text-brand-slate">Caregiver Wellbeing</h4>
+                        <div class="flex-grow">
+                            <h4 class="text-sm font-bold text-brand-slate font-outfit">Mood Pattern</h4>
+                            <p class="text-[11px] text-gray-500 mt-0.5">You often report higher stress on <span class="font-bold text-brand-slate">Sundays</span>.</p>
                         </div>
-                        <p class="text-xs text-gray-500 leading-relaxed mb-4">Dedicated toolsets, burnout trackers, and expert-led support structures for family caregivers holding up their loved ones.</p>
-                        <span class="text-xs font-semibold text-brand-sage flex items-center mt-auto">
-                            Enter Hub <svg class="ml-1 h-3.5 w-3.5 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
-                        </span>
                     </div>
-                </a>
-
-                <!-- AI Companion -->
-                <a href="ai_companion.php" class="group flex flex-col sm:flex-row bg-white rounded-3xl overflow-hidden shadow-card hover:shadow-soft transition-all duration-300 border border-[#EBE8E0]/70 hover:-translate-y-1">
-                    <div class="sm:w-2/5 h-48 sm:h-auto relative overflow-hidden border-r border-[#EBE8E0]/50">
-                        <img src="images/hub_ai.png" alt="AI Companion" class="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
-                    </div>
-                    <div class="sm:w-3/5 p-6 flex flex-col justify-center">
-                        <div class="mb-2">
-                            <h4 class="text-xl font-bold font-outfit text-brand-slate">AI Companion</h4>
+                    <!-- Stat Card 2 -->
+                    <div class="flex items-center p-4 rounded-2xl border border-gray-100 bg-[#FAF9F6]">
+                        <div class="h-10 w-10 rounded-xl bg-brand-skyLight text-brand-slate flex items-center justify-center shrink-0 mr-4">
+                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>
                         </div>
-                        <p class="text-xs text-gray-500 leading-relaxed mb-4">Your 24/7 digital mental health coach. Practice CBT exercises, vent anxiety, or just chat securely.</p>
-                        <span class="text-xs font-semibold text-brand-sage flex items-center mt-auto">
-                            Start Chatting <svg class="ml-1 h-3.5 w-3.5 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
-                        </span>
-                    </div>
-                </a>
-
-                <!-- Teletherapy Marketplace -->
-                <a href="teletherapy_hub.php" class="group flex flex-col sm:flex-row bg-white rounded-3xl overflow-hidden shadow-card hover:shadow-soft transition-all duration-300 border border-[#EBE8E0]/70 hover:-translate-y-1">
-                    <div class="sm:w-2/5 h-48 sm:h-auto relative overflow-hidden border-r border-[#EBE8E0]/50">
-                        <img src="images/hub_teletherapy.png" alt="Teletherapy Hub" class="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
-                    </div>
-                    <div class="sm:w-3/5 p-6 flex flex-col justify-center">
-                        <div class="mb-2">
-                            <h4 class="text-xl font-bold font-outfit text-brand-slate">Teletherapy</h4>
+                        <div class="flex-grow">
+                            <h4 class="text-sm font-bold text-brand-slate font-outfit">What Helps You</h4>
+                            <p class="text-[11px] text-gray-500 mt-0.5">Breathing exercises appear to help you feel calmer.</p>
                         </div>
-                        <p class="text-xs text-gray-500 leading-relaxed mb-4">Connect with qualified, licensed specialists tailored to your demographic. Book secure video sessions instantly.</p>
-                        <span class="text-xs font-semibold text-brand-sage flex items-center mt-auto">
-                            Find a Specialist <svg class="ml-1 h-3.5 w-3.5 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
-                        </span>
                     </div>
-                </a>
-
-                <!-- Community Support -->
-                <a href="community_hub.php" class="group flex flex-col sm:flex-row bg-white rounded-3xl overflow-hidden shadow-card hover:shadow-soft transition-all duration-300 border border-[#EBE8E0]/70 hover:-translate-y-1">
-                    <div class="sm:w-2/5 h-48 sm:h-auto relative overflow-hidden border-r border-[#EBE8E0]/50">
-                        <img src="images/hub_community.png" alt="Community Hub" class="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
-                    </div>
-                    <div class="sm:w-3/5 p-6 flex flex-col justify-center">
-                        <div class="mb-2">
-                            <h4 class="text-xl font-bold font-outfit text-brand-slate">Community Forums</h4>
+                    <!-- Stat Card 3 -->
+                    <div class="flex items-center p-4 rounded-2xl border border-gray-100 bg-[#FAF9F6]">
+                        <div class="h-10 w-10 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center shrink-0 mr-4">
+                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                         </div>
-                        <p class="text-xs text-gray-500 leading-relaxed mb-4">Safe, moderated sharing circles and anonymous forums ensuring mutual care and social solidarity.</p>
-                        <span class="text-xs font-semibold text-brand-sage flex items-center mt-auto">
-                            Join Discussion <svg class="ml-1 h-3.5 w-3.5 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
-                        </span>
-                    </div>
-                </a>
-
-                <!-- VR Resilience -->
-                <a href="vr_resilience.php" class="group flex flex-col sm:flex-row bg-white rounded-3xl overflow-hidden shadow-card hover:shadow-soft transition-all duration-300 border border-[#EBE8E0]/70 hover:-translate-y-1">
-                    <div class="sm:w-2/5 h-48 sm:h-auto relative overflow-hidden border-r border-[#EBE8E0]/50">
-                        <img src="images/hub_vr.png" alt="VR Centre" class="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
-                    </div>
-                    <div class="sm:w-3/5 p-6 flex flex-col justify-center">
-                        <div class="mb-2 flex items-center gap-2">
-                            <span class="px-2 py-1 rounded-md bg-purple-100 text-purple-600 font-bold text-[9px] uppercase tracking-wider">Immersive</span>
-                            <h4 class="text-xl font-bold font-outfit text-brand-slate">VR Centre</h4>
-                        </div>
-                        <p class="text-xs text-gray-500 leading-relaxed mb-4">Immersive psychological resilience training, exposure therapy, and guided meditation environments.</p>
-                        <span class="text-xs font-semibold text-purple-600 flex items-center mt-auto">
-                            Enter VR <svg class="ml-1 h-3.5 w-3.5 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
-                        </span>
-                    </div>
-                </a>
-
-                <!-- Ambient & Breathing Tools -->
-                <div class="col-span-1 lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    <a href="ambient_mixer.php" class="group relative bg-white rounded-3xl overflow-hidden shadow-card hover:shadow-soft transition-all duration-300 border border-[#EBE8E0]/70 hover:-translate-y-1 h-32 flex items-center">
-                        <img src="images/hub_ambient.png" alt="Ambient" class="absolute right-0 top-0 bottom-0 w-1/2 object-cover opacity-20 transition-opacity duration-500 group-hover:opacity-40">
-                        <div class="relative z-10 p-6 w-full flex items-center justify-between">
+                        <div class="flex-grow flex justify-between items-center">
                             <div>
-                                <h4 class="text-lg font-bold font-outfit text-brand-slate">Ambient Mixer</h4>
-                                <p class="text-xs text-gray-500 mt-1 max-w-[200px]">Blend binaural beats and nature sounds.</p>
+                                <h4 class="text-sm font-bold text-brand-slate font-outfit">Monthly Goals</h4>
+                                <p class="text-[11px] text-gray-500 mt-0.5">8 wellbeing activities completed.</p>
                             </div>
-                            <div class="h-10 w-10 rounded-full bg-brand-sageLight text-brand-sage flex items-center justify-center shrink-0">
-                                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
-                            </div>
+                            <span class="text-xs font-bold text-purple-600 bg-purple-100 px-2 py-1 rounded-lg">8 / 10</span>
                         </div>
-                    </a>
-                    
-                    <a href="breathing_exercises.php" class="group relative bg-white rounded-3xl overflow-hidden shadow-card hover:shadow-soft transition-all duration-300 border border-[#EBE8E0]/70 hover:-translate-y-1 h-32 flex items-center">
-                        <img src="images/hub_breathing.png" alt="Breathing" class="absolute right-0 top-0 bottom-0 w-1/2 object-cover opacity-20 transition-opacity duration-500 group-hover:opacity-40">
-                        <div class="relative z-10 p-6 w-full flex items-center justify-between">
-                            <div>
-                                <h4 class="text-lg font-bold font-outfit text-brand-slate">Breathing Tool</h4>
-                                <p class="text-xs text-gray-500 mt-1 max-w-[200px]">Quick box-breathing to regulate anxiety.</p>
-                            </div>
-                            <div class="h-10 w-10 rounded-full bg-brand-sageLight text-brand-sage flex items-center justify-center shrink-0">
-                                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
-                            </div>
-                        </div>
-                    </a>
+                    </div>
                 </div>
-
             </div>
         </section>
 
@@ -1044,21 +1001,75 @@ $today_date = date('l, F j, Y');
                 
                 moodButtons.forEach(btn => {
                     btn.classList.remove('border-brand-sage', 'bg-brand-sageLight', 'text-brand-slate', 'scale-105', 'shadow-active');
-                    btn.classList.add('border-gray-100', 'bg-[#FAF9F6]', 'text-gray-400');
-                    btn.querySelector('.mood-svg-container').classList.remove('text-brand-sage');
-                    btn.querySelector('.mood-svg-container').classList.add('text-gray-400');
+                    btn.classList.add('border-gray-100', 'bg-[#FAF9F6]', 'text-gray-500');
                 });
 
-                button.classList.remove('border-gray-100', 'bg-[#FAF9F6]', 'text-gray-400');
+                button.classList.remove('border-gray-100', 'bg-[#FAF9F6]', 'text-gray-500');
                 button.classList.add('border-brand-sage', 'bg-brand-sageLight', 'text-brand-slate', 'scale-105', 'shadow-active');
                 
-                const activeSvg = button.querySelector('.mood-svg-container');
-                activeSvg.classList.remove('text-gray-400');
-                activeSvg.classList.add('text-brand-sage');
-
                 showReflectionBox();
+                updateRecommendation(mood);
             });
         });
+
+        function updateRecommendation(mood) {
+            const recCard = document.getElementById('recommendation-card');
+            const recText = document.getElementById('recommendation-text');
+            const recLink = document.getElementById('recommendation-link');
+            
+            let msg = '';
+            let lnk = '';
+            let btnText = 'Go';
+
+            switch(mood) {
+                case 'overwhelmed':
+                    msg = "Would you like to try a 3-minute grounding exercise to center your thoughts?";
+                    lnk = "mindbloom.php?action=grounding";
+                    btnText = "Start Grounding";
+                    break;
+                case 'low':
+                    msg = "It's okay to feel low. How about a gentle journaling prompt in MindBloom?";
+                    lnk = "mindbloom.php?action=journal";
+                    btnText = "Open MindBloom";
+                    break;
+                case 'anxious':
+                    msg = "Let's release some of that tension in TrueVent.";
+                    lnk = "truevent.php";
+                    btnText = "Open TrueVent";
+                    break;
+                case 'exhausted':
+                    msg = "Your body needs rest. Would you like to explore sleep strategies in the Academy?";
+                    lnk = "tet_academy.php?topic=sleep";
+                    btnText = "View Lesson";
+                    break;
+                case 'frustrated':
+                    msg = "Release your frustration safely in TrueVent.";
+                    lnk = "truevent.php";
+                    btnText = "Open TrueVent";
+                    break;
+                case 'okay':
+                    msg = "Glad you are doing okay! Want to build your resilience today?";
+                    lnk = "mindbloom.php";
+                    btnText = "Explore MindBloom";
+                    break;
+                case 'grow':
+                    msg = "Ready to learn? Let's check out today's 5-minute wellbeing lesson.";
+                    lnk = "tet_academy.php";
+                    btnText = "Enter Academy";
+                    break;
+                case 'talk':
+                    msg = "Sometimes you just need someone to listen. Connect with a befriender.";
+                    lnk = "tet_circle.php";
+                    btnText = "Connect Now";
+                    break;
+            }
+
+            recText.innerText = msg;
+            recLink.href = lnk;
+            recLink.innerText = btnText;
+            
+            recCard.classList.remove('hidden');
+        }
 
         function showReflectionBox() {
             reflectionContainer.style.maxHeight = '500px';
@@ -1163,5 +1174,6 @@ $today_date = date('l, F j, Y');
             initVoiceTranscription('mood-notes', 'transcribe-mood-notes');
         });
     </script>
+    <?php include 'includes/global_ai_widget.php'; ?>
 </body>
 </html>

@@ -122,6 +122,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             }
         }
     }
+    
+    elseif ($action === 'save_api_keys') {
+        $new_gemini_key = filter_input(INPUT_POST, 'gemini_api_key', FILTER_DEFAULT);
+        $settings_file = __DIR__ . '/storage/settings.json';
+        $settings = [];
+        if (file_exists($settings_file)) {
+            $settings = json_decode(file_get_contents($settings_file), true) ?: [];
+        }
+        $settings['gemini_api_key'] = $new_gemini_key;
+        if (!is_dir(dirname($settings_file))) {
+            mkdir(dirname($settings_file), 0755, true);
+        }
+        if (file_put_contents($settings_file, json_encode($settings, JSON_PRETTY_PRINT))) {
+            $action_success = "API Keys saved successfully.";
+            // Update the global so it reflects immediately
+            global $gemini_api_key;
+            $gemini_api_key = $new_gemini_key;
+        } else {
+            $action_error = "Failed to write to settings file.";
+        }
+    }
 
     elseif ($action === 'add_caregiver_video') {
         $video_title = filter_input(INPUT_POST, 'title', FILTER_DEFAULT);
@@ -148,6 +169,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             }
         } else {
             $action_error = "Title and Embed URL are required.";
+        }
+    }
+
+    elseif ($action === 'update_api_settings') {
+        $new_key = filter_input(INPUT_POST, 'gemini_api_key', FILTER_DEFAULT);
+        $settings_file = __DIR__ . '/storage/settings.json';
+        $settings = [];
+        if (file_exists($settings_file)) {
+            $settings = json_decode(file_get_contents($settings_file), true) ?: [];
+        }
+        $settings['gemini_api_key'] = $new_key;
+        if (file_put_contents($settings_file, json_encode($settings, JSON_PRETTY_PRINT))) {
+            $action_success = "API Settings updated successfully.";
+        } else {
+            $action_error = "Failed to write settings to storage/settings.json.";
         }
     }
 
@@ -1285,6 +1321,28 @@ if ($db_connected && $pdo) {
                     </tbody>
                 </table>
             </div>
+        </div>
+
+        <!-- SYSTEM API CONFIGURATION CARD -->
+        <div class="bg-white rounded-3xl p-6 shadow-soft border border-gray-100 mb-10 font-outfit">
+            <div class="mb-4">
+                <h3 class="text-sm font-bold text-brand-slate uppercase tracking-wider flex items-center gap-2">
+                    <svg class="w-5 h-5 text-brand-sage" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    System API Configuration
+                </h3>
+                <p class="text-xs text-gray-500 mt-1">Manage global API keys for third-party integrations like the AI Companion.</p>
+            </div>
+            
+            <form method="POST" class="bg-gray-50 p-4 rounded-2xl border border-gray-100 flex flex-col md:flex-row gap-4 items-end">
+                <input type="hidden" name="action" value="save_api_keys">
+                <div class="flex-grow w-full">
+                    <label class="block font-bold text-xs text-brand-slate mb-1.5">Google Gemini API Key</label>
+                    <input type="password" name="gemini_api_key" value="<?php echo htmlspecialchars($gemini_api_key); ?>" placeholder="Enter API Key here..." class="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-brand-sage/20 focus:border-brand-sage text-sm font-mono">
+                </div>
+                <button type="submit" class="w-full md:w-auto px-6 py-2.5 rounded-xl bg-brand-sage hover:bg-brand-sageHover text-white font-bold shadow transition-colors whitespace-nowrap">
+                    Save Key
+                </button>
+            </form>
         </div>
 
         <!-- DEVELOPER SIMULATOR CARD -->

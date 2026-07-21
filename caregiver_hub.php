@@ -719,7 +719,7 @@ $today_date = date('l, F j, Y');
                     <!-- Choices Grid -->
                     <div class="grid grid-cols-1 sm:grid-cols-5 gap-3 mt-6">
                         <button type="button" onclick="selectAnswer(1)" class="quiz-choice-btn py-3 px-4 rounded-xl border border-gray-200 text-sm font-semibold text-brand-slate bg-[#FAF9F6] hover:bg-brand-sky/10 hover:border-brand-sky hover:text-brand-slate transition-all text-center">Never</button>
-                        <button type="button" onclick="selectAnswer(2)" class="quiz-choice-btn py-3 px-4 rounded-xl border border-gray-200 text-sm font-semibold text-brand-slate bg-[#FAF9F6] hover:bg-brand-sky/10 hover:border-brand-sky hover:text-brand-slate transition-all text-center">Seldom</button>
+                        <button type="button" onclick="selectAnswer(2)" class="quiz-choice-btn py-3 px-4 rounded-xl border border-gray-200 text-sm font-semibold text-brand-slate bg-[#FAF9F6] hover:bg-brand-sky/10 hover:border-brand-sky hover:text-brand-slate transition-all text-center">Rarely</button>
                         <button type="button" onclick="selectAnswer(3)" class="quiz-choice-btn py-3 px-4 rounded-xl border border-gray-200 text-sm font-semibold text-brand-slate bg-[#FAF9F6] hover:bg-brand-sky/10 hover:border-brand-sky hover:text-brand-slate transition-all text-center">Sometimes</button>
                         <button type="button" onclick="selectAnswer(4)" class="quiz-choice-btn py-3 px-4 rounded-xl border border-gray-200 text-sm font-semibold text-brand-slate bg-[#FAF9F6] hover:bg-brand-sky/10 hover:border-brand-sky hover:text-brand-slate transition-all text-center">Often</button>
                         <button type="button" onclick="selectAnswer(5)" class="quiz-choice-btn py-3 px-4 rounded-xl border border-gray-200 text-sm font-semibold text-brand-slate bg-[#FAF9F6] hover:bg-brand-sky/10 hover:border-brand-sky hover:text-brand-slate transition-all text-center">Always</button>
@@ -2286,23 +2286,23 @@ $today_date = date('l, F j, Y');
         const quizQuestions = [
             {
                 q: "How often do you feel physically exhausted from caregiving duties?",
-                c: ["Never", "Seldom", "Sometimes", "Often", "Always"]
+                c: ["Never", "Rarely", "Sometimes", "Often", "Always"]
             },
             {
                 q: "Do you feel you lack privacy or time for yourself due to caring?",
-                c: ["Never", "Seldom", "Sometimes", "Often", "Always"]
+                c: ["Never", "Rarely", "Sometimes", "Often", "Always"]
             },
             {
                 q: "Are you losing sleep or eating poorly due to care demands?",
-                c: ["Never", "Seldom", "Sometimes", "Often", "Always"]
+                c: ["Never", "Rarely", "Sometimes", "Often", "Always"]
             },
             {
                 q: "Do you feel irritable, anxious, or easily frustrated by minor issues?",
-                c: ["Never", "Seldom", "Sometimes", "Often", "Always"]
+                c: ["Never", "Rarely", "Sometimes", "Often", "Always"]
             },
             {
                 q: "Are you worried about having enough money or support to cover care expenses?",
-                c: ["Never", "Seldom", "Sometimes", "Often", "Always"]
+                c: ["Never", "Rarely", "Sometimes", "Often", "Always"]
             }
         ];
 
