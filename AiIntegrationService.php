@@ -7,54 +7,9 @@
 class AiIntegrationService {
     private static $api_url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent';
 
-    /**
-     * Helper to make API calls to Gemini using cURL
-     */
     private static function callGemini($prompt) {
-        global $gemini_api_key;
-        
-        if (empty($gemini_api_key)) {
-            return false;
-        }
-
-        $url = self::$api_url;
-        $data = [
-            'contents' => [
-                [
-                    'parts' => [
-                        ['text' => $prompt]
-                    ]
-                ]
-            ],
-            'generationConfig' => [
-                'temperature' => 0.7,
-                'maxOutputTokens' => 800
-            ]
-        ];
-
-        $ch = curl_init($url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            'Content-Type: application/json',
-            'X-goog-api-key: ' . $gemini_api_key
-        ]);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // Disabled for local WAMP testing
-
-        $response = curl_exec($ch);
-        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-
-        if ($http_code == 200 && $response) {
-            $json = json_decode($response, true);
-            if (isset($json['candidates'][0]['content']['parts'][0]['text'])) {
-                // Strip markdown formatting like asterisks for cleaner UI integration
-                $text = trim($json['candidates'][0]['content']['parts'][0]['text']);
-                $text = str_replace(['**', '*'], '', $text);
-                return $text;
-            }
-        }
+        // As requested by the user, Gemini API has been completely replaced by Puter.js AI on the frontend.
+        // This backend service is now deprecated and returns false to trigger fallback mechanisms if accidentally called.
         return false;
     }
 

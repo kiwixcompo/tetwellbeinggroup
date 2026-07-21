@@ -186,11 +186,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!$dept_id || empty($description)) {
             $action_error = "Please fill out all fields before submitting.";
         } else {
-            // Compute standard AI recommendation plans based on text analysis
-            require_once 'AiIntegrationService.php';
-            $ai_plan = AiIntegrationService::generateConflictMitigationPlan($description, $severity);
+            // Gemini API has been deprecated in favor of Puter.js AI.
+            // We bypass the backend API and use the local NLP intent matcher.
+            $ai_plan = false;
             
-            // Fallback to mock text if API fails or key is missing
+            // Fallback to mock text
             if (!$ai_plan) {
                 $ai_plan = "1. Facilitate a 1-on-1 boundary alignment discussion.\n2. Leverage Peer Matching configurations.\n3. Recommend box breathing and micro-break resources in the Caregiver portal.";
                 $desc_lower = strtolower($description);

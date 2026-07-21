@@ -444,27 +444,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         ];
     }
 
-    // C. Determine AI Response based on NLP Keywords OR Real AI API
-    require_once 'AiIntegrationService.php';
-    
-    // Fetch recent history to provide context
-    $chat_history = [];
-    if ($db_connected && $pdo) {
-        try {
-            $stmt = $pdo->prepare("SELECT sender, message FROM ai_chat_logs WHERE user_id = ? ORDER BY id DESC LIMIT 5");
-            $stmt->execute([$user_id]);
-            $chat_history = array_reverse($stmt->fetchAll());
-        } catch (PDOException $ex) {}
-    } else {
-        $mock_chats = $_SESSION['mock_ai_chats'] ?? [];
-        $user_chats = array_filter($mock_chats, fn($c) => $c['user_id'] == $user_id);
-        $chat_history = array_slice(array_values($user_chats), -5);
-    }
+    // Gemini API has been deprecated in favor of Puter.js AI.
+    // The main floating AI widget uses Puter.js directly on the frontend.
+    // For this legacy page, we bypass the backend API and use the local NLP intent matcher.
+    $ai_msg = false;
 
-    // Attempt to generate response with Gemini API
-    $ai_msg = AiIntegrationService::generateChatResponse($user_msg, $selected_lang, $chat_history);
-
-    // Fallback to mock parser if API key is not set or fails
+    // Fallback to mock parser
     if (!$ai_msg) {
         $intent = 'default';
         $lowercase_msg = strtolower($user_msg);
