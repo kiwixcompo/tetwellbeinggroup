@@ -101,6 +101,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'upgra
                 break;
             }
         }
+        
+        $coupon_code = trim($_POST['coupon_code'] ?? '');
+        if (strtoupper($coupon_code) === 'TRIAL30') {
+            $new_plan_amount = 0.00;
+        }
 
         $invoice_id = count($_SESSION['mock_subscription_invoices'] ?? []) + 100;
         $now = date('Y-m-d H:i:s');
@@ -224,50 +229,12 @@ foreach ($plans as $p) {
     </style>
 </head>
 <body class="min-h-full flex flex-col selection:bg-brand-sage/20 selection:text-brand-slate">
+    <?php include 'nav_menu.php'; ?>
 
-    <!-- TOP NAV BAR -->
-    <header class="sticky top-0 z-40 w-full border-b border-[#EBE8E0] bg-brand-bg/95 backdrop-blur-md">
-        <div class="mx-auto flex h-20 max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
-            <a href="dashboard.php" class="flex items-center transition-transform hover:scale-[1.01] active:scale-95">
-                <img src="logo.svg" alt="Tet Wellbeing Group" class="h-16 w-auto">
-            </a>
-            <div class="flex items-center gap-4">
-                <!-- Emergency Support -->
-                <button type="button" onclick="openEmergencyModal()" class="flex items-center gap-2 rounded-2xl bg-brand-coral px-4 py-2 text-sm font-semibold text-white shadow-md transition-all duration-300 hover:bg-brand-coralHover hover:shadow-lg active:scale-95">
-                    <svg class="h-4 w-4 animate-pulse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-                        <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
-                    </svg>
-                    <span class="hidden sm:inline">Emergency Support</span>
-                </button>
-
-                <!-- Profile Dropdown -->
-                <div class="relative group cursor-pointer">
-                    <div class="flex h-10 w-10 items-center justify-center rounded-full border-2 border-brand-sage/20 bg-brand-sageLight text-sm font-bold text-brand-sage transition-all hover:border-brand-sage">
-                        <?php echo htmlspecialchars($user_initial); ?>
-                    </div>
-                    <div class="absolute right-0 mt-2 w-52 origin-top-right rounded-2xl bg-white p-2 shadow-xl border border-gray-100 opacity-0 scale-95 pointer-events-none transition-all duration-200 group-hover:opacity-100 group-hover:scale-100 group-hover:pointer-events-auto z-50">
-                        <div class="px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Signed in as</div>
-                        <div class="px-3 py-1 font-bold text-brand-slate text-sm truncate"><?php echo htmlspecialchars($user_name); ?></div>
-                        <div class="px-3 py-1 text-xs text-brand-sage font-semibold font-outfit capitalize"><?php echo htmlspecialchars($current_plan); ?> Plan</div>
-                        <hr class="my-2 border-gray-100">
-                        <?php if ($user_role === 'admin'): ?>
-                        <a href="admin_dashboard.php" class="block px-3 py-2 text-sm text-brand-sage rounded-xl hover:bg-brand-sageLight transition-colors font-bold">Admin Console</a>
-                        <?php endif; ?>
-                        <a href="#" class="block px-3 py-2 text-sm text-gray-600 rounded-xl hover:bg-brand-bg transition-colors">My Profile</a>
-                        <a href="#" class="block px-3 py-2 text-sm text-gray-600 rounded-xl hover:bg-brand-bg transition-colors">Settings</a>
-                        <a href="logout.php" class="block px-3 py-2 text-sm text-brand-coral rounded-xl hover:bg-brand-coralLight transition-colors font-medium font-outfit">Log out</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </header>
+    
 
     <!-- MAIN CONTENT -->
     <main class="flex-grow mx-auto w-full max-w-6xl px-4 py-8 pb-24 md:pb-12 fade-in">
-
-        <!-- NAV TABS -->
-        <?php include 'nav_menu.php'; ?>
 
         <!-- TOAST: Upgrade Success -->
         <?php if (isset($_GET['upgraded']) && $_GET['upgraded'] == '1'): ?>

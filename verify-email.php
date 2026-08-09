@@ -98,6 +98,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             theme: { extend: { colors: { brand: { bg: '#F7F5F0', sage: '#5E8C71', slate: '#264653', coral: '#E76F51' } }, fontFamily: { sans: ['Plus Jakarta Sans', 'sans-serif'], outfit: ['Outfit', 'sans-serif'] } } }
         }
     </script>
+    <link rel="icon" href="logo.svg" type="image/svg+xml">
 </head>
 <body class="bg-brand-bg min-h-full flex items-center justify-center p-4">
     <div class="w-full max-w-md">

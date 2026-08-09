@@ -4,6 +4,7 @@
  * Match with vetted practitioners, check insurance compatibility, and book virtual sessions.
  */
 require_once 'db.php';
+require_once 'gating_helper.php';
 
 // Auth Guard: Redirect if not logged in
 if (!isset($_SESSION['user_id'])) {
@@ -28,7 +29,7 @@ if ($db_connected && $pdo) {
         $user_subscription_plan = $_SESSION['mock_users'][$user_email]['subscription_plan'] ?? 'free';
     }
 }
-$can_book_teletherapy = ($user_subscription_plan !== 'free');
+$can_book_teletherapy = in_array($user_subscription_plan, ['premium', 'corporate']);
 
 // Handle AJAX Chat Inquiries
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
@@ -607,47 +608,16 @@ $today_date = date('l, F j, Y');
     </style>
 </head>
 <body class="min-h-full flex flex-col selection:bg-brand-sage/20 selection:text-brand-slate">
+    <?php if (!isset($_GET['embed'])) { require_once 'nav_menu.php'; } ?>
 
     <!-- TOP NAVIGATION BAR -->
-    <header class="sticky top-0 z-40 w-full border-b border-[#EBE8E0] bg-brand-bg/95 backdrop-blur-md">
-        <div class="mx-auto flex h-20 max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
-            <!-- Brand Logo -->
-            <a href="dashboard.php" class="flex items-center transition-transform hover:scale-[1.01] active:scale-95">
-                <img src="logo.svg" alt="Tet Wellbeing Group" class="h-16 w-auto">
-            </a>
+    <?php if (!isset($_GET['embed'])): ?>
 
-            <!-- Actions -->
-            <div class="flex items-center gap-4">
-                <button type="button" onclick="openEmergencyModal()" class="flex items-center gap-2 rounded-2xl bg-brand-coral px-4 py-2 text-sm font-semibold text-white shadow-md transition-all duration-300 hover:bg-brand-coralHover hover:shadow-lg active:scale-95">
-                    <svg class="h-4.5 w-4.5 animate-pulse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
-                    </svg>
-                    <span>Emergency Support</span>
-                </button>
-
-                <!-- Profile Avatar -->
-                <div class="relative group cursor-pointer">
-                    <div class="flex h-10 w-10 items-center justify-center rounded-full border-2 border-brand-sage/20 bg-brand-sageLight text-sm font-bold text-brand-sage transition-all hover:border-brand-sage">
-                        <?php echo $user_initial; ?>
-                    </div>
-                    <div class="absolute right-0 mt-2 w-48 origin-top-right rounded-2xl bg-white p-2 shadow-xl border border-gray-100 opacity-0 scale-95 pointer-events-none transition-all duration-200 group-hover:opacity-100 group-hover:scale-100 group-hover:pointer-events-auto">
-                        <div class="px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Signed in as</div>
-                        <div class="px-3 py-1 font-bold text-brand-slate text-sm truncate"><?php echo htmlspecialchars($user_name); ?></div>
-                        <hr class="my-2 border-gray-100">
-                        <?php if ($user_role === 'admin'): ?>
-                        <a href="admin_dashboard.php" class="block px-3 py-2 text-sm text-brand-sage rounded-xl hover:bg-brand-sageLight transition-colors font-bold">Admin Console</a>
-                        <?php endif; ?>
-                        <a href="#" class="block px-3 py-2 text-sm text-gray-600 rounded-xl hover:bg-brand-bg transition-colors">My Profile</a>
-                        <a href="#" class="block px-3 py-2 text-sm text-gray-600 rounded-xl hover:bg-brand-bg transition-colors">Settings</a>
-                        <a href="logout.php" class="block px-3 py-2 text-sm text-brand-coral rounded-xl hover:bg-brand-coralLight transition-colors font-medium">Log out</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </header>
+<?php endif; ?>
 
     <!-- MAIN BODY CONTENT -->
     <main class="flex-grow mx-auto w-full max-w-4xl px-4 py-8 pb-24 md:pb-8 fade-in">
+        <?php if (!hasPlan('premium')): renderUpgradeOverlay('Teletherapy Hub', 'premium'); else: ?>
         
         <!-- Header / Banner Card (The Safe Bridge) -->
         <div class="mb-8 relative overflow-hidden rounded-3xl bg-white border border-[#EBE8E0] shadow-soft p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6">
@@ -666,8 +636,6 @@ $today_date = date('l, F j, Y');
         </div>
 
         <!-- APP NAVIGATION TABS -->
-        <?php include 'nav_menu.php'; ?>
-
         <!-- NOTIFICATIONS -->
         <?php if (!empty($action_success)): ?>
             <div id="action-toast-s" class="mb-6 flex items-start gap-3 rounded-2xl border border-brand-sage bg-brand-sageLight p-4 text-brand-slate shadow-soft transition-all duration-300">
@@ -996,10 +964,12 @@ $today_date = date('l, F j, Y');
 
         </div>
 
+    <?php endif; ?>
     </main>
 
     <!-- MOBILE NAVIGATION BAR (Sticky Bottom) -->
-    <nav class="fixed bottom-0 left-0 right-0 z-40 block md:hidden border-t border-[#EBE8E0] bg-white/90 backdrop-blur-lg px-6 py-2 shadow-2xl">
+    <?php if (!isset($_GET['embed'])): ?>
+<nav class="fixed bottom-0 left-0 right-0 z-40 block md:hidden border-t border-[#EBE8E0] bg-white/90 backdrop-blur-lg px-6 py-2 shadow-2xl">
         <div class="flex items-center justify-between mx-auto max-w-md">
             <a href="dashboard.php" class="flex flex-col items-center gap-1 py-1 px-3 text-gray-400 hover:text-brand-slate transition-colors">
                 <svg class="h-5.5 w-5.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
@@ -1013,12 +983,13 @@ $today_date = date('l, F j, Y');
                 <svg class="h-5.5 w-5.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                 <span class="text-[10px] tracking-wider uppercase">Caregiver</span>
             </a>
-            <a href="community_hub.php" class="flex flex-col items-center gap-1 py-1 px-3 text-gray-400 hover:text-brand-slate transition-colors">
+            <a href="community.php" class="flex flex-col items-center gap-1 py-1 px-3 text-gray-400 hover:text-brand-slate transition-colors">
                 <svg class="h-5.5 w-5.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                 <span class="text-[10px] tracking-wider uppercase">Community</span>
             </a>
         </div>
     </nav>
+<?php endif; ?>
 
     <!-- EMERGENCY SUPPORT MODAL -->
     <div id="emergency-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-all duration-300">

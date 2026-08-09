@@ -10,6 +10,7 @@ if (!isset($_SESSION['user_id'])) {
 
 
 $action = $_GET['action'] ?? 'home';
+$tab = $_GET['tab'] ?? 'home';
 
 ?>
 <!DOCTYPE html>
@@ -18,6 +19,7 @@ $action = $_GET['action'] ?? 'home';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MindBloom - TET Wellbeing</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script>
@@ -72,26 +74,58 @@ $action = $_GET['action'] ?? 'home';
         body { background-color: #F9F8F6; font-family: 'Outfit', sans-serif; color: #2D3748; }
         .glass-nav { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(235, 232, 224, 0.8); }
     </style>
+    <link rel="icon" href="logo.svg" type="image/svg+xml">
 </head>
 <body class="antialiased min-h-screen flex flex-col">
 
-    <!-- DESKTOP NAVIGATION -->
-    <nav class="glass-nav fixed w-full top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-20 items-center">
-                <div class="flex items-center gap-2 cursor-pointer" onclick="window.location.href='dashboard.php'">
-                    <img src="logo.svg" alt="TET Wellbeing" class="h-10 w-auto">
-                    <span class="font-bold text-brand-slate text-xl tracking-tight hidden sm:block">TET Wellbeing</span>
-                </div>
-                <div class="flex items-center gap-4">
-                    <a href="dashboard.php" class="text-sm font-semibold text-gray-500 hover:text-brand-sage transition-colors">Back to Dashboard</a>
+    <?php include 'nav_menu.php'; ?>
+
+    <!-- MAIN BODY CONTENT (Phase 3 Tab/Sidebar Layout) -->
+    <main class="flex-grow mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-8 pb-24 md:pb-12 fade-in">
+        
+        <div class="flex flex-col lg:flex-row gap-8">
+            <!-- LEFT SIDEBAR (20%) -->
+            <div class="w-full lg:w-1/4 xl:w-1/5 shrink-0">
+                <div class="sticky top-28 space-y-1">
+                    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider px-4 mb-4">MindBloom Self-Care</h3>
+                    
+                    <a href="?tab=home" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all <?php echo $tab === 'home' ? 'bg-brand-sageLight text-brand-sage' : 'text-gray-500 hover:bg-gray-50 hover:text-brand-slate'; ?>">
+                        <i class="fa-solid fa-leaf w-5 text-center"></i> 
+                        MindBloom Core
+                    </a>
+                    
+                    <a href="?tab=truevent" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all <?php echo $tab === 'truevent' ? 'bg-brand-sageLight text-brand-sage' : 'text-gray-500 hover:bg-gray-50 hover:text-brand-slate'; ?>">
+                        <i class="fa-solid fa-book-open w-5 text-center"></i> 
+                        Journaling (TrueVent)
+                    </a>
+                    
+                    <a href="?tab=assessments" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all <?php echo $tab === 'assessments' ? 'bg-brand-sageLight text-brand-sage' : 'text-gray-500 hover:bg-gray-50 hover:text-brand-slate'; ?>">
+                        <i class="fa-solid fa-clipboard-check w-5 text-center"></i> 
+                        Clinical Check-ins
+                    </a>
+                    
+                    <div class="pt-4 mt-2 border-t border-gray-100">
+                        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider px-4 mb-2">Immersive Tools</h3>
+                        
+                        <a href="?tab=vr" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all <?php echo $tab === 'vr' ? 'bg-brand-sageLight text-brand-sage' : 'text-gray-500 hover:bg-gray-50 hover:text-brand-slate'; ?>">
+                            <i class="fa-solid fa-vr-cardboard w-5 text-center"></i> 
+                            VR Resilience
+                        </a>
+                        
+                        <a href="?tab=ambient" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all <?php echo $tab === 'ambient' ? 'bg-brand-sageLight text-brand-sage' : 'text-gray-500 hover:bg-gray-50 hover:text-brand-slate'; ?>">
+                            <i class="fa-solid fa-music w-5 text-center"></i> 
+                            Ambient Mixer
+                        </a>
+                    </div>
                 </div>
             </div>
-        </div>
-    </nav>
 
-    <!-- MAIN CONTENT -->
-    <main class="flex-grow pt-28 pb-20 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto w-full animate-fade-in">
+            <!-- RIGHT CONTENT AREA (80%) -->
+            <div class="w-full lg:w-3/4 xl:w-4/5">
+                <?php if ($tab === 'home'): ?>
+                    <!-- Original MindBloom Content -->
+                    <div class="max-w-4xl mx-auto">
+                        
         
         <?php if ($action === 'home'): ?>
         
@@ -219,7 +253,12 @@ $action = $_GET['action'] ?? 'home';
                 <p class="text-brand-sage font-medium">Prompt: "What is one small thing that went well today, despite any challenges?"</p>
             </div>
 
-            <textarea rows="6" class="w-full rounded-2xl border border-gray-200 bg-brand-inputBg p-4 text-brand-slate focus:border-brand-sky focus:outline-none focus:ring-2 focus:ring-brand-sky/20 transition-all mb-6 placeholder-gray-400" placeholder="Type your thoughts safely here..."></textarea>
+            <div class="relative mb-6">
+                <textarea id="journal-textarea" rows="6" class="w-full rounded-2xl border border-gray-200 bg-brand-inputBg p-4 pr-14 text-brand-slate focus:border-brand-sky focus:outline-none focus:ring-2 focus:ring-brand-sky/20 transition-all placeholder-gray-400" placeholder="Type or speak your thoughts safely here..."></textarea>
+                <button type="button" id="journal-mic-btn" onclick="toggleJournalDictation()" class="absolute right-3 top-3 h-10 w-10 rounded-xl bg-gray-100 text-gray-500 hover:text-brand-sky hover:bg-brand-sky/10 flex items-center justify-center transition-colors focus:outline-none" title="Start Dictation">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+                </button>
+            </div>
             
             <div class="flex items-center justify-between">
                 <p class="text-xs text-gray-400 flex items-center gap-1"><svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg> Private & Secure</p>
@@ -234,8 +273,41 @@ $action = $_GET['action'] ?? 'home';
             </div>
         <?php endif; ?>
 
+    
+                    </div>
+                
+                <?php elseif ($tab === 'truevent'): ?>
+                    <div class="bg-white rounded-[2rem] border border-[#EBE8E0] shadow-soft overflow-hidden h-[85vh]">
+                        <iframe src="truevent.php?embed=1" class="w-full h-full border-0"></iframe>
+                    </div>
+                    
+                <?php elseif ($tab === 'assessments'): ?>
+                    <div class="bg-white rounded-[2rem] border border-[#EBE8E0] shadow-soft overflow-hidden h-[85vh]">
+                        <iframe src="assessments.php?embed=1" class="w-full h-full border-0"></iframe>
+                    </div>
+                    
+                <?php elseif ($tab === 'vr'): ?>
+                    <div class="bg-white rounded-[2rem] border border-[#EBE8E0] shadow-soft overflow-hidden h-[85vh]">
+                        <iframe src="vr_resilience.php?embed=1" class="w-full h-full border-0"></iframe>
+                    </div>
+                    
+                <?php elseif ($tab === 'ambient'): ?>
+                    <div class="bg-white rounded-[2rem] border border-[#EBE8E0] shadow-soft overflow-hidden h-[85vh]">
+                        <iframe src="ambient_mixer.php?embed=1" class="w-full h-full border-0"></iframe>
+                    </div>
+                    
+                <?php else: ?>
+                    <div class="text-center py-20">
+                        <h2 class="text-2xl font-bold text-brand-slate mb-4">Module Not Found</h2>
+                        <a href="?tab=home" class="text-brand-sage underline">Return to MindBloom</a>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
     </main>
 
-    <?php include 'includes/global_ai_widget.php'; ?>
+    <script>
+        // Adjust iframe heights dynamically if needed, though h-[85vh] usually suffices.
+    </script>
 </body>
 </html>

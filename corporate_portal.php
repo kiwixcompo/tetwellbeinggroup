@@ -5,6 +5,7 @@
  * Handles staff invitations, usage analytics, and credit management.
  */
 require_once 'db.php';
+require_once 'gating_helper.php';
 
 // ─── Auth Guard ───────────────────────────────────────────────────────────────
 if (!isset($_SESSION['user_id'])) {
@@ -326,57 +327,18 @@ if (isset($_GET['invite_error']))     { $toast_type = 'error';   $toast_message 
     </style>
 </head>
 <body class="min-h-full flex flex-col selection:bg-brand-sage/20 selection:text-brand-slate">
+    <?php if (!isset($_GET['embed'])) { require_once 'nav_menu.php'; } ?>
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
      TOP NAVIGATION BAR
 ════════════════════════════════════════════════════════════════════════════ -->
-<header class="sticky top-0 z-40 w-full border-b border-[#EBE8E0] bg-brand-bg/95 backdrop-blur-md">
-    <div class="mx-auto flex h-20 max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        <!-- Logo -->
-        <a href="dashboard.php" class="flex items-center transition-transform hover:scale-[1.01] active:scale-95">
-            <img src="logo.svg" alt="Tet Wellbeing Group" class="h-16 w-auto">
-        </a>
 
-        <!-- Right Actions -->
-        <div class="flex items-center gap-4">
-            <!-- Emergency Support -->
-            <button type="button" onclick="openEmergencyModal()"
-                    class="flex items-center gap-2 rounded-2xl bg-brand-coral px-4 py-2 text-sm font-semibold text-white shadow-md transition-all duration-300 hover:bg-brand-coralHover hover:shadow-lg active:scale-95">
-                <svg class="h-4 w-4 animate-pulse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-                    <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
-                </svg>
-                <span class="hidden sm:inline">Emergency Support</span>
-            </button>
-
-            <!-- Profile Avatar Dropdown -->
-            <div class="relative group cursor-pointer">
-                <div class="flex h-10 w-10 items-center justify-center rounded-full border-2 border-brand-sage/20 bg-brand-sageLight text-sm font-bold text-brand-sage transition-all hover:border-brand-sage">
-                    <?php echo htmlspecialchars($user_initial); ?>
-                </div>
-                <div class="absolute right-0 mt-2 w-52 origin-top-right rounded-2xl bg-white p-2 shadow-xl border border-gray-100 opacity-0 scale-95 pointer-events-none transition-all duration-200 group-hover:opacity-100 group-hover:scale-100 group-hover:pointer-events-auto">
-                    <div class="px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Signed in as</div>
-                    <div class="px-3 py-1 font-bold text-brand-slate text-sm truncate"><?php echo htmlspecialchars($user_name); ?></div>
-                    <div class="px-3 py-0.5">
-                        <span class="inline-block text-[10px] font-bold uppercase tracking-wider bg-brand-sageLight text-brand-sage px-2 py-0.5 rounded-full">Corporate Plan</span>
-                    </div>
-                    <hr class="my-2 border-gray-100">
-                    <?php if ($is_admin): ?>
-                    <a href="admin_dashboard.php" class="block px-3 py-2 text-sm text-brand-sage rounded-xl hover:bg-brand-sageLight transition-colors font-bold">Admin Console</a>
-                    <?php endif; ?>
-                    <a href="#" class="block px-3 py-2 text-sm text-gray-600 rounded-xl hover:bg-brand-bg transition-colors">My Profile</a>
-                    <a href="#" class="block px-3 py-2 text-sm text-gray-600 rounded-xl hover:bg-brand-bg transition-colors">Settings</a>
-                    <a href="logout.php" class="block px-3 py-2 text-sm text-brand-coral rounded-xl hover:bg-brand-coralLight transition-colors font-medium font-outfit">Log out</a>
-                </div>
-            </div>
-        </div>
-    </div>
-</header>
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
      MAIN BODY
 ════════════════════════════════════════════════════════════════════════════ -->
 <main class="flex-grow mx-auto w-full max-w-6xl px-4 py-8 pb-24 md:pb-12">
+        <?php if (!hasPlan('corporate')): renderUpgradeOverlay('Corporate Portal', 'corporate'); else: ?>
 
 <?php if (!$is_corporate): ?>
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -414,7 +376,7 @@ if (isset($_GET['invite_error']))     { $toast_type = 'error';   $toast_message 
     </div>
     <div class="flex flex-col sm:flex-row gap-3 w-full">
         <a href="dashboard.php" class="flex-1 text-center px-6 py-3 rounded-2xl border border-[#EBE8E0] text-brand-slate font-semibold hover:bg-white transition-all font-outfit">← Back to Dashboard</a>
-        <a href="#" class="flex-1 text-center px-6 py-3 rounded-2xl bg-brand-sage text-white font-bold hover:bg-brand-sageHover transition-all shadow-active font-outfit">Upgrade to Corporate</a>
+        <a href="javascript:void(0)" onclick="alert('This feature is coming soon!')" class="flex-1 text-center px-6 py-3 rounded-2xl bg-brand-sage text-white font-bold hover:bg-brand-sageHover transition-all shadow-active font-outfit">Upgrade to Corporate</a>
     </div>
 </div>
 
@@ -501,8 +463,6 @@ if (isset($_GET['invite_error']))     { $toast_type = 'error';   $toast_message 
 </div>
 
 <!-- ─── Nav Menu ──────────────────────────────────────────────────────────── -->
-<?php include 'nav_menu.php'; ?>
-
 <!-- ─── Tab Navigation ───────────────────────────────────────────────────── -->
 <div class="mb-6 flex items-center gap-1 bg-white border border-[#EBE8E0] rounded-2xl p-1.5 shadow-soft w-full max-w-sm">
     <?php foreach (['overview' => 'Overview', 'staff' => 'Manage Staff', 'analytics' => 'Analytics'] as $tab_key => $tab_label): ?>
@@ -895,7 +855,8 @@ if (isset($_GET['invite_error']))     { $toast_type = 'error';   $toast_message 
 
 <?php endif; // end $is_corporate ?>
 
-</main>
+<?php endif; ?>
+    </main>
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
      EMERGENCY SUPPORT MODAL

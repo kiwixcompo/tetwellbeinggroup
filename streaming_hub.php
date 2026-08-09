@@ -10,12 +10,9 @@
 require_once __DIR__ . '/db.php';
 
 // Auth check
-if (!isset($_SESSION['user_id'])) {
-    header('Location: login.php');
-    exit;
-}
+require_once "gating_helper.php";
 
-$user_id = $_SESSION['user_id'];
+$user_id = $_SESSION['user_id'] ?? 0;
 $user_role = $_SESSION['user_role'] ?? 'client';
 $user_name = $_SESSION['user_name'] ?? 'Staff Member';
 
@@ -176,27 +173,15 @@ $active_tab = $_GET['tab'] ?? 'browse';
             border: 1px solid rgba(255, 255, 255, 0.08);
         }
     </style>
+    <link rel="icon" href="logo.svg" type="image/svg+xml">
 </head>
 <body class="text-brand-slate min-h-screen pb-32">
+    <?php if (!isset($_GET['embed'])) { require_once 'nav_menu.php'; } ?>
 
     <!-- NAV BAR -->
-    <header class="border-b border-white/5 bg-slate-900/80 backdrop-blur-md sticky top-0 z-50 px-6 py-4">
-        <div class="max-w-7xl mx-auto flex items-center justify-between">
-            <a href="dashboard.php" class="flex items-center transition-transform hover:scale-[1.01] active:scale-95">
-                <span class="text-xl font-extrabold tracking-tight font-outfit text-white flex items-center gap-2">
-                    <object data="logo.svg" type="image/svg+xml" class="h-6 w-6 pointer-events-none filter invert"></object>
-                    Tet <span class="text-brand-sage font-medium">Wellbeing</span>
-                </span>
-            </a>
-            
-            <div class="flex items-center gap-3">
-                <span class="hidden md:inline text-xs font-semibold text-gray-400 bg-slate-800 border border-white/5 px-3.5 py-1.5 rounded-full">
-                    🎥 Streaming Account: <strong class="text-brand-slate font-bold"><?php echo htmlspecialchars($user_name); ?></strong>
-                </span>
-                <a href="logout.php" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-white/10 text-xs font-bold text-brand-coral rounded-xl transition-all">Logout</a>
-            </div>
-        </div>
-    </header>
+    <?php if (!isset($_GET['embed'])): ?>
+
+<?php endif; ?>
 
     <main class="max-w-7xl mx-auto px-6 py-8">
         
@@ -219,8 +204,6 @@ $active_tab = $_GET['tab'] ?? 'browse';
         </div>
 
         <!-- APP NAVIGATION TABS -->
-        <?php include 'nav_menu.php'; ?>
-
         <!-- HERO CINEMATIC SPOTLIGHT -->
         <?php if ($featured_track): ?>
             <div class="glassmorphism rounded-3xl p-6 md:p-8 flex flex-col md:flex-row justify-between items-center gap-8 mb-12 shadow-glow border border-brand-sage/10 relative overflow-hidden">
@@ -415,7 +398,8 @@ $active_tab = $_GET['tab'] ?? 'browse';
     </div>
 
     <!-- MOBILE BOTTOM NAVIGATION -->
-    <nav class="fixed bottom-0 left-0 right-0 z-40 block md:hidden border-t border-white/5 bg-slate-950/90 backdrop-blur-lg px-6 py-2 shadow-2xl">
+    <?php if (!isset($_GET['embed'])): ?>
+<nav class="fixed bottom-0 left-0 right-0 z-40 block md:hidden border-t border-white/5 bg-slate-950/90 backdrop-blur-lg px-6 py-2 shadow-2xl">
         <div class="flex items-center justify-between mx-auto max-w-md">
             <a href="dashboard.php" class="flex flex-col items-center gap-1 py-1 px-3 text-gray-400 hover:text-white transition-colors font-sans">
                 <svg class="h-5.5 w-5.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
@@ -435,6 +419,7 @@ $active_tab = $_GET['tab'] ?? 'browse';
             </a>
         </div>
     </nav>
+<?php endif; ?>
 
     <!-- WEB AUDIO SYNTHESIZER AND CANVAS SCRIPTS -->
     <script>

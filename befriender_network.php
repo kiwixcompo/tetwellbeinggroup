@@ -143,49 +143,17 @@ if (isset($_GET['joined'])) $success_msg = "Successfully RSVP'd/Joined the virtu
     </style>
 </head>
 <body class="min-h-full flex flex-col selection:bg-brand-sage/20 selection:text-brand-slate bg-brand-bg">
+    <?php if (!isset($_GET['embed'])) { require_once 'nav_menu.php'; } ?>
 
     <!-- TOP NAVIGATION BAR -->
-    <header class="sticky top-0 z-40 w-full border-b border-[#EBE8E0] bg-brand-bg/95 backdrop-blur-md">
-        <div class="mx-auto flex h-20 max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
-            <!-- Brand Logo -->
-            <a href="dashboard.php" class="flex items-center transition-transform hover:scale-[1.01] active:scale-95">
-                <img src="logo.svg" alt="Tet Wellbeing Group" class="h-16 w-auto">
-            </a>
+    <?php if (!isset($_GET['embed'])): ?>
 
-            <!-- Actions -->
-            <div class="flex items-center gap-4">
-                <!-- Emergency Support Button -->
-                <button type="button" onclick="openEmergencyModal()" class="flex items-center gap-2 rounded-2xl bg-brand-coral px-4 py-2 text-sm font-semibold text-white shadow-md transition-all duration-300 hover:bg-brand-coralHover hover:shadow-lg active:scale-95">
-                    <svg class="h-4.5 w-4.5 animate-pulse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-                        <line x1="12" y1="9" x2="12" y2="13"/>
-                        <line x1="12" y1="17" x2="12.01" y2="17"/>
-                    </svg>
-                    <span class="hidden sm:inline">Emergency Support</span>
-                </button>
-
-                <!-- User Profile -->
-                <div class="relative group">
-                    <button type="button" class="flex h-10 w-10 items-center justify-center rounded-full bg-brand-sageLight text-brand-sage font-bold shadow-sm transition-transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-brand-sage focus:ring-offset-2">
-                        <?php echo $user_initial; ?>
-                    </button>
-                    <div class="absolute right-0 mt-2 w-48 origin-top-right rounded-2xl bg-white py-2 shadow-card ring-1 ring-black ring-opacity-5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
-                        <div class="px-4 py-2 border-b border-gray-50">
-                            <p class="text-sm font-semibold text-brand-slate truncate"><?php echo htmlspecialchars($user_name); ?></p>
-                        </div>
-                        <a href="logout.php" class="block px-4 py-2 text-sm text-brand-coral hover:bg-brand-coralLight/50 transition-colors">Sign Out</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </header>
+<?php endif; ?>
 
     <!-- Main Content Layout -->
     <main class="flex-grow">
         <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-8">
             
-            <?php include 'nav_menu.php'; ?>
-
             <?php if ($success_msg): ?>
                 <div class="mb-6 p-4 rounded-xl bg-brand-sageLight border border-brand-sage/20 text-brand-sageHover flex items-start gap-3">
                     <svg class="h-6 w-6 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">

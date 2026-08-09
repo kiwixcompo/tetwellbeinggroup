@@ -85,6 +85,7 @@ $challenges = [
         .tab-content { display: none; }
         .tab-content.active { display: block; }
     </style>
+    <link rel="icon" href="logo.svg" type="image/svg+xml">
 </head>
 <body class="text-brand-slate antialiased flex flex-col min-h-screen">
 

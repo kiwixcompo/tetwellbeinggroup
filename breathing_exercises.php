@@ -5,10 +5,7 @@
  */
 require_once __DIR__ . '/db.php';
 
-if (!isset($_SESSION['user_id'])) {
-    header('Location: login.php');
-    exit;
-}
+require_once "gating_helper.php";
 $user_name = $_SESSION['user_name'] ?? 'User';
 ?>
 <!DOCTYPE html>
@@ -54,25 +51,16 @@ $user_name = $_SESSION['user_name'] ?? 'User';
         
         /* Smooth scale animation handled by JS modifying the inline transition duration */
     </style>
+    <link rel="icon" href="logo.svg" type="image/svg+xml">
 </head>
 <body class="min-h-screen text-brand-slate pb-20 flex flex-col">
+    <?php if (!isset($_GET['embed'])) { require_once 'nav_menu.php'; } ?>
 
     <!-- NAV BAR -->
-    <header class="bg-white/80 backdrop-blur-md border-b border-gray-100 sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-            <a href="dashboard.php" class="flex items-center gap-2 transition-transform hover:scale-[1.02] active:scale-95">
-                <img src="logo.svg" alt="Logo" class="h-8 w-auto">
-                <span class="text-xl font-extrabold tracking-tight font-outfit text-brand-slate">
-                    Tet <span class="text-brand-sage font-medium">Wellbeing</span>
-                </span>
-            </a>
-            <a href="dashboard.php" class="text-sm font-bold text-gray-500 hover:text-brand-sage transition">Dashboard</a>
-        </div>
-    </header>
+    
 
     <div class="max-w-7xl mx-auto w-full px-6 mt-8">
-        <?php require_once 'nav_menu.php'; ?>
-    </div>
+        </div>
 
     <!-- MAIN CONTENT -->
     <main class="flex-grow flex flex-col items-center justify-center max-w-4xl mx-auto px-6 w-full mt-4">

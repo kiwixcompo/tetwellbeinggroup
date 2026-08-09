@@ -46,6 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #F7F5F0; }
         h1, h2 { font-family: 'Outfit', sans-serif; }
     </style>
+    <link rel="icon" href="logo.svg" type="image/svg+xml">
 </head>
 <body class="min-h-screen flex items-center justify-center p-4">
 

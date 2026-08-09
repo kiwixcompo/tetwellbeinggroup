@@ -510,9 +510,10 @@ try {
     $plan_count = $pdo->query("SELECT COUNT(*) FROM subscription_plans")->fetchColumn();
     if ($plan_count == 0) {
         $pdo->exec("INSERT INTO subscription_plans (slug, name, price_monthly, features) VALUES
-            ('free','Free Starter',0.00,'AI Companion,Community Hub,1 Journal Entry/day,3 Streaming Tracks'),
-            ('professional','Professional',29.00,'Everything in Free,Unlimited Journal Entries,Full Streaming Library,Teletherapy Booking,Predictive Health Alerts,Digital Twin Access,Priority Support'),
-            ('corporate','Corporate Wellness',199.00,'Everything in Professional,Corporate HR Portal,Bulk Session Credits (50),Staff Roster Management,Org Wellbeing Analytics,Dedicated Account Manager,White-label Reports')");
+            ('free','Free Account',0.00,'Dashboard, MindBloom (3 goals), TrueVent (30 days), Assessments (monthly), Community (Anonymous), TET Academy (Beginner), AI Companion (Limited), Passport'),
+            ('basic','Basic Plan',9.99,'Everything in Free, Unlimited Journaling, AI Coach, Live Community Groups, Befriender Network, Academy (Intermediate), Unlimited Soundscapes, Basic Digital Twin'),
+            ('premium','Premium Plan',29.99,'Everything in Basic, Full Digital Twin, VR Resilience, Teletherapy, Caregiver Network, AI Companion Pro, Advanced Analytics, Premium Academy, Priority Support'),
+            ('corporate','Corporate Plan',199.00,'Everything in Premium, HR Dashboard, Employee Benefits, Company Challenges, Compliance')");
     }
 
     // Subscription Invoices table
@@ -532,8 +533,8 @@ try {
             (1, 1, 'professional', 29.00, 'paid')");
     }
 
-    // Mark user id=1 as professional subscriber
-    $pdo->exec("UPDATE users SET subscription_plan = 'professional' WHERE id = 1");
+    // Mark user id=1 as premium subscriber
+    $pdo->exec("UPDATE users SET subscription_plan = 'premium' WHERE id = 1");
     // Admin is corporate
     $pdo->exec("UPDATE users SET subscription_plan = 'corporate' WHERE id = 99");
 
@@ -984,6 +985,7 @@ if (!isset($_SESSION['mock_community_circles'])) {
             'slug' => 'daily-wins',
             'name' => 'Positivity & Gratitude Log',
             'description' => 'Focus on the bright side. Post your daily micro-successes, small wins, and gratitude notes.',
+            'subscription_plan' => 'premium',
             'category' => 'positivity',
             'champion_name' => 'Clara Green',
             'champion_avatar' => 'C'
@@ -1177,8 +1179,9 @@ if (!isset($_SESSION['mock_streaming_content'])) {
 }
 if (!isset($_SESSION['mock_caregiver_videos'])) {
     $_SESSION['mock_caregiver_videos'] = [
-        ['id' => 1, 'title' => 'Understanding Caregiver Fatigue', 'embed_url' => 'https://www.youtube.com/embed/dQw4w9WgXcQ'],
-        ['id' => 2, 'title' => 'Therapeutic Boundaries', 'embed_url' => 'https://www.youtube.com/embed/dQw4w9WgXcQ']
+        ['id' => 1, 'title' => 'Understanding Caregiver Fatigue', 'embed_url' => 'https://www.youtube.com/embed/tS41O7Z-fA0?rel=0&modestbranding=1'],
+        ['id' => 2, 'title' => 'Therapeutic Boundaries', 'embed_url' => 'https://www.youtube.com/embed/I7v6t2qTjH0?rel=0&modestbranding=1'],
+        ['id' => 3, 'title' => 'Coping with Burnout', 'embed_url' => 'https://www.youtube.com/embed/q_mDrtW9gOQ?rel=0&modestbranding=1']
     ];
 }
 if (!isset($_SESSION['mock_research_studies'])) {
@@ -1197,9 +1200,34 @@ if (!isset($_SESSION['mock_research_participants'])) {
 // ── PHASE 10 MOCK ARRAYS ─────────────────────────────────────────────────────
 if (!isset($_SESSION['mock_subscription_plans'])) {
     $_SESSION['mock_subscription_plans'] = [
-        ['slug' => 'free',         'name' => 'Free Starter',       'price_monthly' => 0.00,   'features' => 'AI Companion,Community Hub,1 Journal Entry/day,3 Streaming Tracks'],
-        ['slug' => 'professional', 'name' => 'Professional',       'price_monthly' => 29.00,  'features' => 'Everything in Free,Unlimited Journal Entries,Full Streaming Library,Teletherapy Booking,Predictive Health Alerts,Digital Twin Access,Priority Support'],
-        ['slug' => 'corporate',    'name' => 'Corporate Wellness', 'price_monthly' => 199.00, 'features' => 'Everything in Professional,Corporate HR Portal,Bulk Session Credits (50),Staff Roster Management,Org Wellbeing Analytics,Dedicated Account Manager,White-label Reports']
+        [
+            'id' => 1,
+            'slug' => 'free',
+            'name' => 'Free Account',
+            'price_monthly' => 0.00,
+            'features' => 'Dashboard, MindBloom (3 goals), TrueVent (30 days), Assessments (monthly), Community (Anonymous), TET Academy (Beginner), AI Companion (Limited), Passport'
+        ],
+        [
+            'id' => 2,
+            'slug' => 'basic',
+            'name' => 'Basic Plan',
+            'price_monthly' => 9.99,
+            'features' => 'Everything in Free, Unlimited Journaling, AI Coach, Live Community Groups, Befriender Network, Academy (Intermediate), Unlimited Soundscapes, Basic Digital Twin'
+        ],
+        [
+            'id' => 3,
+            'slug' => 'premium',
+            'name' => 'Premium Plan',
+            'price_monthly' => 29.99,
+            'features' => 'Everything in Basic, Full Digital Twin, VR Resilience, Teletherapy, Caregiver Network, AI Companion Pro, Advanced Analytics, Premium Academy, Priority Support'
+        ],
+        [
+            'id' => 4,
+            'slug' => 'corporate',
+            'name' => 'Corporate Plan',
+            'price_monthly' => 199.00,
+            'features' => 'Everything in Premium, HR Dashboard, Employee Benefits, Company Challenges, Compliance'
+        ]
     ];
 }
 if (!isset($_SESSION['mock_subscription_invoices'])) {
@@ -1288,5 +1316,22 @@ if (isset($_SESSION['user_id']) && !in_array($current_page, ['login.php', 'signu
 
     // Sync crisis state
     $_SESSION['crisis_state'] = $db_crisis_state;
+
+    // Fetch user subscription plan globally
+    $user_subscription_plan = 'free';
+    if ($db_connected && $pdo) {
+        try {
+            $stmt = $pdo->prepare("SELECT subscription_plan FROM users WHERE id = ?");
+            $stmt->execute([$user_id]);
+            $res = $stmt->fetchColumn();
+            if ($res) {
+                $user_subscription_plan = $res;
+            }
+        } catch (PDOException $ex) {}
+    }
+    if ($user_subscription_plan === 'free' && isset($_SESSION['mock_users'][$user_email])) {
+        $user_subscription_plan = $_SESSION['mock_users'][$user_email]['subscription_plan'] ?? 'free';
+    }
+    $_SESSION['user_subscription_plan'] = $user_subscription_plan;
 }
 ?>

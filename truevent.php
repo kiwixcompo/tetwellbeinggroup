@@ -53,11 +53,13 @@ if (!isset($_SESSION['user_id'])) {
             100% { box-shadow: 0 0 0 0 rgba(231, 111, 81, 0); }
         }
     </style>
+    <link rel="icon" href="logo.svg" type="image/svg+xml">
 </head>
 <body class="antialiased min-h-screen flex flex-col">
 
     <!-- DESKTOP NAVIGATION -->
-    <nav class="glass-nav fixed w-full top-0 z-50">
+    <?php if (!isset($_GET['embed'])): ?>
+<nav class="glass-nav fixed w-full top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-20 items-center">
                 <div class="flex items-center gap-2 cursor-pointer" onclick="window.location.href='dashboard.php'">
@@ -69,9 +71,25 @@ if (!isset($_SESSION['user_id'])) {
             </div>
         </div>
     </nav>
+<?php endif; ?>
 
     <!-- MAIN CONTENT -->
-    <main class="flex-grow pt-28 pb-20 px-4 sm:px-6 lg:px-8 max-w-3xl mx-auto w-full">
+    <main class="flex-grow <?php echo isset($_GET['embed']) ? 'pt-6' : 'pt-28'; ?> pb-20 px-4 sm:px-6 lg:px-8 max-w-3xl mx-auto w-full">
+        <?php if (($_SESSION['user_subscription_plan'] ?? 'free') === 'free'): ?>
+        <div class="fixed inset-0 z-50 bg-brand-slate/80 backdrop-blur-sm flex items-center justify-center p-4">
+            <div class="bg-white rounded-3xl p-8 max-w-lg w-full text-center shadow-2xl">
+                <div class="h-16 w-16 mx-auto bg-brand-sageLight text-brand-sage rounded-full flex items-center justify-center mb-6">
+                    <i class="fa-solid fa-lock text-2xl"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-brand-slate mb-4">Basic Feature</h2>
+                <p class="text-gray-600 mb-8">This feature requires a Basic or Premium plan. Upgrade your plan to access this tool.</p>
+                <a href="subscription.php" class="inline-block px-8 py-3 bg-brand-sage text-white rounded-2xl font-bold shadow-md hover:bg-brand-sageHover transition-all">Upgrade to Basic</a>
+                <a href="dashboard.php" class="block mt-4 text-sm font-bold text-gray-400 hover:text-brand-slate transition-colors">Return to Dashboard</a>
+            </div>
+        </div>
+        <div class="hidden">
+        <?php endif; ?>
+
         
         <div class="text-center mb-10">
             <h1 class="text-3xl md:text-4xl font-extrabold text-white tracking-tight mb-3">TrueVent</h1>
@@ -97,7 +115,11 @@ if (!isset($_SESSION['user_id'])) {
             </div>
         </div>
 
-    </main>
+    
+        <?php if (($_SESSION['user_subscription_plan'] ?? 'free') === 'free'): ?>
+        </div>
+        <?php endif; ?>
+</main>
 
     <!-- SUCCESS MODAL -->
     <div id="success-modal" class="fixed inset-0 z-[60] flex items-center justify-center p-4 opacity-0 pointer-events-none transition-all duration-500">

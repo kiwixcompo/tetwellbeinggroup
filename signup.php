@@ -294,7 +294,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         I agree to the 
                         <a href="index.php" target="_blank" class="font-semibold text-brand-sage hover:underline">Terms of Service</a> 
                         and 
-                        <a href="#" class="font-semibold text-brand-sage hover:underline">Privacy Policy</a>.
+                        <a href="javascript:void(0)" onclick="alert('This feature is coming soon!')" class="font-semibold text-brand-sage hover:underline">Privacy Policy</a>.
                     </label>
                 </div>
 

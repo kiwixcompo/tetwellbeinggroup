@@ -8,15 +8,12 @@ require_once 'db.php';
 require_once 'EmotionalHealthService.php';
 
 // Auth Guard: Client, Specialist & Admin
-if (!isset($_SESSION['user_id'])) {
-    header('Location: login.php');
-    exit;
-}
+require_once "gating_helper.php";
 
-$user_id = $_SESSION['user_id'];
+$user_id = $_SESSION['user_id'] ?? 0;
 $user_name = $_SESSION['user_name'] ?? 'User';
 $user_role = $_SESSION['user_role'] ?? 'client';
-$user_initial = strtoupper(substr($user_name, 0, 1));
+$user_initial = 'G';
 $today_date = date('l, F j, Y');
 
 // Multilingual translations dictionary
@@ -615,49 +612,13 @@ if (!$loaded_from_db && isset($_SESSION['mock_ai_chats'])) {
             border-radius: 9999px;
         }
     </style>
+    <script src="https://js.puter.com/v2/"></script>
 </head>
 <body class="min-h-full flex flex-col selection:bg-brand-sage/20 selection:text-brand-slate">
+    <?php if (!isset($_GET['embed'])) { require_once 'nav_menu.php'; } ?>
 
     <!-- TOP NAVIGATION BAR -->
-    <header class="sticky top-0 z-40 w-full border-b border-[#EBE8E0] bg-brand-bg/95 backdrop-blur-md">
-        <div class="mx-auto flex h-20 max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
-            <!-- Brand Logo -->
-            <a href="dashboard.php" class="flex items-center transition-transform hover:scale-[1.01] active:scale-95">
-                <img src="logo.svg" alt="Tet Wellbeing Group" class="h-16 w-auto">
-            </a>
-
-            <!-- Actions -->
-            <div class="flex items-center gap-4">
-                <!-- Emergency Support Button -->
-                <button type="button" onclick="openEmergencyModal()" class="flex items-center gap-2 rounded-2xl bg-brand-coral px-4 py-2 text-sm font-semibold text-white shadow-md transition-all duration-300 hover:bg-brand-coralHover hover:shadow-lg active:scale-95">
-                    <svg class="h-4.5 w-4.5 animate-pulse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-                        <line x1="12" y1="9" x2="12" y2="13"/>
-                        <line x1="12" y1="17" x2="12.01" y2="17"/>
-                    </svg>
-                    <span>Emergency Support</span>
-                </button>
-
-                <!-- Profile Avatar -->
-                <div class="relative group cursor-pointer">
-                    <div class="flex h-10 w-10 items-center justify-center rounded-full border-2 border-brand-sage/20 bg-brand-sageLight text-sm font-bold text-brand-sage transition-all hover:border-brand-sage">
-                        <?php echo $user_initial; ?>
-                    </div>
-                    <div class="absolute right-0 mt-2 w-48 origin-top-right rounded-2xl bg-white p-2 shadow-xl border border-gray-100 opacity-0 scale-95 pointer-events-none transition-all duration-200 group-hover:opacity-100 group-hover:scale-100 group-hover:pointer-events-auto">
-                        <div class="px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Signed in as</div>
-                        <div class="px-3 py-1 font-bold text-brand-slate text-sm truncate"><?php echo htmlspecialchars($user_name); ?></div>
-                        <hr class="my-2 border-gray-100">
-                        <?php if ($user_role === 'admin'): ?>
-                        <a href="admin_dashboard.php" class="block px-3 py-2 text-sm text-brand-sage rounded-xl hover:bg-brand-sageLight transition-colors font-bold">Admin Console</a>
-                        <?php endif; ?>
-                        <a href="#" class="block px-3 py-2 text-sm text-gray-600 rounded-xl hover:bg-brand-bg transition-colors">My Profile</a>
-                        <a href="#" class="block px-3 py-2 text-sm text-gray-600 rounded-xl hover:bg-brand-bg transition-colors">Settings</a>
-                        <a href="logout.php" class="block px-3 py-2 text-sm text-brand-coral rounded-xl hover:bg-brand-coralLight transition-colors font-medium font-outfit">Log out</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </header>
+    
 
     <!-- MAIN BODY CONTENT -->
     <main class="flex-grow mx-auto w-full max-w-6xl px-4 py-8 pb-24 md:pb-8 fade-in">
@@ -695,8 +656,6 @@ if (!$loaded_from_db && isset($_SESSION['mock_ai_chats'])) {
         </div>
 
         <!-- APP NAVIGATION TABS -->
-        <?php include 'nav_menu.php'; ?>
-
         <!-- GRID LAYOUT -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             
@@ -1037,17 +996,23 @@ if (!$loaded_from_db && isset($_SESSION['mock_ai_chats'])) {
             typing.classList.remove('hidden');
 
             // Send POST request
-            const formData = new FormData();
-            formData.append('action', 'send_message');
-            formData.append('message', messageText);
-            formData.append('language', currentLang);
+            
+            // Puter.js AI Chat
+            let prompt = `Respond natively in this language code: ${currentLang}. You are a wellbeing companion. The user says: ${messageText}`;
+            
+            puter.ai.chat(prompt)
+            .then(response => {
+                let ai_response_text = response?.message?.content || response;
+                
+                // Silently log to server history (optional, retaining old logic structure)
+                const formData = new FormData();
+                formData.append('action', 'send_message');
+                formData.append('message', messageText);
+                formData.append('language', currentLang);
+                fetch('ai_companion.php', { method: 'POST', body: formData }).catch(e=>console.log(e));
 
-            fetch('ai_companion.php', {
-                method: 'POST',
-                body: formData
-            })
-            .then(res => res.json())
-            .then(data => {
+                let data = { status: 'success', ai_message: ai_response_text };
+
                 typing.classList.add('hidden');
                 
                 if (data.status === 'success') {
@@ -1194,21 +1159,36 @@ if (!$loaded_from_db && isset($_SESSION['mock_ai_chats'])) {
                 return;
             }
 
-            const templates = cognitiveTemplates[distortionType] || cognitiveTemplates['catastrophizing'];
-            const randomReframe = templates[Math.floor(Math.random() * templates.length)];
-
-            reframedText.textContent = randomReframe;
+            
+            reframedText.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Analyzing...';
             resultBox.classList.remove('hidden');
             resultBox.classList.add('fade-in');
+
+            puter.ai.chat(`As a CBT expert, act as a cognitive reframer. The user has this automatic negative thought: "${thoughtText}". They identified the cognitive distortion as: "${distortionType}". Provide a single, concise, rational, and positive reframed thought. Don't add extra commentary, just the reframe.`)
+            .then(response => {
+                let ans = response?.message?.content || response;
+                reframedText.textContent = ans;
+            })
+            .catch(err => {
+                reframedText.textContent = "Error: Could not process the reframe at this time.";
+            });
+
         }
 
         // Gratitude journaling prompts generator
         const promptsDict = <?php echo json_encode($gratitude_prompts); ?>;
 
         function generateGratitudePrompt() {
-            const list = promptsDict[currentLang] || promptsDict['en'];
-            const randomPrompt = list[Math.floor(Math.random() * list.length)];
-            document.getElementById('gratitude-text').textContent = randomPrompt;
+            document.getElementById('gratitude-text').innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Generating prompt...';
+            
+            puter.ai.chat(`Generate a unique, insightful gratitude journal prompt. Keep it to one sentence. Respond in this language code: ${currentLang}.`)
+            .then(response => {
+                let ans = response?.message?.content || response;
+                document.getElementById('gratitude-text').textContent = ans;
+            })
+            .catch(err => {
+                document.getElementById('gratitude-text').textContent = "What is something small that brought you peace today?";
+            });
         }
 
         // Emergency Modal Controls

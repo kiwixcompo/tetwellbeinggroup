@@ -11,12 +11,9 @@ require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/EmotionalHealthService.php';
 
 // Auth check
-if (!isset($_SESSION['user_id'])) {
-    header('Location: login.php');
-    exit;
-}
+require_once "gating_helper.php";
 
-$user_id = $_SESSION['user_id'];
+$user_id = $_SESSION['user_id'] ?? 0;
 $user_role = $_SESSION['user_role'] ?? 'client';
 $user_name = $_SESSION['user_name'] ?? 'Staff Member';
 
@@ -368,33 +365,15 @@ $active_tab = $_GET['tab'] ?? 'population';
             background: #D1D5DB;
         }
     </style>
+    <link rel="icon" href="logo.svg" type="image/svg+xml">
 </head>
 <body class="text-brand-slate antialiased pb-24">
+    <?php if (!isset($_GET['embed'])) { require_once 'nav_menu.php'; } ?>
 
     <!-- HEADER BAR -->
-    <header class="bg-white border-b border-[#EBE8E0] sticky top-0 z-40 backdrop-blur-md bg-white/95">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <div class="h-10 w-10 flex items-center justify-center rounded-xl bg-brand-sageLight border border-brand-sage/10 shadow-sm">
-                    <img src="logo.svg" alt="Tet Wellbeing Logo" class="h-6 w-6">
-                </div>
-                <div>
-                    <h1 class="text-lg font-bold font-outfit tracking-tight leading-none text-brand-slate">Tet Wellbeing Group</h1>
-                    <span class="text-[10px] text-gray-500 font-semibold tracking-wider uppercase block mt-1">Research & Population Analytics</span>
-                </div>
-            </div>
-            <div class="flex items-center gap-4">
-                <div class="hidden sm:block text-right">
-                    <span class="text-xs text-gray-500 block font-medium">Logged in as</span>
-                    <span class="text-sm font-bold text-brand-slate"><?php echo htmlspecialchars($user_name); ?></span>
-                </div>
-                <div class="h-9 w-9 rounded-full bg-brand-sage/10 border border-brand-sage/20 flex items-center justify-center text-brand-sage font-bold font-outfit uppercase">
-                    <?php echo substr($user_name, 0, 1); ?>
-                </div>
-                <a href="logout.php" class="text-xs font-bold text-brand-coral hover:text-red-700 transition-colors uppercase font-outfit">Log out</a>
-            </div>
-        </div>
-    </header>
+    <?php if (!isset($_GET['embed'])): ?>
+
+<?php endif; ?>
 
     <!-- CONTENT PORTAL -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
@@ -418,8 +397,6 @@ $active_tab = $_GET['tab'] ?? 'population';
         </div>
 
         <!-- SHARED NAVIGATION MENU INCLUDED -->
-        <?php include 'nav_menu.php'; ?>
-
         <!-- TOAST ALERTS -->
         <?php if (!empty($action_success)): ?>
             <div id="status-toast" class="mb-6 flex items-start gap-3 rounded-2xl border border-brand-sage bg-brand-sageLight p-4 text-brand-slate shadow-soft transition-all duration-300">

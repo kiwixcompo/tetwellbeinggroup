@@ -396,6 +396,7 @@ if ($user_role === 'client' && $active_tab === 'analytics') {
         .font-outfit { font-family: 'Outfit', sans-serif; }
         body { background-color: #F9F8F3; font-family: 'Inter', sans-serif; }
     </style>
+    <link rel="icon" href="logo.svg" type="image/svg+xml">
 </head>
 <body class="text-brand-slate min-h-screen pb-20 md:pb-8">
 
@@ -420,7 +421,7 @@ if ($user_role === 'client' && $active_tab === 'analytics') {
                             <?php echo strtoupper(substr($user_name, 0, 2)); ?>
                         </div>
                     </button>
-                    <div class="absolute right-0 top-full mt-2 w-48 bg-white border border-[#EBE8E0] rounded-2xl shadow-lg opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all p-1 z-50">
+                    <div class="absolute right-0 top-full mt-2 before:absolute before:-top-2 before:left-0 before:h-2 before:w-full before:content-[''] w-48 bg-white border border-[#EBE8E0] rounded-2xl shadow-lg opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all p-1 z-50">
                         <a href="logout.php" class="block px-4 py-2.5 text-xs font-bold text-brand-coral hover:bg-brand-coralLight rounded-xl transition-all">Logout Portal</a>
                     </div>
                 </div>

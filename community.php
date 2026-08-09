@@ -1,9 +1,10 @@
 <?php
 /**
- * Tet Wellbeing Group - Community & Peer Support Hub (community_hub.php)
+ * Tet Wellbeing Group - Community & Peer Support Hub (community.php)
  * Anonymous forums, moderated discussion channels, and peer connection layers.
  */
 require_once 'db.php';
+$tab = $_GET['tab'] ?? 'home';
 
 // Auth Guard: Redirect if not logged in
 if (!isset($_SESSION['user_id'])) {
@@ -139,7 +140,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             unset($mu);
         }
-        header("Location: community_hub.php?channel=" . urlencode($current_channel));
+        header("Location: community.php?channel=" . urlencode($current_channel));
         exit;
     }
 
@@ -164,7 +165,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
                 unset($mock_p);
             }
-            header("Location: community_hub.php?channel=" . urlencode($current_channel));
+            header("Location: community.php?channel=" . urlencode($current_channel));
             exit;
         }
     }
@@ -236,7 +237,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         break;
                     }
                 }
-                header("Location: community_hub.php?channel=" . urlencode($slug) . "&circle_joined=1");
+                header("Location: community.php?channel=" . urlencode($slug) . "&circle_joined=1");
                 exit;
             }
         }
@@ -261,7 +262,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $left = true;
             }
             if ($left) {
-                header("Location: community_hub.php?channel=general&circle_left=1");
+                header("Location: community.php?channel=general&circle_left=1");
                 exit;
             }
         }
@@ -296,7 +297,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $saved = true;
             }
             if ($saved) {
-                header("Location: community_hub.php?channel=" . urlencode($current_channel) . "&comment_added=1");
+                header("Location: community.php?channel=" . urlencode($current_channel) . "&comment_added=1");
                 exit;
             }
         } else {
@@ -323,7 +324,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $deleted = true;
             }
             if ($deleted) {
-                header("Location: community_hub.php?channel=" . urlencode($current_channel) . "&comment_deleted=1");
+                header("Location: community.php?channel=" . urlencode($current_channel) . "&comment_deleted=1");
                 exit;
             }
         }
@@ -353,7 +354,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $pinned = true;
             }
             if ($pinned) {
-                header("Location: community_hub.php?channel=" . urlencode($current_channel) . "&post_pinned=" . $pin_val);
+                header("Location: community.php?channel=" . urlencode($current_channel) . "&post_pinned=" . $pin_val);
                 exit;
             }
         }
@@ -378,7 +379,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $deleted = true;
             }
             if ($deleted) {
-                header("Location: community_hub.php?channel=" . urlencode($current_channel) . "&post_deleted=1");
+                header("Location: community.php?channel=" . urlencode($current_channel) . "&post_deleted=1");
                 exit;
             }
         }
@@ -450,6 +451,7 @@ function Math_Round($val) {
     <link rel="icon" type="image/svg+xml" href="logo.svg">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Community Hub - Tet Wellbeing Group</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Fonts -->
@@ -522,46 +524,44 @@ function Math_Round($val) {
 </head>
 <body class="min-h-full flex flex-col selection:bg-brand-sage/20 selection:text-brand-slate">
 
-    <!-- TOP NAVIGATION BAR -->
-    <header class="sticky top-0 z-40 w-full border-b border-[#EBE8E0] bg-brand-bg/95 backdrop-blur-md">
-        <div class="mx-auto flex h-20 max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
-            <!-- Brand Logo -->
-            <a href="dashboard.php" class="flex items-center transition-transform hover:scale-[1.01] active:scale-95">
-                <img src="logo.svg" alt="Tet Wellbeing Group" class="h-16 w-auto">
-            </a>
+    <?php include 'nav_menu.php'; ?>
 
-            <!-- Actions -->
-            <div class="flex items-center gap-4">
-                <button type="button" onclick="openEmergencyModal()" class="flex items-center gap-2 rounded-2xl bg-brand-coral px-4 py-2 text-sm font-semibold text-white shadow-md transition-all duration-300 hover:bg-brand-coralHover hover:shadow-lg active:scale-95">
-                    <svg class="h-4.5 w-4.5 animate-pulse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
-                    </svg>
-                    <span>Emergency Support</span>
-                </button>
+    <!-- MAIN BODY CONTENT (Phase 4 Community Layout) -->
+    <main class="flex-grow mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-8 pb-24 md:pb-12 fade-in">
+        
+        <div class="flex flex-col lg:flex-row gap-8">
+            <!-- LEFT SIDEBAR (20%) -->
+            <div class="w-full lg:w-1/4 xl:w-1/5 shrink-0">
+                <div class="sticky top-28 space-y-1">
+                    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider px-4 mb-4">Community & Care</h3>
+                    
+                    <a href="?tab=home" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all <?php echo $tab === 'home' ? 'bg-brand-sageLight text-brand-sage' : 'text-gray-500 hover:bg-gray-50 hover:text-brand-slate'; ?>">
+                        <i class="fa-solid fa-users w-5 text-center"></i> 
+                        Community Feed
+                    </a>
+                    
+                    <a href="?tab=teletherapy" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all <?php echo $tab === 'teletherapy' ? 'bg-brand-sageLight text-brand-sage' : 'text-gray-500 hover:bg-gray-50 hover:text-brand-slate'; ?>">
+                        <i class="fa-solid fa-user-md w-5 text-center"></i> 
+                        Teletherapy Services
+                    </a>
+                    
+                    <a href="?tab=befriender" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all <?php echo $tab === 'befriender' ? 'bg-brand-sageLight text-brand-sage' : 'text-gray-500 hover:bg-gray-50 hover:text-brand-slate'; ?>">
+                        <i class="fa-solid fa-handshake-angle w-5 text-center"></i> 
+                        Befriender Network
+                    </a>
 
-                <!-- Profile Avatar -->
-                <div class="relative group cursor-pointer">
-                    <div class="flex h-10 w-10 items-center justify-center rounded-full border-2 border-brand-sage/20 bg-brand-sageLight text-sm font-bold text-brand-sage transition-all hover:border-brand-sage">
-                        <?php echo $user_initial; ?>
-                    </div>
-                    <div class="absolute right-0 mt-2 w-48 origin-top-right rounded-2xl bg-white p-2 shadow-xl border border-gray-100 opacity-0 scale-95 pointer-events-none transition-all duration-200 group-hover:opacity-100 group-hover:scale-100 group-hover:pointer-events-auto">
-                        <div class="px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Signed in as</div>
-                        <div class="px-3 py-1 font-bold text-brand-slate text-sm truncate"><?php echo htmlspecialchars($user_name); ?></div>
-                        <hr class="my-2 border-gray-100">
-                        <?php if ($user_role === 'admin'): ?>
-                        <a href="admin_dashboard.php" class="block px-3 py-2 text-sm text-brand-sage rounded-xl hover:bg-brand-sageLight transition-colors font-bold font-outfit">Admin Console</a>
-                        <?php endif; ?>
-                        <a href="#" class="block px-3 py-2 text-sm text-gray-600 rounded-xl hover:bg-brand-bg transition-colors">My Profile</a>
-                        <a href="#" class="block px-3 py-2 text-sm text-gray-600 rounded-xl hover:bg-brand-bg transition-colors">Settings</a>
-                        <a href="logout.php" class="block px-3 py-2 text-sm text-brand-coral rounded-xl hover:bg-brand-coralLight transition-colors font-medium">Log out</a>
-                    </div>
+                    <a href="?tab=caregiver" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all <?php echo $tab === 'caregiver' ? 'bg-brand-sageLight text-brand-sage' : 'text-gray-500 hover:bg-gray-50 hover:text-brand-slate'; ?>">
+                        <i class="fa-solid fa-hands-holding-child w-5 text-center"></i> 
+                        Caregiver Hub
+                    </a>
                 </div>
             </div>
-        </div>
-    </header>
 
-    <!-- MAIN BODY CONTENT -->
-    <main class="flex-grow mx-auto w-full max-w-4xl px-4 py-8 pb-24 md:pb-8 fade-in">
+            <!-- RIGHT CONTENT AREA (80%) -->
+            <div class="w-full lg:w-3/4 xl:w-4/5">
+                <?php if ($tab === 'home'): ?>
+                    <div class="max-w-4xl mx-auto">
+                        
         
         <!-- Header / Banner Card (The Unfiltered Circle) -->
         <div class="mb-8 relative overflow-hidden rounded-3xl bg-white border border-[#EBE8E0] shadow-soft p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6">
@@ -578,9 +578,6 @@ function Math_Round($val) {
                 <img src="images/unfiltered_circle.png" alt="Community Support Group" class="w-full h-full object-cover">
             </div>
         </div>
-
-        <!-- APP NAVIGATION TABS -->
-        <?php include 'nav_menu.php'; ?>
 
         <!-- NOTIFICATIONS -->
         <?php if (!empty($action_success)): ?>
@@ -613,6 +610,74 @@ function Math_Round($val) {
             </div>
         <?php endif; ?>
 
+        <!-- Peer Support Video Groups (Jitsi) -->
+        <div class="mb-10">
+            <h2 class="text-2xl font-bold text-brand-slate mb-6 font-heading">Peer Support Video Groups</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Group Card 1 -->
+                <div class="bg-white p-6 rounded-3xl shadow-soft border border-[#EBE8E0] hover:border-brand-sage/50 transition-all">
+                    <div class="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center text-blue-500 mb-4 text-xl">
+                        <i class="fa-solid fa-mars"></i>
+                    </div>
+                    <h3 class="text-lg font-bold mb-2 font-heading">Men's Group</h3>
+                    <p class="text-gray-500 mb-4 text-xs">Discuss mental health, challenges, and support.</p>
+                    <a href="https://meet.jit.si/tet-wellbeing-mens-group" target="_blank" class="block text-center w-full py-2 bg-brand-sage/10 text-brand-sage rounded-xl font-bold hover:bg-brand-sage hover:text-white transition-colors text-sm">Join Video Chat</a>
+                </div>
+
+                <!-- Group Card 2 -->
+                <div class="bg-white p-6 rounded-3xl shadow-soft border border-[#EBE8E0] hover:border-brand-sage/50 transition-all">
+                    <div class="w-12 h-12 bg-pink-100 rounded-2xl flex items-center justify-center text-pink-500 mb-4 text-xl">
+                        <i class="fa-solid fa-venus"></i>
+                    </div>
+                    <h3 class="text-lg font-bold mb-2 font-heading">Women's Group</h3>
+                    <p class="text-gray-500 mb-4 text-xs">Share experiences, empowerment, and wellness.</p>
+                    <a href="https://meet.jit.si/tet-wellbeing-womens-group" target="_blank" class="block text-center w-full py-2 bg-brand-sage/10 text-brand-sage rounded-xl font-bold hover:bg-brand-sage hover:text-white transition-colors text-sm">Join Video Chat</a>
+                </div>
+
+                <!-- Group Card 3 -->
+                <div class="bg-white p-6 rounded-3xl shadow-soft border border-[#EBE8E0] hover:border-brand-sage/50 transition-all">
+                    <div class="w-12 h-12 bg-brand-sky/20 rounded-2xl flex items-center justify-center text-brand-sky mb-4 text-xl">
+                        <i class="fa-solid fa-person-praying"></i>
+                    </div>
+                    <h3 class="text-lg font-bold mb-2 font-heading">Loneliness</h3>
+                    <p class="text-gray-500 mb-4 text-xs">Connect with others who understand the feeling.</p>
+                    <a href="https://meet.jit.si/tet-wellbeing-loneliness" target="_blank" class="block text-center w-full py-2 bg-brand-sage/10 text-brand-sage rounded-xl font-bold hover:bg-brand-sage hover:text-white transition-colors text-sm">Join Video Chat</a>
+                </div>
+
+                <!-- Group Card 4 -->
+                <div class="bg-white p-6 rounded-3xl shadow-soft border border-[#EBE8E0] hover:border-brand-sage/50 transition-all">
+                    <div class="w-12 h-12 bg-brand-coralLight rounded-2xl flex items-center justify-center text-brand-coral mb-4 text-xl">
+                        <i class="fa-solid fa-briefcase"></i>
+                    </div>
+                    <h3 class="text-lg font-bold mb-2 font-heading">Workplace Stress</h3>
+                    <p class="text-gray-500 mb-4 text-xs">Manage burnout and professional exhaustion.</p>
+                    <a href="https://meet.jit.si/tet-wellbeing-workplace-stress" target="_blank" class="block text-center w-full py-2 bg-brand-sage/10 text-brand-sage rounded-xl font-bold hover:bg-brand-sage hover:text-white transition-colors text-sm">Join Video Chat</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Befriender CTA Block -->
+        <section class="bg-brand-slate text-white rounded-3xl p-8 md:p-10 mb-10 flex flex-col md:flex-row items-center justify-between shadow-lg relative overflow-hidden">
+            <div class="absolute -right-20 -top-20 w-64 h-64 bg-brand-coral rounded-full opacity-20 blur-3xl"></div>
+            <div class="absolute -left-20 -bottom-20 w-64 h-64 bg-brand-sky rounded-full opacity-20 blur-3xl"></div>
+            
+            <div class="z-10 mb-6 md:mb-0 md:pr-8">
+                <h2 class="text-3xl font-bold mb-2 font-heading">Need a 1-on-1 chat?</h2>
+                <p class="text-white/80 max-w-xl text-sm md:text-base">Sometimes a personal conversation is what you need most. Match with a befriender today and talk in a safe, non-judgmental space.</p>
+            </div>
+            <div class="z-10 w-full md:w-auto shrink-0">
+                <?php if (isset($_SESSION['user_subscription_plan']) && $_SESSION['user_subscription_plan'] !== 'free'): ?>
+                <button onclick="showToast('Match request sent! A befriender will be in touch soon.')" class="inline-block w-full md:w-auto text-center px-8 py-4 bg-brand-coral hover:bg-brand-coralHover text-white font-bold rounded-xl transition-all shadow-md hover:shadow-lg transform hover:-translate-y-1">
+                    Find a Befriender
+                </button>
+                <?php else: ?>
+                <a href="subscription.php" class="inline-block w-full md:w-auto text-center px-8 py-4 bg-gray-500 hover:bg-gray-600 text-white font-bold rounded-xl transition-all shadow-md hover:shadow-lg transform hover:-translate-y-1">
+                    Upgrade to Unlock
+                </a>
+                <?php endif; ?>
+            </div>
+        </section>
+
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
             
             <!-- LEFT COLUMN: CHANNEL SELECTOR -->
@@ -624,10 +689,9 @@ function Math_Round($val) {
                         <?php foreach ($channels as $slug => $name): ?>
                             <?php $isActive = ($current_channel === $slug); ?>
                             <a 
-                                href="community_hub.php?channel=<?php echo urlencode($slug); ?>" 
+                                href="community.php?channel=<?php echo urlencode($slug); ?>" 
                                 class="shrink-0 flex items-center gap-2 px-4 py-3 rounded-2xl text-xs font-semibold transition-all <?php echo $isActive ? 'bg-brand-sage text-white shadow-soft font-bold' : 'bg-brand-bg text-brand-slate hover:bg-brand-sageLight hover:text-brand-sage'; ?>"
                             >
-                                <span class="<?php echo $isActive ? 'text-white' : 'text-brand-sage'; ?>">#</span>
                                 <span><?php echo $name; ?></span>
                             </a>
                         <?php endforeach; ?>
@@ -662,7 +726,6 @@ function Math_Round($val) {
                     <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                         <div class="space-y-1">
                             <div class="flex items-center gap-2">
-                                <span class="text-brand-sage font-extrabold text-lg">#</span>
                                 <h2 class="text-lg font-bold font-outfit text-brand-slate leading-tight"><?php echo htmlspecialchars($active_circle['name']); ?></h2>
                                 <span class="text-[9px] bg-brand-sageLight text-brand-sage font-extrabold uppercase px-2 py-0.5 rounded-full whitespace-nowrap">
                                     <?php echo htmlspecialchars($active_circle['category']); ?>
@@ -696,7 +759,7 @@ function Math_Round($val) {
                         
                         <?php if ($active_circle['slug'] !== 'general'): ?>
                             <?php if ($isJoined): ?>
-                                <form method="POST" action="community_hub.php?channel=<?php echo urlencode($current_channel); ?>">
+                                <form method="POST" action="community.php?channel=<?php echo urlencode($current_channel); ?>">
                                     <input type="hidden" name="action" value="leave_circle">
                                     <input type="hidden" name="circle_id" value="<?php echo (int)$active_circle['id']; ?>">
                                     <button type="submit" class="px-4 py-1.5 rounded-xl border border-brand-coral/30 hover:border-brand-coral bg-white hover:bg-brand-coralLight text-brand-coral font-bold text-[10px] uppercase tracking-wider transition-all active:scale-95">
@@ -704,7 +767,7 @@ function Math_Round($val) {
                                     </button>
                                 </form>
                             <?php else: ?>
-                                <form method="POST" action="community_hub.php?channel=<?php echo urlencode($current_channel); ?>">
+                                <form method="POST" action="community.php?channel=<?php echo urlencode($current_channel); ?>">
                                     <input type="hidden" name="action" value="join_circle">
                                     <input type="hidden" name="circle_id" value="<?php echo (int)$active_circle['id']; ?>">
                                     <button type="submit" class="px-5 py-1.5 rounded-xl bg-brand-sage hover:bg-brand-sageHover text-white font-bold text-[10px] uppercase tracking-wider shadow-sm transition-all active:scale-95">
@@ -730,7 +793,7 @@ function Math_Round($val) {
                         <p class="text-xs text-gray-500 max-w-sm mx-auto leading-relaxed">
                             This is a moderated peer circle. You are currently viewing it in preview mode. To publish posts or reply to comments, please join this circle.
                         </p>
-                        <form method="POST" action="community_hub.php?channel=<?php echo urlencode($current_channel); ?>">
+                        <form method="POST" action="community.php?channel=<?php echo urlencode($current_channel); ?>">
                             <input type="hidden" name="action" value="join_circle">
                             <input type="hidden" name="circle_id" value="<?php echo (int)$active_circle['id']; ?>">
                             <button type="submit" class="px-6 py-2.5 rounded-2xl bg-brand-sage hover:bg-brand-sageHover text-white font-bold text-xs uppercase tracking-wider shadow-soft transition-all active:scale-95">
@@ -744,7 +807,7 @@ function Math_Round($val) {
                         <div class="absolute top-0 left-0 w-full h-1 bg-brand-sage"></div>
                         <h3 class="text-base font-bold font-outfit text-brand-slate mb-3">Share a thought in #<?php echo $channels[$current_channel]; ?></h3>
                         
-                        <form method="POST" action="community_hub.php?channel=<?php echo urlencode($current_channel); ?>" class="space-y-4">
+                        <form method="POST" action="community.php?channel=<?php echo urlencode($current_channel); ?>" class="space-y-4">
                             <input type="hidden" name="action" value="create_post">
                             
                             <div>
@@ -833,7 +896,7 @@ function Math_Round($val) {
                                         <div class="flex items-center justify-between pt-2 border-t border-gray-100/50">
                                             <div class="flex items-center gap-2">
                                                 <!-- Hearts Form -->
-                                                <form method="POST" action="community_hub.php?channel=<?php echo urlencode($current_channel); ?>" class="inline">
+                                                <form method="POST" action="community.php?channel=<?php echo urlencode($current_channel); ?>" class="inline">
                                                     <input type="hidden" name="action" value="heart_post">
                                                     <input type="hidden" name="post_id" value="<?php echo (int)$post['id']; ?>">
                                                     
@@ -850,7 +913,7 @@ function Math_Round($val) {
                                             <?php if ($user_is_champion || $_SESSION['user_role'] === 'admin'): ?>
                                                 <div class="flex items-center gap-2 pl-3">
                                                     <!-- Pin/Unpin Action -->
-                                                    <form method="POST" action="community_hub.php?channel=<?php echo urlencode($current_channel); ?>" class="inline">
+                                                    <form method="POST" action="community.php?channel=<?php echo urlencode($current_channel); ?>" class="inline">
                                                         <input type="hidden" name="action" value="pin_post">
                                                         <input type="hidden" name="post_id" value="<?php echo (int)$post['id']; ?>">
                                                         <input type="hidden" name="pin_value" value="<?php echo $post['is_pinned'] ? 0 : 1; ?>">
@@ -862,7 +925,7 @@ function Math_Round($val) {
                                                     <span class="text-gray-200">|</span>
 
                                                     <!-- Delete Action -->
-                                                    <form method="POST" action="community_hub.php?channel=<?php echo urlencode($current_channel); ?>" class="inline" onsubmit="return confirm('Are you sure you want to delete this thread?');">
+                                                    <form method="POST" action="community.php?channel=<?php echo urlencode($current_channel); ?>" class="inline" onsubmit="return confirm('Are you sure you want to delete this thread?');">
                                                         <input type="hidden" name="action" value="delete_post">
                                                         <input type="hidden" name="post_id" value="<?php echo (int)$post['id']; ?>">
                                                         <button type="submit" class="text-brand-coral hover:text-brand-coralHover text-[10px] font-bold transition-colors">
@@ -904,7 +967,7 @@ function Math_Round($val) {
                                                                 <span class="text-gray-400 text-[9px]"><?php echo getRelativeTime($reply['created_at']); ?></span>
                                                                 
                                                                 <?php if ($user_is_champion || $_SESSION['user_role'] === 'admin'): ?>
-                                                                    <form method="POST" action="community_hub.php?channel=<?php echo urlencode($current_channel); ?>" class="inline" onsubmit="return confirm('Are you sure you want to delete this reply?');">
+                                                                    <form method="POST" action="community.php?channel=<?php echo urlencode($current_channel); ?>" class="inline" onsubmit="return confirm('Are you sure you want to delete this reply?');">
                                                                         <input type="hidden" name="action" value="delete_comment">
                                                                         <input type="hidden" name="reply_id" value="<?php echo (int)$reply['id']; ?>">
                                                                         <button type="submit" class="text-brand-coral hover:text-brand-coralHover text-[9px] font-bold transition-colors">
@@ -922,7 +985,7 @@ function Math_Round($val) {
 
                                         <!-- INLINE REPLY FORM -->
                                         <?php if ($isJoinedOrGeneral): ?>
-                                            <form method="POST" action="community_hub.php?channel=<?php echo urlencode($current_channel); ?>" class="mt-4 pt-3 border-t border-gray-100/50 flex gap-2.5 items-end">
+                                            <form method="POST" action="community.php?channel=<?php echo urlencode($current_channel); ?>" class="mt-4 pt-3 border-t border-gray-100/50 flex gap-2.5 items-end">
                                                 <input type="hidden" name="action" value="add_comment">
                                                 <input type="hidden" name="post_id" value="<?php echo (int)$post['id']; ?>">
                                                 <div class="flex-grow">
@@ -950,335 +1013,55 @@ function Math_Round($val) {
             </div>
         </div>
 
+    
+                    </div>
+                
+                <?php elseif ($tab === 'teletherapy'): ?>
+                    <div class="bg-white rounded-[2rem] border border-[#EBE8E0] shadow-soft overflow-hidden h-[85vh]">
+                        <iframe src="teletherapy_hub.php?embed=1" class="w-full h-full border-0"></iframe>
+                    </div>
+                    
+                <?php elseif ($tab === 'befriender'): ?>
+                    <div class="bg-white rounded-[2rem] border border-[#EBE8E0] shadow-soft overflow-hidden h-[85vh]">
+                        <iframe src="befriender_network.php?embed=1" class="w-full h-full border-0"></iframe>
+                    </div>
+                    
+                <?php elseif ($tab === 'caregiver'): ?>
+                    <div class="bg-white rounded-[2rem] border border-[#EBE8E0] shadow-soft overflow-hidden h-[85vh]">
+                        <iframe src="caregiver_hub.php?embed=1" class="w-full h-full border-0"></iframe>
+                    </div>
+                    
+                <?php else: ?>
+                    <div class="text-center py-20">
+                        <h2 class="text-2xl font-bold text-brand-slate mb-4">Module Not Found</h2>
+                        <a href="?tab=home" class="text-brand-sage underline">Return to Community</a>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
     </main>
 
-    <!-- MOBILE NAVIGATION BAR (Sticky Bottom) -->
-    <nav class="fixed bottom-0 left-0 right-0 z-40 block md:hidden border-t border-[#EBE8E0] bg-white/90 backdrop-blur-lg px-6 py-2 shadow-2xl">
-        <div class="flex items-center justify-between mx-auto max-w-md">
-            <a href="dashboard.php" class="flex flex-col items-center gap-1 py-1 px-3 text-gray-400 hover:text-brand-slate transition-colors">
-                <svg class="h-5.5 w-5.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                <span class="text-[10px] tracking-wider uppercase font-semibold">Home</span>
-            </a>
-            <a href="dashboard.php" class="flex flex-col items-center gap-1 py-1 px-3 text-gray-400 hover:text-brand-slate transition-colors">
-                <svg class="h-5.5 w-5.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-                <span class="text-[10px] tracking-wider uppercase font-semibold">Journal</span>
-            </a>
-            <a href="caregiver_hub.php" class="flex flex-col items-center gap-1 py-1 px-3 text-gray-400 hover:text-brand-slate transition-colors">
-                <svg class="h-5.5 w-5.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                <span class="text-[10px] tracking-wider uppercase">Caregiver</span>
-            </a>
-            <a href="community_hub.php" class="flex flex-col items-center gap-1 py-1 px-3 text-brand-sage font-medium">
-                <svg class="h-5.5 w-5.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                <span class="text-[10px] tracking-wider uppercase">Community</span>
-            </a>
-        </div>
-    </nav>
-
-    <!-- EMERGENCY SUPPORT MODAL -->
-    <div id="emergency-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-all duration-300">
-        <div class="absolute inset-0 bg-brand-slate/40 backdrop-blur-sm" onclick="closeEmergencyModal()"></div>
-        <div class="relative bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl border border-brand-coral/20 transform scale-95 transition-all duration-300">
-            <button onclick="closeEmergencyModal()" class="absolute top-4 right-4 text-gray-400 hover:text-brand-slate transition-colors p-1 rounded-full hover:bg-gray-100">
-                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            </button>
-            <div class="flex items-center gap-3 mb-4 text-brand-coral">
-                <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-coralLight">
-                    <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                </div>
-                <div>
-                    <h3 class="text-xl font-bold font-outfit text-brand-slate">Crisis Support Resources</h3>
-                    <p class="text-xs text-brand-coral font-semibold">Immediate 24/7 Assistance</p>
-                </div>
-            </div>
-            <p class="text-sm text-gray-600 mb-6 leading-relaxed">If you are facing an emergency, in distress, or in danger of hurting yourself, please reach out to one of the free support services below.</p>
-            <div class="space-y-3.5 mb-6">
-                <div class="flex items-center justify-between p-3.5 rounded-2xl bg-[#FAF9F6] border border-gray-100">
-                    <div>
-                        <h4 class="text-sm font-bold text-brand-slate">988 Crisis Lifeline</h4>
-                        <p class="text-xs text-gray-500">Call or Text 24/7 (US & Canada)</p>
-                    </div>
-                    <a href="tel:988" class="px-4 py-1.5 rounded-xl bg-brand-coral text-white text-xs font-bold shadow-sm hover:bg-brand-coralHover transition-colors">Call 988</a>
-                </div>
-                <div class="flex items-center justify-between p-3.5 rounded-2xl bg-[#FAF9F6] border border-gray-100">
-                    <div>
-                        <h4 class="text-sm font-bold text-brand-slate">Samaritans Helpline</h4>
-                        <p class="text-xs text-gray-500">Call 116 123 24/7 (United Kingdom)</p>
-                    </div>
-                    <a href="tel:116123" class="px-4 py-1.5 rounded-xl bg-brand-coral text-white text-xs font-bold shadow-sm hover:bg-brand-coralHover transition-colors">Call 116 123</a>
-                </div>
-                <div class="flex items-center justify-between p-3.5 rounded-2xl bg-[#FAF9F6] border border-gray-100">
-                    <div>
-                        <h4 class="text-sm font-bold text-brand-slate">Crisis Text Line (US/CA)</h4>
-                        <p class="text-xs text-gray-500">Text HOME to 741741 (Free, 24/7)</p>
-                    </div>
-                    <a href="sms:741741?body=HOME" class="px-4 py-1.5 rounded-xl bg-brand-slate text-white text-xs font-bold shadow-sm hover:bg-gray-800 transition-colors">Text HOME</a>
-                </div>
-                <div class="flex items-center justify-between p-3.5 rounded-2xl bg-[#FAF9F6] border border-gray-100">
-                    <div>
-                        <h4 class="text-sm font-bold text-brand-slate">Shout Crisis Text (UK)</h4>
-                        <p class="text-xs text-gray-500">Text SHOUT to 85258 (Free, 24/7)</p>
-                    </div>
-                    <a href="sms:85258?body=SHOUT" class="px-4 py-1.5 rounded-xl bg-brand-slate text-white text-xs font-bold shadow-sm hover:bg-gray-800 transition-colors">Text SHOUT</a>
-                </div>
-            </div>
-            <button onclick="closeEmergencyModal()" class="w-full py-2.5 rounded-2xl bg-gray-100 hover:bg-gray-200 text-gray-600 font-semibold text-sm transition-colors">Close</button>
-        </div>
-    </div>
-
-    <!-- CLINICAL SAFETY TRIAGE CRISIS MODAL -->
-    <?php if (isset($_SESSION['crisis_state']) && $_SESSION['crisis_state'] == 1): ?>
-    <div id="crisis-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div class="absolute inset-0 bg-brand-slate/60 backdrop-blur-md"></div>
-        <div class="relative bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl border border-brand-coral/30 transform scale-100 transition-all duration-300">
-            
-            <div class="flex items-center gap-3.5 mb-5 text-brand-coral">
-                <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-coralLight">
-                    <svg class="h-6 w-6 text-brand-coral" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-                        <line x1="12" y1="9" x2="12" y2="13"/>
-                        <line x1="12" y1="17" x2="12.01" y2="17"/>
-                    </svg>
-                </div>
-                <div>
-                    <h3 class="text-lg font-bold font-outfit text-brand-slate">Crisis Support Resources</h3>
-                    <p class="text-[10px] text-brand-coral font-bold uppercase tracking-wider font-outfit">Un-bypassable safety notice</p>
-                </div>
-            </div>
-
-            <p class="text-xs text-gray-500 mb-6 leading-relaxed">
-                Our safety scans detected keywords indicating severe distress in your journal entry. Your life and wellbeing are valuable to us. Please connect with one of these free, confidential support resources immediately:
-            </p>
-
-            <div class="space-y-3 mb-6">
-                <!-- 988 -->
-                <div class="flex items-center justify-between p-3.5 rounded-2xl bg-brand-inputBg border border-gray-100 text-xs">
-                    <div>
-                        <h4 class="font-bold text-brand-slate">988 Suicide & Crisis Lifeline</h4>
-                        <p class="text-[10px] text-gray-500 mt-0.5">Call or Text 24/7 (US & Canada)</p>
-                    </div>
-                    <a href="tel:988" class="px-3.5 py-1.5 rounded-xl bg-brand-coral text-white font-bold text-[10px] shadow-sm hover:bg-brand-coralHover">Call 988</a>
-                </div>
-
-                <!-- Samaritans UK -->
-                <div class="flex items-center justify-between p-3.5 rounded-2xl bg-[#FAF9F6] border border-gray-100 text-xs">
-                    <div>
-                        <h4 class="font-bold text-brand-slate">Samaritans Helpline (UK)</h4>
-                        <p class="text-[10px] text-gray-500 mt-0.5">Call 116 123 24/7 (United Kingdom)</p>
-                    </div>
-                    <a href="tel:116123" class="px-3.5 py-1.5 rounded-xl bg-brand-coral text-white font-bold text-[10px] shadow-sm hover:bg-brand-coralHover">Call 116 123</a>
-                </div>
-
-                <!-- Shout UK -->
-                <div class="flex items-center justify-between p-3.5 rounded-2xl bg-[#FAF9F6] border border-gray-100 text-xs">
-                    <div>
-                        <h4 class="font-bold text-brand-slate">Shout Crisis Text (UK)</h4>
-                        <p class="text-[10px] text-gray-500 mt-0.5">Text SHOUT to 85258 (Free, 24/7)</p>
-                    </div>
-                    <a href="sms:85258?body=SHOUT" class="px-3.5 py-1.5 rounded-xl bg-brand-slate text-white font-bold text-[10px] shadow-sm hover:bg-gray-800">Text SHOUT</a>
-                </div>
-            </div>
-
-            <form method="POST" action="community_hub.php?channel=<?php echo urlencode($current_channel); ?>">
-                <input type="hidden" name="action" value="clear_crisis">
-                
-                <label class="flex items-start gap-2.5 mb-4 cursor-pointer select-none text-[10px] text-gray-500 leading-normal">
-                    <input type="checkbox" required class="rounded border-gray-300 text-brand-sage focus:ring-brand-sage mt-0.5">
-                    <span>I acknowledge these resources and confirm that I am safe or currently seeking appropriate help.</span>
-                </label>
-
-                <button type="submit" class="w-full py-2.5 rounded-2xl bg-brand-sage hover:bg-brand-sageHover text-white font-bold text-xs shadow-md transition-colors text-center">
-                    Acknowledge & Dismiss Modal
-                </button>
-            </form>
-        </div>
-    </div>
-    <?php endif; ?>
-
-    <!-- DISCOVER CIRCLES MODAL -->
-    <div id="discover-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-all duration-300">
-        <div class="absolute inset-0 bg-brand-slate/40 backdrop-blur-sm" onclick="closeDiscoverModal()"></div>
-        <div class="relative bg-white w-full max-w-lg rounded-3xl p-6 shadow-2xl border border-[#EBE8E0] transform scale-95 transition-all duration-300 max-h-[85vh] flex flex-col">
-            <button onclick="closeDiscoverModal()" class="absolute top-4 right-4 text-gray-400 hover:text-brand-slate transition-colors p-1 rounded-full hover:bg-gray-100">
-                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            </button>
-            
-            <div class="flex items-center gap-3 mb-4 pb-2 border-b border-[#EBE8E0]">
-                <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-sageLight text-brand-sage text-xl font-bold">
-                    🤝
-                </div>
-                <div>
-                    <h3 class="text-lg font-bold font-outfit text-brand-slate">Discover Support Circles</h3>
-                    <p class="text-[11px] text-gray-400 font-semibold">Join safe, facilitated peer circles</p>
-                </div>
-            </div>
-            
-            <div class="flex-grow overflow-y-auto space-y-3.5 pr-1 py-1">
-                <?php foreach ($all_circles as $circle): ?>
-                    <?php $joined = in_array($circle['id'], $my_circle_ids); ?>
-                    <div class="p-4 rounded-2xl bg-[#FAF9F6] border border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all hover:border-brand-sage/20">
-                        <div class="space-y-1 max-w-sm">
-                            <div class="flex items-center gap-2">
-                                <span class="text-brand-sage font-extrabold">#</span>
-                                <h4 class="text-sm font-bold text-brand-slate"><?php echo htmlspecialchars($circle['name']); ?></h4>
-                                <span class="text-[9px] bg-brand-sageLight text-brand-sage font-extrabold uppercase px-2 py-0.5 rounded-full whitespace-nowrap">
-                                    <?php echo htmlspecialchars($circle['category']); ?>
-                                </span>
-                            </div>
-                            <p class="text-xs text-gray-500 leading-relaxed"><?php echo htmlspecialchars($circle['description']); ?></p>
-                            
-                            <!-- Champion details -->
-                            <div class="flex items-center gap-1.5 text-[10px] text-gray-400 pt-1">
-                                <span class="h-4.5 w-4.5 rounded-full bg-brand-sage text-white flex items-center justify-center font-bold text-[8px]">
-                                    <?php echo htmlspecialchars($circle['champion_avatar'] ?? 'T'); ?>
-                                </span>
-                                <span>Champion: <strong class="text-gray-600 font-semibold"><?php echo htmlspecialchars($circle['champion_name']); ?></strong></span>
-                            </div>
-                        </div>
-                        
-                        <div class="shrink-0">
-                            <?php if ($circle['slug'] === 'general'): ?>
-                                <span class="text-xs text-brand-sage font-bold px-3 py-1.5 bg-brand-sageLight rounded-xl block text-center select-none">Open to All</span>
-                            <?php elseif ($joined): ?>
-                                <form method="POST" action="community_hub.php?channel=<?php echo urlencode($current_channel); ?>">
-                                    <input type="hidden" name="action" value="leave_circle">
-                                    <input type="hidden" name="circle_id" value="<?php echo (int)$circle['id']; ?>">
-                                    <button type="submit" class="w-full px-4 py-1.5 rounded-xl border border-brand-coral/30 hover:border-brand-coral bg-white hover:bg-brand-coralLight text-brand-coral font-bold text-[10px] uppercase tracking-wider transition-all active:scale-95">
-                                        Leave
-                                    </button>
-                                </form>
-                            <?php else: ?>
-                                <form method="POST" action="community_hub.php?channel=<?php echo urlencode($current_channel); ?>">
-                                    <input type="hidden" name="action" value="join_circle">
-                                    <input type="hidden" name="circle_id" value="<?php echo (int)$circle['id']; ?>">
-                                    <button type="submit" class="w-full px-4 py-1.5 rounded-xl bg-brand-sage hover:bg-brand-sageHover text-white font-bold text-[10px] uppercase tracking-wider shadow-sm transition-all active:scale-95">
-                                        Join
-                                    </button>
-                                </form>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                <?php endforeach; ?>
-            </div>
-            
-            <div class="mt-4 pt-3 border-t border-[#EBE8E0]">
-                <button onclick="closeDiscoverModal()" class="w-full py-2.5 rounded-2xl bg-gray-100 hover:bg-gray-200 text-gray-600 font-semibold text-xs transition-colors">Close</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- VANILLA JAVASCRIPT -->
-    <script>
-        // Emergency Modal actions
-        const emergencyModal = document.getElementById('emergency-modal');
-        const discoverModal = document.getElementById('discover-modal');
-
-        function openEmergencyModal() {
-            emergencyModal.classList.remove('opacity-0', 'pointer-events-none');
-            emergencyModal.querySelector('.relative').classList.remove('scale-95');
-            emergencyModal.querySelector('.relative').classList.add('scale-100');
-        }
-
-        function closeEmergencyModal() {
-            emergencyModal.classList.add('opacity-0', 'pointer-events-none');
-            emergencyModal.querySelector('.relative').classList.remove('scale-100');
-            emergencyModal.querySelector('.relative').classList.add('scale-95');
-        }
-
-        function openDiscoverModal() {
-            discoverModal.classList.remove('opacity-0', 'pointer-events-none');
-            discoverModal.querySelector('.relative').classList.remove('scale-95');
-            discoverModal.querySelector('.relative').classList.add('scale-100');
-        }
-
-        function closeDiscoverModal() {
-            discoverModal.classList.add('opacity-0', 'pointer-events-none');
-            discoverModal.querySelector('.relative').classList.remove('scale-100');
-            discoverModal.querySelector('.relative').classList.add('scale-95');
-        }
-
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                if (emergencyModal && !emergencyModal.classList.contains('opacity-0')) {
-                    closeEmergencyModal();
-                }
-                if (discoverModal && !discoverModal.classList.contains('opacity-0')) {
-                    closeDiscoverModal();
-                }
-            }
-        });
-
-        // Speech Transcription Helper
-        function initVoiceTranscription(textareaId, buttonId) {
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if (!SpeechRecognition) {
-                const btn = document.getElementById(buttonId);
-                if (btn) btn.style.display = 'none';
-                return;
-            }
-            const recognition = new SpeechRecognition();
-            recognition.continuous = false;
-            recognition.lang = 'en-US';
-            recognition.interimResults = false;
-            recognition.maxAlternatives = 1;
-            
-            const textarea = document.getElementById(textareaId);
-            const button = document.getElementById(buttonId);
-            let isRecording = false;
-            
-            button.addEventListener('click', (e) => {
-                e.preventDefault();
-                if (isRecording) {
-                    recognition.stop();
-                } else {
-                    recognition.start();
-                }
-            });
-            
-            recognition.onstart = () => {
-                isRecording = true;
-                button.innerHTML = `
-                    <svg class="h-3.5 w-3.5 text-brand-coral animate-pulse" fill="currentColor" viewBox="0 0 24 24">
-                        <circle cx="12" cy="12" r="10" />
-                    </svg>
-                    <span class="text-brand-coral font-bold">Listening...</span>
-                `;
-                button.classList.add('bg-brand-coralLight', 'border-brand-coral/20');
-            };
-            
-            recognition.onresult = (event) => {
-                const transcript = event.results[0][0].transcript;
-                if (textarea.value) {
-                    textarea.value += ' ' + transcript;
-                } else {
-                    textarea.value = transcript;
-                }
-                textarea.dispatchEvent(new Event('input'));
-            };
-            
-            recognition.onspeechend = () => {
-                recognition.stop();
-            };
-            
-            recognition.onend = () => {
-                isRecording = false;
-                button.innerHTML = `
-                    <svg class="h-3 w-3 text-brand-sage" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-                    </svg>
-                    <span>Transcribe Voice</span>
-                `;
-                button.classList.remove('bg-brand-coralLight', 'border-brand-coral/20');
-            };
-            
-            recognition.onerror = (event) => {
-                console.error("Speech recognition error", event.error);
-                recognition.stop();
-            };
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            initVoiceTranscription('post-content', 'transcribe-post-content');
-        });
-    </script>
+<div id="toast-container" class="fixed bottom-4 right-4 z-[9999] flex flex-col gap-2"></div>
+<script>
+function showToast(message) {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = 'bg-brand-sage text-white px-6 py-3 rounded-xl shadow-xl transform transition-all duration-300 translate-y-full opacity-0 font-outfit text-sm font-semibold flex items-center gap-2';
+    toast.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> ${message}`;
+    container.appendChild(toast);
+    
+    // Animate in
+    setTimeout(() => {
+        toast.classList.remove('translate-y-full', 'opacity-0');
+    }, 10);
+    
+    // Animate out and remove
+    setTimeout(() => {
+        toast.classList.add('translate-y-full', 'opacity-0');
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+</script>
 </body>
+
 </html>

@@ -5,6 +5,21 @@
  */
 ?>
 
+<?php
+if (!isset($_SESSION['user_subscription_plan']) || $_SESSION['user_subscription_plan'] === 'free') {
+    // Render upgrade button instead of AI widget
+?>
+<!-- Floating Action Button (Upgrade Gated) -->
+<button onclick="window.location.href='subscription.php'" class="fixed bottom-6 right-6 h-16 w-16 bg-gray-400 hover:bg-brand-coral text-white rounded-full shadow-2xl flex items-center justify-center transition-all hover:scale-105 z-50 group" title="Upgrade to unlock AI Companion">
+    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+    </svg>
+</button>
+<?php
+    return; // Stop executing the rest of the widget code
+}
+?>
+
 <!-- Floating Action Button -->
 <button id="ai-widget-toggle" onclick="toggleAiWidget()" class="fixed bottom-6 right-6 h-16 w-16 bg-brand-sage hover:bg-brand-sageHover text-white rounded-full shadow-2xl flex items-center justify-center transition-all hover:scale-105 z-50 group">
     <svg class="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -34,6 +49,21 @@
         </button>
     </div>
 
+    <!-- Toolbar -->
+    <div class="bg-[#F0F5F2] border-b border-gray-100 p-2 flex items-center justify-between shrink-0 text-xs">
+        <div class="flex items-center gap-2">
+            <button onclick="startNewChat()" class="text-brand-sage font-medium hover:text-brand-sageHover px-2 py-1 rounded hover:bg-brand-sage/10 transition-colors">
+                <svg class="h-3 w-3 inline-block mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>New Chat
+            </button>
+            <button onclick="toggleChatHistory()" class="text-brand-slate font-medium hover:text-brand-slate/80 px-2 py-1 rounded hover:bg-gray-200 transition-colors">
+                <svg class="h-3 w-3 inline-block mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>History
+            </button>
+        </div>
+        <select id="ai-voice-select" class="text-[10px] bg-white border border-gray-200 rounded px-1 py-1 max-w-[120px] text-gray-600 focus:outline-none">
+            <option value="">Default Voice</option>
+        </select>
+    </div>
+
     <!-- Widget Body (Chat) -->
     <div id="ai-widget-chat" class="flex-1 p-4 overflow-y-auto space-y-4 bg-[#FAF9F6]">
         <!-- Welcome Message -->
@@ -49,13 +79,23 @@
         </div>
     </div>
 
+    <!-- History View (hidden by default) -->
+    <div id="ai-widget-history-view" class="flex-1 p-4 overflow-y-auto bg-[#FAF9F6] hidden space-y-2">
+        <!-- History items injected here -->
+    </div>
+
     <!-- Widget Footer (Input) -->
-    <div class="p-3 bg-white border-t border-gray-100 shrink-0">
-        <form onsubmit="handleAiWidgetSubmit(event)" class="relative flex items-center">
-            <input type="text" id="ai-widget-input" placeholder="Type a message..." class="w-full pl-4 pr-12 py-3 rounded-2xl border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-brand-sage/20 focus:border-brand-sage text-xs text-brand-slate">
-            <button type="submit" id="ai-widget-send-btn" class="absolute right-2 h-8 w-8 rounded-xl bg-brand-sage text-white flex items-center justify-center shadow-sm hover:bg-brand-sageHover transition-colors disabled:opacity-50">
-                <svg class="h-4 w-4 translate-x-px translate-y-px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+    <div id="ai-widget-footer" class="p-3 bg-white border-t border-gray-100 shrink-0">
+        <form onsubmit="handleAiWidgetSubmit(event)" class="flex items-center gap-2">
+            <button type="button" id="ai-mic-btn" onclick="startVoiceInput()" class="h-11 w-11 shrink-0 rounded-2xl bg-gray-100 text-gray-500 hover:text-brand-sage hover:bg-brand-sage/10 flex items-center justify-center transition-colors focus:outline-none">
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
             </button>
+            <div class="relative flex-grow">
+                <input type="text" id="ai-widget-input" placeholder="Type or speak a message..." class="w-full pl-4 pr-12 py-3 rounded-2xl border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-brand-sage/20 focus:border-brand-sage text-xs text-brand-slate">
+                <button type="submit" id="ai-widget-send-btn" class="absolute right-1.5 top-1.5 h-8 w-8 rounded-xl bg-brand-sage text-white flex items-center justify-center shadow-sm hover:bg-brand-sageHover transition-colors disabled:opacity-50">
+                    <svg class="h-4 w-4 translate-x-px translate-y-px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                </button>
+            </div>
         </form>
     </div>
 </div>
@@ -67,10 +107,141 @@
     const chatBox = document.getElementById('ai-widget-chat');
     const sendBtn = document.getElementById('ai-widget-send-btn');
     const inputField = document.getElementById('ai-widget-input');
+    const micBtn = document.getElementById('ai-mic-btn');
 
-    let chatHistory = [
+    const defaultHistory = [
         { role: 'system', content: 'You are a compassionate, empathetic Cognitive Behavioral Therapy (CBT) assistant. Keep responses under 3 sentences. Be very supportive. Never provide medical diagnoses.' }
     ];
+
+    let chatHistory = [];
+    
+    // Load from localStorage
+    try {
+        const stored = localStorage.getItem('tet_ai_history');
+        if (stored) {
+            chatHistory = JSON.parse(stored);
+        } else {
+            chatHistory = [...defaultHistory];
+        }
+    } catch(e) {
+        chatHistory = [...defaultHistory];
+    }
+
+    // Function to render history to DOM on load
+    function renderHistory() {
+        // Clear except welcome message
+        const welcomeMsg = chatBox.firstElementChild;
+        chatBox.innerHTML = '';
+        if (welcomeMsg) chatBox.appendChild(welcomeMsg);
+
+        for (let i = 1; i < chatHistory.length; i++) {
+            const msg = chatHistory[i];
+            if (msg.role === 'user' || msg.role === 'assistant') {
+                appendMessage(msg.content, msg.role === 'user');
+            }
+        }
+    }
+    
+    // Call render once
+    renderHistory();
+
+    // Voice Selection Logic
+    const voiceSelect = document.getElementById('ai-voice-select');
+    let voices = [];
+    
+    function populateVoices() {
+        if (!('speechSynthesis' in window)) return;
+        voices = window.speechSynthesis.getVoices();
+        if (voices.length > 0) {
+            voiceSelect.innerHTML = '<option value="">Default Voice</option>';
+            voices.forEach((voice, index) => {
+                const option = document.createElement('option');
+                option.textContent = voice.name;
+                option.value = index;
+                voiceSelect.appendChild(option);
+            });
+        }
+    }
+    
+    if ('speechSynthesis' in window) {
+        populateVoices();
+        if (speechSynthesis.onvoiceschanged !== undefined) {
+            speechSynthesis.onvoiceschanged = populateVoices;
+        }
+    }
+
+    // Session Management Logic
+    let allSessions = [];
+    try {
+        const storedSessions = localStorage.getItem('tet_ai_sessions');
+        if (storedSessions) {
+            allSessions = JSON.parse(storedSessions);
+        }
+    } catch(e) { }
+
+    function startNewChat() {
+        if (chatHistory.length > 1) { 
+            allSessions.unshift({
+                id: Date.now(),
+                date: new Date().toLocaleString(),
+                snippet: chatHistory[1].content.substring(0, 40) + '...',
+                history: [...chatHistory]
+            });
+            localStorage.setItem('tet_ai_sessions', JSON.stringify(allSessions));
+        }
+        chatHistory = [...defaultHistory];
+        saveHistory();
+        renderHistory();
+        showChatView();
+    }
+
+    function toggleChatHistory() {
+        const chatView = document.getElementById('ai-widget-chat');
+        const historyView = document.getElementById('ai-widget-history-view');
+        const footer = document.getElementById('ai-widget-footer');
+        
+        if (historyView.classList.contains('hidden')) {
+            chatView.classList.add('hidden');
+            footer.classList.add('hidden');
+            historyView.classList.remove('hidden');
+            
+            historyView.innerHTML = '<h4 class="font-bold text-sm text-brand-slate mb-3">Previous Conversations</h4>';
+            if (allSessions.length === 0) {
+                historyView.innerHTML += '<p class="text-xs text-gray-500">No previous conversations.</p>';
+            } else {
+                allSessions.forEach(session => {
+                    historyView.innerHTML += `
+                        <div onclick="loadSession(${session.id})" class="p-3 bg-white border border-gray-200 rounded-xl cursor-pointer hover:border-brand-sage hover:shadow-sm transition-all">
+                            <p class="text-xs text-gray-400 mb-1">${session.date}</p>
+                            <p class="text-sm text-brand-slate font-medium truncate">${session.snippet}</p>
+                        </div>
+                    `;
+                });
+            }
+        } else {
+            showChatView();
+        }
+    }
+    
+    function showChatView() {
+        document.getElementById('ai-widget-chat').classList.remove('hidden');
+        document.getElementById('ai-widget-footer').classList.remove('hidden');
+        document.getElementById('ai-widget-history-view').classList.add('hidden');
+    }
+
+    function loadSession(id) {
+        const session = allSessions.find(s => s.id === id);
+        if (session) {
+            chatHistory = [...session.history];
+            saveHistory();
+            renderHistory();
+            showChatView();
+        }
+    }
+
+    function saveHistory() {
+        localStorage.setItem('tet_ai_history', JSON.stringify(chatHistory));
+    }
 
     function toggleAiWidget() {
         aiWidgetOpen = !aiWidgetOpen;
@@ -120,7 +291,7 @@
     }
 
     async function handleAiWidgetSubmit(e) {
-        e.preventDefault();
+        if(e) e.preventDefault();
         const text = inputField.value.trim();
         if (!text) return;
 
@@ -131,6 +302,7 @@
 
         // Add to history
         chatHistory.push({ role: 'user', content: text });
+        saveHistory();
 
         // Show typing indicator
         const typingId = 'typing-' + Date.now();
@@ -166,15 +338,84 @@
             appendMessage(aiText, false);
             chatHistory.push({ role: 'assistant', content: aiText });
             
-            if (chatHistory.length > 10) {
+            // Prune history to keep it from getting too large (keep last 20 messages + system prompt)
+            if (chatHistory.length > 21) {
                 chatHistory.splice(1, 2);
             }
+            saveHistory();
+
+            // Attempt to speak (Text-to-Speech)
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(aiText);
+                utterance.rate = 0.9;
+                utterance.pitch = 1.0;
+                if (voiceSelect && voiceSelect.value !== "") {
+                    utterance.voice = voices[voiceSelect.value];
+                }
+                window.speechSynthesis.speak(utterance);
+            }
+
         } catch (err) {
             document.getElementById(typingId).remove();
             appendMessage("I'm sorry, I'm having trouble connecting right now. Please try again in a moment.", false);
         } finally {
             sendBtn.disabled = false;
             inputField.focus();
+        }
+    }
+
+    // Speech to Text (Microphone)
+    let recognition;
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        recognition = new SpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = true;
+
+        recognition.onstart = function() {
+            micBtn.classList.add('bg-brand-coral', 'text-white');
+            micBtn.classList.remove('bg-gray-100', 'text-gray-500');
+            micBtn.innerHTML = `<svg class="h-5 w-5 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>`;
+            inputField.placeholder = "Listening...";
+        };
+
+        recognition.onresult = function(event) {
+            let finalTranscript = '';
+            let interimTranscript = '';
+            for (let i = event.resultIndex; i < event.results.length; ++i) {
+                if (event.results[i].isFinal) {
+                    finalTranscript += event.results[i][0].transcript;
+                } else {
+                    interimTranscript += event.results[i][0].transcript;
+                }
+            }
+            inputField.value = finalTranscript + interimTranscript;
+        };
+
+        recognition.onend = function() {
+            micBtn.classList.remove('bg-brand-coral', 'text-white');
+            micBtn.classList.add('bg-gray-100', 'text-gray-500');
+            micBtn.innerHTML = `<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>`;
+            inputField.placeholder = "Type or speak a message...";
+            
+            // Auto-submit if there's text
+            if (inputField.value.trim().length > 0) {
+                handleAiWidgetSubmit();
+            }
+        };
+
+        recognition.onerror = function(event) {
+            console.error("Speech recognition error", event.error);
+        };
+    } else {
+        micBtn.style.display = 'none'; // Hide if not supported
+    }
+
+    function startVoiceInput() {
+        if (recognition) {
+            recognition.start();
+        } else {
+            alert("Speech recognition is not supported in this browser.");
         }
     }
 </script>

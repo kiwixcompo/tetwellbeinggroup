@@ -5,10 +5,7 @@
  */
 require_once __DIR__ . '/db.php';
 
-if (!isset($_SESSION['user_id'])) {
-    header('Location: login.php');
-    exit;
-}
+require_once "gating_helper.php";
 $user_name = $_SESSION['user_name'] ?? 'User';
 ?>
 <!DOCTYPE html>
@@ -69,27 +66,18 @@ $user_name = $_SESSION['user_name'] ?? 'User';
             border-radius: 2px;
         }
     </style>
+    <link rel="icon" href="logo.svg" type="image/svg+xml">
 </head>
 <body class="min-h-screen pb-32">
+    <?php if (!isset($_GET['embed'])) { require_once 'nav_menu.php'; } ?>
 
     <!-- NAV BAR -->
-    <header class="border-b border-white/5 bg-slate-900/80 backdrop-blur-md sticky top-0 z-50 px-6 py-4">
-        <div class="max-w-7xl mx-auto flex items-center justify-between">
-            <a href="dashboard.php" class="flex items-center transition-transform hover:scale-[1.01] active:scale-95">
-                <span class="text-xl font-extrabold tracking-tight font-outfit text-white flex items-center gap-2">
-                    <object data="logo.svg" type="image/svg+xml" class="h-6 w-6 pointer-events-none filter invert"></object>
-                    Tet <span class="text-brand-sage font-medium">Wellbeing</span>
-                </span>
-            </a>
-            <div class="flex items-center gap-3">
-                <a href="dashboard.php" class="text-xs font-bold text-gray-400 hover:text-white transition">Dashboard</a>
-            </div>
-        </div>
-    </header>
+    <?php if (!isset($_GET['embed'])): ?>
+
+<?php endif; ?>
 
     <div class="max-w-7xl mx-auto px-6 mt-8">
-        <?php require_once 'nav_menu.php'; ?>
-    </div>
+        </div>
 
     <main class="max-w-3xl mx-auto px-6 mt-8">
         <div class="text-center mb-10">

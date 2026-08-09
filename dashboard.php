@@ -243,6 +243,7 @@ $today_date = date('l, F j, Y');
     <link rel="icon" type="image/svg+xml" href="logo.svg">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Tet Wellbeing Group</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Fonts -->
@@ -322,858 +323,249 @@ $today_date = date('l, F j, Y');
 </head>
 <body class="min-h-full flex flex-col selection:bg-brand-sage/20 selection:text-brand-slate">
 
-    <!-- TOP NAVIGATION BAR -->
-    <header class="sticky top-0 z-40 w-full border-b border-[#EBE8E0] bg-brand-bg/95 backdrop-blur-md">
-        <div class="mx-auto flex h-20 max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
-            <!-- Brand Logo -->
-            <a href="dashboard.php" class="flex items-center transition-transform hover:scale-[1.01] active:scale-95">
-                <img src="logo.svg" alt="Tet Wellbeing Group" class="h-16 w-auto">
-            </a>
+    <?php include 'nav_menu.php'; ?>
 
-            <!-- Actions -->
-            <div class="flex items-center gap-4">
-                <!-- Emergency Support Button -->
-                <button type="button" onclick="openEmergencyModal()" class="flex items-center gap-2 rounded-2xl bg-brand-coral px-4 py-2 text-sm font-semibold text-white shadow-md transition-all duration-300 hover:bg-brand-coralHover hover:shadow-lg active:scale-95">
-                    <svg class="h-4.5 w-4.5 animate-pulse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-                        <line x1="12" y1="9" x2="12" y2="13"/>
-                        <line x1="12" y1="17" x2="12.01" y2="17"/>
-                    </svg>
-                    <span>Emergency Support</span>
-                </button>
-
-                <!-- Profile Avatar -->
-                <div class="relative group cursor-pointer">
-                    <div class="flex h-10 w-10 items-center justify-center rounded-full border-2 border-brand-sage/20 bg-brand-sageLight text-sm font-bold text-brand-sage transition-all hover:border-brand-sage">
-                        <?php echo $user_initial; ?>
-                    </div>
-                    <div class="absolute right-0 mt-2 w-48 origin-top-right rounded-2xl bg-white p-2 shadow-xl border border-gray-100 opacity-0 scale-95 pointer-events-none transition-all duration-200 group-hover:opacity-100 group-hover:scale-100 group-hover:pointer-events-auto">
-                        <div class="px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Signed in as</div>
-                        <div class="px-3 py-1 font-bold text-brand-slate text-sm truncate"><?php echo htmlspecialchars($user_name); ?></div>
-                        <hr class="my-2 border-gray-100">
-                        <?php if ($user_role === 'admin'): ?>
-                        <a href="admin_dashboard.php" class="block px-3 py-2 text-sm text-brand-sage rounded-xl hover:bg-brand-sageLight transition-colors font-bold">Admin Console</a>
-                        <?php endif; ?>
-                        <a href="#" class="block px-3 py-2 text-sm text-gray-600 rounded-xl hover:bg-brand-bg transition-colors">My Profile</a>
-                        <a href="#" class="block px-3 py-2 text-sm text-gray-600 rounded-xl hover:bg-brand-bg transition-colors">Settings</a>
-                        <a href="logout.php" class="block px-3 py-2 text-sm text-brand-coral rounded-xl hover:bg-brand-coralLight transition-colors font-medium font-outfit">Log out</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </header>
-
-    <!-- MAIN BODY CONTENT -->
-    <main class="flex-grow mx-auto w-full max-w-4xl px-4 py-8 pb-24 md:pb-8 fade-in">
+    <!-- MAIN BODY CONTENT (Phase 2 Grid Layout) -->
+    <main class="flex-grow mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-8 pb-24 md:pb-12 fade-in">
         
-        <!-- Welcoming Banner Card (The Quiet Sanctuary) -->
-        <div class="mb-8 relative overflow-hidden rounded-3xl bg-white border border-[#EBE8E0] shadow-soft p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6">
-            <div class="space-y-3 z-10 max-w-lg">
-                <p class="text-xs font-bold tracking-wider text-brand-sage uppercase font-outfit"><?php echo $today_date; ?></p>
-                <h1 class="text-3xl md:text-4xl font-extrabold font-outfit text-brand-slate tracking-tight mt-1">
-                    <?php echo $greeting; ?>, <span class="text-brand-sage"><?php echo htmlspecialchars($user_name); ?></span>
+        <!-- HERO SECTION (Full Width) -->
+        <div class="mb-8 relative w-full h-[250px] rounded-[2rem] overflow-hidden shadow-soft flex items-center p-8">
+            <img src="images/landing_hero.png" class="absolute inset-0 w-full h-full object-cover" alt="Calming Background">
+            <div class="absolute inset-0 bg-gradient-to-r from-brand-slate/80 to-transparent"></div>
+            
+            <div class="relative z-10 text-white max-w-xl">
+                <p class="text-sm font-bold tracking-wider uppercase text-brand-sageLight mb-2"><?php echo $today_date; ?></p>
+                <h1 class="text-3xl md:text-5xl font-extrabold font-outfit tracking-tight mb-4">
+                    <?php echo $greeting; ?>, <?php echo htmlspecialchars($user_name); ?>
                 </h1>
-                <p class="text-gray-500 text-sm leading-relaxed">
-                    Welcome to your quiet sanctuary. Take a deep breath, leave the stress outside, and take a moment for yourself. Let's check in with your mind today.
-                </p>
+                <p class="text-brand-sageLight text-lg">Welcome to your central command center.</p>
             </div>
-            <div class="relative shrink-0 w-full md:w-56 h-36 md:h-36 rounded-2xl overflow-hidden shadow-soft border border-brand-sage/10">
-                <img src="images/quiet_sanctuary.png" alt="Serene Sanctuary" class="w-full h-full object-cover">
+
+            <!-- Embedded TET Navigator Card -->
+            <div class="hidden lg:block absolute right-8 top-1/2 -translate-y-1/2 w-80 bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-6 text-white shadow-xl">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="h-10 w-10 rounded-full bg-brand-sage flex items-center justify-center">
+                        <i class="fa-solid fa-compass"></i>
+                    </div>
+                    <h3 class="font-bold text-lg">TET Navigator</h3>
+                </div>
+                <p class="text-sm text-gray-200 mb-4">Next Step: Complete your daily check-in to update your wellbeing score.</p>
+                <button class="w-full py-2 bg-white text-brand-slate font-bold rounded-xl hover:bg-brand-sageLight transition-colors">Begin Navigator</button>
             </div>
         </div>
 
-        <!-- APP NAVIGATION TABS -->
-        <?php include 'nav_menu.php'; ?>
-
-        <!-- DAILY ROUTINE WIDGET -->
-        <div class="mb-8 relative overflow-hidden rounded-3xl bg-white border border-[#EBE8E0] shadow-soft p-6 flex flex-col md:flex-row items-center justify-between gap-6 transition-all duration-300 hover:shadow-card">
-            <div class="absolute left-0 top-0 bottom-0 w-2 bg-<?php echo $routine_color; ?>"></div>
-            <div class="flex items-center gap-4">
-                <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-<?php echo $routine_color; ?>/10 text-2xl">
-                    <?php echo $routine_icon; ?>
-                </div>
-                <div>
-                    <h3 class="text-lg font-bold font-outfit text-brand-slate"><?php echo $routine_title; ?></h3>
-                    <p class="text-xs text-gray-500 mt-1"><?php echo $routine_desc; ?></p>
-                </div>
-            </div>
-            <div class="shrink-0 w-full md:w-auto">
-                <a href="<?php echo $routine_link; ?>" class="w-full md:w-auto text-center px-5 py-2.5 bg-<?php echo $routine_color; ?> hover:opacity-90 text-white rounded-full text-sm font-bold shadow-sm transition-all font-outfit inline-block">
-                    <?php echo $routine_action; ?>
-                </a>
-            </div>
-        </div>
-
-        <!-- NOTIFICATIONS -->
-        <?php if ($form_submitted): ?>
-            <div id="status-toast" class="mb-6 flex items-start gap-3 rounded-2xl border border-brand-sage bg-brand-sageLight p-4 text-brand-slate shadow-soft transition-all duration-300">
-                <div class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-sage text-white">
-                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="20 6 9 17 4 12"/>
-                    </svg>
-                </div>
-                <div class="flex-grow">
-                    <h4 class="font-bold text-sm">Check-in Logged</h4>
-                    <p class="text-xs text-gray-600 mt-0.5"><?php echo $success_message; ?></p>
-                    <?php if (!empty($submitted_notes)): ?>
-                        <div class="mt-2 text-xs border-t border-brand-sage/20 pt-2 text-gray-500 italic">
-                            &ldquo;<?php echo htmlspecialchars($submitted_notes); ?>&rdquo;
+        <!-- TWO COLUMN GRID -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <!-- LEFT COLUMN (60%) -->
+            <div class="lg:col-span-7 xl:col-span-8 flex flex-col gap-8">
+                
+                <!-- Daily Summary & Check-in (Re-using existing check-in logic UI) -->
+                <section class="bg-white rounded-3xl p-6 md:p-8 shadow-soft border border-[#EBE8E0]">
+                    <h2 class="text-2xl font-bold font-outfit text-brand-slate mb-6">Daily Summary & Check-in</h2>
+                    <form method="POST" id="checkin-form" class="space-y-6">
+                        <input type="hidden" name="mood_value" id="mood-value" value="">
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            <button type="button" data-mood="overwhelmed" class="mood-btn flex flex-col items-center justify-center p-4 rounded-2xl border border-gray-100 bg-[#FAF9F6] text-gray-500 hover:border-brand-sage hover:bg-white transition-all"><span class="text-3xl mb-2">😟</span><span class="text-xs font-semibold">Overwhelmed</span></button>
+                            <button type="button" data-mood="low" class="mood-btn flex flex-col items-center justify-center p-4 rounded-2xl border border-gray-100 bg-[#FAF9F6] text-gray-500 hover:border-brand-sage hover:bg-white transition-all"><span class="text-3xl mb-2">😔</span><span class="text-xs font-semibold">Low</span></button>
+                            <button type="button" data-mood="anxious" class="mood-btn flex flex-col items-center justify-center p-4 rounded-2xl border border-gray-100 bg-[#FAF9F6] text-gray-500 hover:border-brand-sage hover:bg-white transition-all"><span class="text-3xl mb-2">😰</span><span class="text-xs font-semibold">Anxious</span></button>
+                            <button type="button" data-mood="exhausted" class="mood-btn flex flex-col items-center justify-center p-4 rounded-2xl border border-gray-100 bg-[#FAF9F6] text-gray-500 hover:border-brand-sage hover:bg-white transition-all"><span class="text-3xl mb-2">😴</span><span class="text-xs font-semibold">Exhausted</span></button>
+                            <button type="button" data-mood="frustrated" class="mood-btn flex flex-col items-center justify-center p-4 rounded-2xl border border-gray-100 bg-[#FAF9F6] text-gray-500 hover:border-brand-sage hover:bg-white transition-all"><span class="text-3xl mb-2">😡</span><span class="text-xs font-semibold">Frustrated</span></button>
+                            <button type="button" data-mood="okay" class="mood-btn flex flex-col items-center justify-center p-4 rounded-2xl border border-gray-100 bg-[#FAF9F6] text-gray-500 hover:border-brand-sage hover:bg-white transition-all"><span class="text-3xl mb-2">🙂</span><span class="text-xs font-semibold">Okay</span></button>
+                            <button type="button" data-mood="grow" class="mood-btn flex flex-col items-center justify-center p-4 rounded-2xl border border-gray-100 bg-[#FAF9F6] text-gray-500 hover:border-brand-sage hover:bg-white transition-all"><span class="text-3xl mb-2">🌱</span><span class="text-xs font-semibold">Grow</span></button>
+                            <button type="button" data-mood="talk" class="mood-btn flex flex-col items-center justify-center p-4 rounded-2xl border border-gray-100 bg-[#FAF9F6] text-gray-500 hover:border-brand-sage hover:bg-white transition-all"><span class="text-3xl mb-2">🤝</span><span class="text-xs font-semibold">Talk</span></button>
                         </div>
-                    <?php endif; ?>
-                </div>
-                <button onclick="document.getElementById('status-toast').remove()" class="text-gray-400 hover:text-gray-600 transition-colors">
-                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                </button>
-            </div>
-        <?php endif; ?>
-
-        <?php if (!empty($error_message)): ?>
-            <div id="error-toast" class="mb-6 flex items-start gap-3 rounded-2xl border border-brand-coral bg-brand-coralLight p-4 text-brand-slate shadow-soft transition-all duration-300">
-                <div class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-coral text-white">
-                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                </div>
-                <div class="flex-grow">
-                    <h4 class="font-bold text-sm">Notice</h4>
-                    <p class="text-xs text-gray-600 mt-0.5"><?php echo $error_message; ?></p>
-                </div>
-                <button onclick="document.getElementById('error-toast').remove()" class="text-gray-400 hover:text-gray-600 transition-colors">
-                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                </button>
-            </div>
-        <?php endif; ?>
-
-        <!-- DOWNWARD TREND WARNING BANNER -->
-        <?php if ($downward_trend_detected): ?>
-            <div class="mb-8 flex items-start gap-4 rounded-3xl border border-brand-coral/20 bg-brand-coralLight p-6 text-brand-slate shadow-soft">
-                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-brand-coral text-white text-xl">
-                    ⚠️
-                </div>
-                <div class="flex-grow space-y-1">
-                    <h4 class="font-bold text-sm font-outfit text-brand-slate">Wellbeing Notice: Deteriorating Mood Trend</h4>
-                    <p class="text-xs text-gray-600 leading-relaxed">
-                        We've noticed a consecutive decline in your mood check-ins over the past few days. Your wellbeing is our priority. Consider utilizing some caregiver respite planning toolsets or schedule a virtual session with one of our specialized clinicians.
-                    </p>
-                    <div class="pt-2 flex flex-wrap gap-2">
-                        <a href="caregiver_hub.php" class="px-3.5 py-1.5 bg-white hover:bg-gray-50 border border-gray-200 text-brand-slate rounded-xl text-[10px] font-bold shadow-sm transition-all font-outfit">
-                            Explore Respite Hub
-                        </a>
-                        <a href="teletherapy_hub.php?recommend=1" class="px-3.5 py-1.5 bg-brand-coral hover:bg-brand-coralHover text-white rounded-xl text-[10px] font-bold shadow-sm transition-all font-outfit">
-                            Talk to Recommended Specialist
-                        </a>
-                    </div>
-                </div>
-            </div>
-        <?php endif; ?>
-
-        <!-- PREDICTIVE EARLY WARNINGS -->
-        <?php if (!empty($early_warnings)): ?>
-            <div class="mb-8 space-y-3">
-                <?php foreach ($early_warnings as $warn): ?>
-                    <div class="flex items-start gap-4 rounded-3xl border border-brand-coral/20 bg-brand-coralLight p-6 text-brand-slate shadow-soft">
-                        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-brand-coral text-white text-xl">
-                            ⚠️
+                        <div class="mt-4 flex justify-end">
+                            <button type="submit" class="px-6 py-2.5 rounded-2xl bg-brand-sage text-white font-bold text-sm shadow-md hover:bg-brand-sageHover transition-all">Save Check-in</button>
                         </div>
-                        <div class="flex-grow space-y-1">
-                            <h4 class="font-bold text-sm font-outfit text-brand-coral"><?php echo htmlspecialchars($warn['title']); ?></h4>
-                            <p class="text-xs text-gray-600 leading-relaxed">
-                                <?php echo htmlspecialchars($warn['desc']); ?>
-                            </p>
-                            <div class="pt-2">
-                                <a href="<?php echo htmlspecialchars($warn['link']); ?>" class="px-3.5 py-1.5 bg-brand-slate hover:bg-brand-slate/90 text-white rounded-xl text-[10px] font-bold shadow-sm transition-all inline-block font-outfit">
-                                    <?php echo htmlspecialchars($warn['action']); ?>
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                <?php endforeach; ?>
-            </div>
-        <?php endif; ?>
+                    </form>
+                </section>
 
-        <!-- CHECK-IN & EMOTIONAL HEALTH INDEX GRID -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-            <!-- Left: Checkin (Col-span 2) -->
-            <div class="md:col-span-2">
-                <section class="bg-white rounded-3xl p-6 md:p-8 shadow-soft border border-[#EBE8E0] relative overflow-hidden h-full flex flex-col justify-between">
-                    <div class="absolute top-0 left-0 w-2 h-full bg-brand-sage"></div>
-                    
+                <!-- Wellbeing Passport Widget -->
+                <section class="bg-white rounded-3xl p-6 md:p-8 shadow-soft border border-[#EBE8E0] flex items-center justify-between">
                     <div>
-                        <div class="mb-6 flex items-start justify-between gap-4">
-                            <div>
-                                <h2 class="text-xl md:text-2xl font-bold font-outfit text-brand-slate">How are you feeling today?</h2>
-                                <p class="text-sm text-gray-500 mt-0.5">Your reflection is private and helps track trends in your wellbeing.</p>
-                            </div>
-                            <img src="images/blooming_renewal.png" alt="Personal Growth Sprout" class="w-16 h-16 rounded-2xl object-cover shadow-soft border border-brand-sage/15 shrink-0 hidden sm:block">
+                        <h3 class="text-xl font-bold text-brand-slate font-outfit mb-2">Wellbeing Passport</h3>
+                        <p class="text-sm text-gray-500">Your gamified progress tracker.</p>
+                        <a href="wellbeing_passport.php" class="inline-block mt-4 text-sm font-bold text-brand-sage hover:text-brand-sageHover">View Full Passport &rarr;</a>
+                    </div>
+                    <div class="relative h-24 w-24">
+                        <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                            <circle cx="50" cy="50" r="40" stroke="#F1EFEA" stroke-width="8" fill="transparent" />
+                            <circle cx="50" cy="50" r="40" stroke="#5E8C71" stroke-width="8" fill="transparent" stroke-dasharray="251.2" stroke-dashoffset="60" class="transition-all duration-1000" />
+                        </svg>
+                        <div class="absolute inset-0 flex items-center justify-center flex-col">
+                            <span class="text-xl font-bold text-brand-slate">Lvl 4</span>
                         </div>
-
-                        <form method="POST" id="checkin-form" class="space-y-6">
-                            <input type="hidden" name="mood_value" id="mood-value" value="">
-
-                            <!-- Mood Grid (8 Options) -->
-                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                                
-                                <button type="button" data-mood="overwhelmed" class="mood-btn flex flex-col items-center justify-center p-4 rounded-2xl border border-gray-100 bg-[#FAF9F6] text-gray-500 hover:border-gray-300 hover:bg-white hover:shadow-sm focus:outline-none transition-all">
-                                    <span class="text-3xl mb-2">😟</span>
-                                    <span class="text-xs font-semibold">Overwhelmed</span>
-                                </button>
-
-                                <button type="button" data-mood="low" class="mood-btn flex flex-col items-center justify-center p-4 rounded-2xl border border-gray-100 bg-[#FAF9F6] text-gray-500 hover:border-gray-300 hover:bg-white hover:shadow-sm focus:outline-none transition-all">
-                                    <span class="text-3xl mb-2">😔</span>
-                                    <span class="text-xs font-semibold">Low</span>
-                                </button>
-
-                                <button type="button" data-mood="anxious" class="mood-btn flex flex-col items-center justify-center p-4 rounded-2xl border border-gray-100 bg-[#FAF9F6] text-gray-500 hover:border-gray-300 hover:bg-white hover:shadow-sm focus:outline-none transition-all">
-                                    <span class="text-3xl mb-2">😰</span>
-                                    <span class="text-xs font-semibold">Anxious</span>
-                                </button>
-
-                                <button type="button" data-mood="exhausted" class="mood-btn flex flex-col items-center justify-center p-4 rounded-2xl border border-gray-100 bg-[#FAF9F6] text-gray-500 hover:border-gray-300 hover:bg-white hover:shadow-sm focus:outline-none transition-all">
-                                    <span class="text-3xl mb-2">😴</span>
-                                    <span class="text-xs font-semibold">Exhausted</span>
-                                </button>
-
-                                <button type="button" data-mood="frustrated" class="mood-btn flex flex-col items-center justify-center p-4 rounded-2xl border border-gray-100 bg-[#FAF9F6] text-gray-500 hover:border-gray-300 hover:bg-white hover:shadow-sm focus:outline-none transition-all">
-                                    <span class="text-3xl mb-2">😡</span>
-                                    <span class="text-xs font-semibold">Frustrated</span>
-                                </button>
-
-                                <button type="button" data-mood="okay" class="mood-btn flex flex-col items-center justify-center p-4 rounded-2xl border border-gray-100 bg-[#FAF9F6] text-gray-500 hover:border-gray-300 hover:bg-white hover:shadow-sm focus:outline-none transition-all">
-                                    <span class="text-3xl mb-2">🙂</span>
-                                    <span class="text-xs font-semibold">Okay</span>
-                                </button>
-
-                                <button type="button" data-mood="grow" class="mood-btn flex flex-col items-center justify-center p-4 rounded-2xl border border-gray-100 bg-[#FAF9F6] text-gray-500 hover:border-gray-300 hover:bg-white hover:shadow-sm focus:outline-none transition-all">
-                                    <span class="text-3xl mb-2">🌱</span>
-                                    <span class="text-xs font-semibold">Grow</span>
-                                </button>
-
-                                <button type="button" data-mood="talk" class="mood-btn flex flex-col items-center justify-center p-4 rounded-2xl border border-gray-100 bg-[#FAF9F6] text-gray-500 hover:border-gray-300 hover:bg-white hover:shadow-sm focus:outline-none transition-all">
-                                    <span class="text-3xl mb-2">🤝</span>
-                                    <span class="text-xs font-semibold">Talk</span>
-                                </button>
-                            </div>
-                            
-                            <!-- Dynamic Recommendation Card (hidden by default) -->
-                            <div id="recommendation-card" class="hidden mt-4 p-5 rounded-2xl bg-brand-sageLight/30 border border-brand-sage/20 text-center animate-fade-in">
-                                <h4 class="font-bold text-brand-slate text-sm mb-2">Today's Recommendation</h4>
-                                <p id="recommendation-text" class="text-xs text-brand-slate leading-relaxed mb-4"></p>
-                                <a href="#" id="recommendation-link" class="inline-block px-5 py-2 bg-brand-sage hover:bg-brand-sageHover text-white text-xs font-bold rounded-xl shadow-sm transition-colors">Go</a>
-                            </div>
-
-                            <!-- Conditional notes area -->
-                            <div id="reflection-container" class="max-h-0 opacity-0 overflow-hidden transition-all duration-500 ease-in-out">
-                                <div class="pt-4 border-t border-[#EBE8E0]">
-                                    <div class="flex items-center justify-between mb-2">
-                                        <label for="mood-notes" class="block text-xs font-bold text-brand-slate uppercase tracking-wider font-outfit">
-                                            Would you like to share what's impacting your mood?
-                                        </label>
-                                        <button type="button" id="transcribe-mood-notes" class="flex items-center gap-1.5 text-xs font-bold text-brand-sage hover:text-brand-sageHover bg-brand-sageLight/50 px-3 py-1 rounded-xl border border-brand-sage/10 transition-all select-none">
-                                            <svg class="h-3.5 w-3.5 text-brand-sage" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-                                            </svg>
-                                            <span>Transcribe Voice</span>
-                                        </button>
-                                    </div>
-                                    <textarea 
-                                        id="mood-notes" 
-                                        name="mood_notes" 
-                                        rows="3" 
-                                        class="w-full rounded-2xl border border-gray-200 bg-brand-inputBg p-4 text-brand-slate placeholder-gray-400 focus:border-brand-sage focus:outline-none focus:ring-2 focus:ring-brand-sage/20 text-sm transition-all"
-                                        placeholder="Write your thoughts here..."
-                                    ></textarea>
-                                </div>
-
-                                <div class="mt-4 flex justify-end">
-                                    <button type="submit" class="w-full sm:w-auto px-6 py-2.5 rounded-2xl bg-brand-sage text-white font-bold text-xs shadow-md hover:bg-brand-sageHover active:scale-95 transition-all">
-                                        Save Daily Check-in
-                                    </button>
-                                </div>
-                            </div>
-                        </form>
                     </div>
                 </section>
             </div>
 
-            <!-- Right: Emotional Health Index (Col-span 1) -->
-            <div class="md:col-span-1">
-                <section class="bg-white rounded-3xl p-6 md:p-8 shadow-soft border border-[#EBE8E0] h-full flex flex-col justify-between items-center text-center relative overflow-hidden">
-                    <div class="absolute top-0 left-0 w-full h-2 bg-brand-sage"></div>
-                    
-                    <div class="w-full">
-                        <h3 class="text-md font-bold font-outfit text-brand-slate mb-1">Emotional Health Index™</h3>
-                        <p class="text-[9px] text-gray-400 font-bold uppercase tracking-wider mb-4">7-Day Real-Time Wellbeing Score</p>
-                        
-                        <!-- SVG Gauge -->
-                        <div class="relative flex items-center justify-center h-32 w-32 mx-auto mb-2">
-                            <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-                                <circle cx="50" cy="50" r="40" stroke="#F1EFEA" stroke-width="8" fill="transparent" />
-                                <circle cx="50" cy="50" r="40" stroke="currentColor" stroke-width="8" fill="transparent" 
-                                    stroke-dasharray="251.2" 
-                                    stroke-dashoffset="<?php echo 251.2 - (251.2 * $ehi['score'] / 100); ?>"
-                                    class="transition-all duration-1000 ease-out" 
-                                    style="stroke: <?php 
-                                        if ($ehi['color'] === 'brand-coral') echo '#E76F51';
-                                        elseif ($ehi['color'] === 'brand-sky') echo '#8ECAE6';
-                                        else echo '#5E8C71'; 
-                                    ?>;"
-                                />
-                            </svg>
-                            <div class="absolute flex flex-col items-center">
-                                <span class="text-3xl font-extrabold font-outfit text-brand-slate"><?php echo $ehi['score']; ?></span>
-                                <span class="text-[9px] font-bold text-gray-400 uppercase mt-0.5">Index</span>
-                            </div>
-                        </div>
+            <!-- RIGHT COLUMN (40%) -->
+            <div class="lg:col-span-5 xl:col-span-4 flex flex-col gap-8">
+                
+                <!-- Digital Twin / AI Insights -->
+                <section class="bg-gradient-to-br from-brand-slate to-gray-800 rounded-3xl p-6 md:p-8 shadow-2xl text-white relative overflow-hidden">
+                    <div class="absolute top-0 right-0 p-4 opacity-10">
+                        <i class="fa-solid fa-dna text-9xl"></i>
                     </div>
-
-                    <div class="w-full">
-                        <!-- Label and Description -->
-                        <div class="inline-block px-3 py-0.5 rounded-md text-[10px] font-bold uppercase mb-2 <?php 
-                            if ($ehi['color'] === 'brand-coral') echo 'bg-brand-coralLight text-brand-coral';
-                            elseif ($ehi['color'] === 'brand-sky') echo 'bg-brand-skyLight text-brand-slate';
-                            else echo 'bg-brand-sageLight text-brand-sage'; 
-                        ?>">
-                            Status: <?php echo $ehi['label']; ?>
+                    <div class="relative z-10">
+                        <div class="flex items-center gap-3 mb-6">
+                            <div class="h-12 w-12 rounded-xl bg-white/10 flex items-center justify-center backdrop-blur-sm border border-white/20">
+                                <img src="images/hub_ai.png" alt="Digital Twin" class="h-8 w-8 object-cover rounded-md opacity-80 mix-blend-screen">
+                            </div>
+                            <h3 class="text-2xl font-bold font-outfit tracking-tight">AI Insights</h3>
                         </div>
-                        <p class="text-[11px] text-gray-500 leading-relaxed font-medium">
-                            Calculated dynamically based on your mood check-ins and activity engagement.
-                        </p>
+                        <p class="text-sm text-gray-300 mb-6 leading-relaxed">Your Digital Twin has processed your latest data. Your stress patterns indicate a peak on weekends. Consider scheduling a preventative session.</p>
                         
-                        <div class="mt-4 pt-3.5 border-t border-gray-150 grid grid-cols-2 gap-2 text-left">
-                            <div>
-                                <span class="text-[8px] text-gray-400 font-bold uppercase block">Check-ins</span>
-                                <span class="text-xs font-bold text-brand-slate font-outfit"><?php echo $ehi['checkins_count']; ?> logged</span>
+                        <div class="space-y-3 mb-6">
+                            <div class="bg-white/10 rounded-xl p-3 backdrop-blur-sm border border-white/10">
+                                <span class="block text-xs text-brand-sageLight font-bold uppercase mb-1">Emotional Health Index</span>
+                                <span class="text-xl font-bold">78 / 100</span>
                             </div>
-                            <div>
-                                <span class="text-[8px] text-gray-400 font-bold uppercase block">Interactions</span>
-                                <span class="text-xs font-bold text-brand-slate font-outfit"><?php echo ($ehi['respite_count'] + $ehi['posts_count'] + $ehi['burnout_count']); ?> total</span>
+                            <div class="bg-white/10 rounded-xl p-3 backdrop-blur-sm border border-white/10">
+                                <span class="block text-xs text-brand-sageLight font-bold uppercase mb-1">Burnout Risk</span>
+                                <span class="text-xl font-bold text-green-400">Low</span>
                             </div>
                         </div>
+
+                        <a href="predictive_hub.php" class="block w-full text-center py-3 bg-white text-brand-slate font-bold rounded-xl hover:bg-brand-sageLight transition-colors">
+                            Open Digital Twin
+                        </a>
                     </div>
                 </section>
-            </div>
-        </div>
-
-        <!-- TET ECOSYSTEM (Image Cards Grid) -->
-        <section class="mt-16">
-            <div class="mb-8">
-                <h2 class="text-2xl font-bold font-outfit text-brand-slate">Explore the TET Ecosystem</h2>
-                <p class="text-sm text-gray-500 mt-1">Your dedicated spaces for reflection, growth, and connection.</p>
+                
             </div>
             
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                <?php
-                $dashboard_pillars = [
-                    'mindbloom.php' => ['title' => 'MindBloom', 'img' => 'images/nav_mindbloom2.png', 'desc' => 'Micro-activities for grounding and journaling'],
-                    'truevent.php' => ['title' => 'TrueVent', 'img' => 'images/nav_truevent2.png', 'desc' => 'An anonymous safe space to vocalize your thoughts'],
-                    'tet_academy.php' => ['title' => 'TET Academy', 'img' => 'images/nav_academy2.png', 'desc' => 'Bite-sized emotional intelligence lessons'],
-                    'tet_circle.php' => ['title' => 'TET Circle', 'img' => 'images/circle_hero.png', 'desc' => 'Community groups and human connection'],
-                    'wellbeing_passport.php' => ['title' => 'Wellbeing Passport', 'img' => 'images/passport_hero.png', 'desc' => 'Gamified tracking of your personal growth'],
-                    'befriender_network.php' => ['title' => 'Befriender Network', 'img' => 'images/hub_befriender.png', 'desc' => 'Match with a supportive peer 1-on-1']
-                ];
-                foreach ($dashboard_pillars as $url => $data):
-                ?>
-                <a href="<?php echo $url; ?>" class="group flex flex-col rounded-3xl bg-white overflow-hidden shadow-sm hover:shadow-md border border-[#EBE8E0] hover:border-brand-sage transition-all">
-                    <!-- Image Area -->
-                    <div class="h-36 sm:h-44 w-full overflow-hidden shrink-0 relative border-b border-[#EBE8E0]">
-                        <img src="<?php echo $data['img']; ?>" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" alt="<?php echo $data['title']; ?>">
-                    </div>
-                    <!-- Text Content Area -->
-                    <div class="p-6 flex-grow flex flex-col justify-center">
-                        <h3 class="text-xl font-bold font-outfit text-brand-slate mb-1 group-hover:text-brand-sage transition-colors"><?php echo $data['title']; ?></h3>
-                        <p class="text-gray-500 text-sm font-medium leading-relaxed"><?php echo $data['desc']; ?></p>
-                        <div class="w-8 h-1 bg-brand-sage/20 group-hover:bg-brand-sage rounded-full mt-4 transition-colors duration-300"></div>
-                    </div>
-                </a>
-                <?php endforeach; ?>
-            </div>
-        </section>
-
-        <!-- PERSONAL WELLBEING JOURNEY & DAILY TET -->
-        <section class="mt-16 grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <!-- Daily TET Habit Builder -->
-            <div class="bg-white rounded-3xl p-6 md:p-8 shadow-soft border border-[#EBE8E0]">
-                <div class="flex items-center justify-between mb-6">
-                    <div>
-                        <h3 class="text-xl font-bold font-outfit text-brand-slate">Daily TET</h3>
-                        <p class="text-sm text-gray-500 mt-1">A simple moment for you.</p>
-                    </div>
-                    <div class="h-12 w-12 rounded-2xl bg-brand-sageLight text-brand-sage flex items-center justify-center text-xl shadow-sm">
-                        <?php 
-                        $day = date('l'); 
-                        if($day == 'Monday') echo '🧠';
-                        elseif($day == 'Tuesday') echo '💪';
-                        elseif($day == 'Wednesday') echo '🤝';
-                        elseif($day == 'Thursday') echo '🎯';
-                        elseif($day == 'Friday') echo '✨';
-                        else echo '☕';
-                        ?>
-                    </div>
-                </div>
-                
-                <div class="p-6 rounded-2xl bg-[#FAF9F6] border border-gray-100 relative overflow-hidden">
-                    <div class="absolute top-0 right-0 p-4 opacity-5">
-                        <svg class="h-24 w-24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 22h20L12 2z"/></svg>
-                    </div>
-                    <h4 class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Today: <?php echo date('l'); ?></h4>
-                    <p class="text-lg font-bold font-outfit text-brand-slate leading-snug mb-6">
-                        <?php 
-                        if($day == 'Monday') echo '"What has been taking up most of your mental space today?"';
-                        elseif($day == 'Tuesday') echo '"How is your body responding to stress today?"';
-                        elseif($day == 'Wednesday') echo '"Who could you connect with today?"';
-                        elseif($day == 'Thursday') echo '"What is one thing that matters to you right now?"';
-                        elseif($day == 'Friday') echo '"What did you manage this week that you should give yourself credit for?"';
-                        else echo '"What would help you feel restored this weekend?"';
-                        ?>
-                    </p>
-                    <a href="truevent.php" class="inline-block px-5 py-2.5 bg-brand-slate hover:bg-gray-800 text-white rounded-xl text-xs font-bold shadow-sm transition-all">Reflect in TrueVent</a>
-                </div>
-            </div>
-
-            <!-- Personal Wellbeing Journey -->
-            <div class="bg-white rounded-3xl p-6 md:p-8 shadow-soft border border-[#EBE8E0]">
-                <h3 class="text-xl font-bold font-outfit text-brand-slate mb-1">Your Journey</h3>
-                <p class="text-sm text-gray-500 mb-6">Your progress and patterns at a glance.</p>
-                
-                <div class="space-y-4">
-                    <!-- Stat Card 1 -->
-                    <div class="flex items-center p-4 rounded-2xl border border-gray-100 bg-[#FAF9F6]">
-                        <div class="h-10 w-10 rounded-xl bg-brand-sageLight text-brand-sage flex items-center justify-center shrink-0 mr-4">
-                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                        </div>
-                        <div class="flex-grow">
-                            <h4 class="text-sm font-bold text-brand-slate font-outfit">Mood Pattern</h4>
-                            <p class="text-[11px] text-gray-500 mt-0.5">You often report higher stress on <span class="font-bold text-brand-slate">Sundays</span>.</p>
-                        </div>
-                    </div>
-                    <!-- Stat Card 2 -->
-                    <div class="flex items-center p-4 rounded-2xl border border-gray-100 bg-[#FAF9F6]">
-                        <div class="h-10 w-10 rounded-xl bg-brand-skyLight text-brand-slate flex items-center justify-center shrink-0 mr-4">
-                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>
-                        </div>
-                        <div class="flex-grow">
-                            <h4 class="text-sm font-bold text-brand-slate font-outfit">What Helps You</h4>
-                            <p class="text-[11px] text-gray-500 mt-0.5">Breathing exercises appear to help you feel calmer.</p>
-                        </div>
-                    </div>
-                    <!-- Stat Card 3 -->
-                    <div class="flex items-center p-4 rounded-2xl border border-gray-100 bg-[#FAF9F6]">
-                        <div class="h-10 w-10 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center shrink-0 mr-4">
-                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                        </div>
-                        <div class="flex-grow flex justify-between items-center">
-                            <div>
-                                <h4 class="text-sm font-bold text-brand-slate font-outfit">Monthly Goals</h4>
-                                <p class="text-[11px] text-gray-500 mt-0.5">8 wellbeing activities completed.</p>
-                            </div>
-                            <span class="text-xs font-bold text-purple-600 bg-purple-100 px-2 py-1 rounded-lg">8 / 10</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
+        </div>
     </main>
-
-    <!-- MOBILE NAVIGATION BAR (Sticky Bottom) -->
-    <nav class="fixed bottom-0 left-0 right-0 z-40 block md:hidden border-t border-[#EBE8E0] bg-white/90 backdrop-blur-lg px-6 py-2 shadow-2xl">
-        <div class="flex items-center justify-between mx-auto max-w-md">
-            <!-- Home -->
-            <a href="#" class="flex flex-col items-center gap-1 py-1 px-3 text-brand-sage font-medium">
-                <svg class="h-5.5 w-5.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                <span class="text-[10px] tracking-wider uppercase font-semibold">Home</span>
-            </a>
-            <!-- Journal -->
-            <a href="#" class="flex flex-col items-center gap-1 py-1 px-3 text-gray-400 hover:text-brand-slate transition-colors">
-                <svg class="h-5.5 w-5.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-                <span class="text-[10px] tracking-wider uppercase">Journal</span>
-            </a>
-            <!-- Community -->
-            <a href="#" class="flex flex-col items-center gap-1 py-1 px-3 text-gray-400 hover:text-brand-slate transition-colors">
-                <svg class="h-5.5 w-5.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                <span class="text-[10px] tracking-wider uppercase">Community</span>
-            </a>
-            <!-- Profile -->
-            <a href="#" class="flex flex-col items-center gap-1 py-1 px-3 text-gray-400 hover:text-brand-slate transition-colors">
-                <svg class="h-5.5 w-5.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                <span class="text-[10px] tracking-wider uppercase">Profile</span>
-            </a>
-        </div>
-    </nav>
-
-    <!-- EMERGENCY MODAL -->
-    <div id="emergency-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-all duration-300">
-        <div class="absolute inset-0 bg-brand-slate/40 backdrop-blur-sm" onclick="closeEmergencyModal()"></div>
-        <div class="relative bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl border border-brand-coral/20 transform scale-95 transition-all duration-300">
-            <button onclick="closeEmergencyModal()" class="absolute top-4 right-4 text-gray-400 hover:text-brand-slate transition-colors p-1 rounded-full hover:bg-gray-100">
-                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            </button>
-
-            <div class="flex items-center gap-3 mb-4 text-brand-coral">
-                <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-coralLight">
-                    <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                </div>
-                <div>
-                    <h3 class="text-xl font-bold font-outfit text-brand-slate">Crisis Support Resources</h3>
-                    <p class="text-xs text-brand-coral font-semibold">Immediate 24/7 Assistance</p>
-                </div>
-            </div>
-
-            <p class="text-sm text-gray-600 mb-6 leading-relaxed">If you are facing an emergency, in distress, or in danger of hurting yourself, please reach out to one of the free support services below.</p>
-
-            <div class="space-y-3.5 mb-6">
-                <div class="flex items-center justify-between p-3.5 rounded-2xl bg-[#FAF9F6] border border-gray-100">
-                    <div>
-                        <h4 class="text-sm font-bold text-brand-slate">988 Crisis Lifeline</h4>
-                        <p class="text-xs text-gray-500">Call or Text 24/7 (US & Canada)</p>
-                    </div>
-                    <a href="tel:988" class="px-4 py-1.5 rounded-xl bg-brand-coral text-white text-xs font-bold shadow-sm hover:bg-brand-coralHover transition-colors">Call 988</a>
-                </div>
-                <div class="flex items-center justify-between p-3.5 rounded-2xl bg-[#FAF9F6] border border-gray-100">
-                    <div>
-                        <h4 class="text-sm font-bold text-brand-slate">Samaritans Helpline</h4>
-                        <p class="text-xs text-gray-500">Call 116 123 24/7 (United Kingdom)</p>
-                    </div>
-                    <a href="tel:116123" class="px-4 py-1.5 rounded-xl bg-brand-coral text-white text-xs font-bold shadow-sm hover:bg-brand-coralHover transition-colors">Call 116 123</a>
-                </div>
-                <div class="flex items-center justify-between p-3.5 rounded-2xl bg-[#FAF9F6] border border-gray-100">
-                    <div>
-                        <h4 class="text-sm font-bold text-brand-slate">Crisis Text Line (US/CA)</h4>
-                        <p class="text-xs text-gray-500">Text HOME to 741741 (Free, 24/7)</p>
-                    </div>
-                    <a href="sms:741741?body=HOME" class="px-4 py-1.5 rounded-xl bg-brand-slate text-white text-xs font-bold shadow-sm hover:bg-gray-800 transition-colors">Text HOME</a>
-                </div>
-                <div class="flex items-center justify-between p-3.5 rounded-2xl bg-[#FAF9F6] border border-gray-100">
-                    <div>
-                        <h4 class="text-sm font-bold text-brand-slate">Shout Crisis Text (UK)</h4>
-                        <p class="text-xs text-gray-500">Text SHOUT to 85258 (Free, 24/7)</p>
-                    </div>
-                    <a href="sms:85258?body=SHOUT" class="px-4 py-1.5 rounded-xl bg-brand-slate text-white text-xs font-bold shadow-sm hover:bg-gray-800 transition-colors">Text SHOUT</a>
-                </div>
-            </div>
-
-            <button onclick="closeEmergencyModal()" class="w-full py-2.5 rounded-2xl bg-gray-100 hover:bg-gray-200 text-gray-600 font-semibold text-sm transition-colors">Close</button>
-        </div>
-    </div>
-
-    <!-- CONTEXTUAL ONBOARDING MODAL -->
-    <?php if ($user_archetype === null): ?>
-    <div id="onboarding-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div class="absolute inset-0 bg-brand-slate/60 backdrop-blur-md"></div>
-        <div class="relative bg-white w-full max-w-lg rounded-3xl p-6 sm:p-8 shadow-2xl border border-gray-100 transform scale-100 transition-all duration-300">
-            <div class="text-center mb-6">
-                <img src="logo.svg" alt="Tet Wellbeing Group" class="h-20 w-auto mx-auto mb-3">
-                <h3 class="text-xl font-bold font-outfit text-brand-slate">Personalize Your Quiet Sanctuary</h3>
-                <p class="text-xs text-gray-500 mt-1 leading-normal">
-                    Please answer a quick question to help us tailor resources and support hubs to your direct care circumstances.
-                </p>
-            </div>
-
-            <form method="POST" action="dashboard.php" class="space-y-4">
-                <input type="hidden" name="action" value="save_onboarding">
-                
-                <span class="block text-xs font-bold text-brand-slate uppercase tracking-wider font-outfit mb-2">Select the profile that fits you best:</span>
-                
-                <div class="space-y-3">
-                    <!-- Option 1: Dementia Carer -->
-                    <label class="flex items-start gap-3 p-4 rounded-2xl border-2 border-gray-100 hover:border-brand-sage hover:bg-brand-sageLight/20 cursor-pointer transition-all select-none">
-                        <input type="radio" name="archetype" value="dementia_carer" required class="mt-1 text-brand-sage focus:ring-brand-sage">
-                        <div>
-                            <span class="block text-xs font-bold text-brand-slate">Dementia Carer</span>
-                            <span class="block text-[10px] text-gray-500 mt-0.5 leading-relaxed">
-                                Caring for a spouse, parent, or family member dealing with Alzheimers or dementia.
-                            </span>
-                        </div>
-                    </label>
-
-                    <!-- Option 2: Stressed Student -->
-                    <label class="flex items-start gap-3 p-4 rounded-2xl border-2 border-gray-100 hover:border-brand-sage hover:bg-brand-sageLight/20 cursor-pointer transition-all select-none">
-                        <input type="radio" name="archetype" value="stressed_student" class="mt-1 text-brand-sage focus:ring-brand-sage">
-                        <div>
-                            <span class="block text-xs font-bold text-brand-slate">Stressed Student</span>
-                            <span class="block text-[10px] text-gray-500 mt-0.5 leading-relaxed">
-                                Balancing exams, university lectures, research workload, and personal coping pressures.
-                            </span>
-                        </div>
-                    </label>
-
-                    <!-- Option 3: General Wellbeing -->
-                    <label class="flex items-start gap-3 p-4 rounded-2xl border-2 border-gray-100 hover:border-brand-sage hover:bg-brand-sageLight/20 cursor-pointer transition-all select-none">
-                        <input type="radio" name="archetype" value="general_wellbeing" class="mt-1 text-brand-sage focus:ring-brand-sage">
-                        <div>
-                            <span class="block text-xs font-bold text-brand-slate">General Wellbeing</span>
-                            <span class="block text-[10px] text-gray-500 mt-0.5 leading-relaxed">
-                                Seeking standard burnout support, mindfulness toolkits, and daily positive habit routines.
-                            </span>
-                        </div>
-                    </label>
-                </div>
-
-                <div class="pt-3">
-                    <button type="submit" class="w-full py-3 rounded-2xl bg-brand-sage hover:bg-brand-sageHover text-white font-bold text-sm shadow-md transition-all active:scale-95 text-center">
-                        Save Preferences & Enter Hub
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-    <?php endif; ?>
-
-    <!-- CLINICAL SAFETY TRIAGE CRISIS MODAL -->
-    <?php if (isset($_SESSION['crisis_state']) && $_SESSION['crisis_state'] == 1): ?>
-    <div id="crisis-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div class="absolute inset-0 bg-brand-slate/60 backdrop-blur-md"></div>
-        <div class="relative bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl border border-brand-coral/30 transform scale-100 transition-all duration-300">
-            
-            <div class="flex items-center gap-3.5 mb-5 text-brand-coral">
-                <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-coralLight">
-                    <svg class="h-6 w-6 text-brand-coral" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-                        <line x1="12" y1="9" x2="12" y2="13"/>
-                        <line x1="12" y1="17" x2="12.01" y2="17"/>
-                    </svg>
-                </div>
-                <div>
-                    <h3 class="text-lg font-bold font-outfit text-brand-slate">Crisis Support Resources</h3>
-                    <p class="text-[10px] text-brand-coral font-bold uppercase tracking-wider font-outfit">Un-bypassable safety notice</p>
-                </div>
-            </div>
-
-            <p class="text-xs text-gray-500 mb-6 leading-relaxed">
-                Our safety scans detected keywords indicating severe distress in your journal entry. Your life and wellbeing are valuable to us. Please connect with one of these free, confidential support resources immediately:
-            </p>
-
-            <div class="space-y-3 mb-6">
-                <!-- 988 -->
-                <div class="flex items-center justify-between p-3.5 rounded-2xl bg-brand-inputBg border border-gray-100 text-xs">
-                    <div>
-                        <h4 class="font-bold text-brand-slate">988 Suicide & Crisis Lifeline</h4>
-                        <p class="text-[10px] text-gray-500 mt-0.5">Call or Text 24/7 (US & Canada)</p>
-                    </div>
-                    <a href="tel:988" class="px-3.5 py-1.5 rounded-xl bg-brand-coral text-white font-bold text-[10px] shadow-sm hover:bg-brand-coralHover">Call 988</a>
-                </div>
-
-                <!-- Samaritans UK -->
-                <div class="flex items-center justify-between p-3.5 rounded-2xl bg-brand-inputBg border border-gray-100 text-xs">
-                    <div>
-                        <h4 class="font-bold text-brand-slate">Samaritans Helpline (UK)</h4>
-                        <p class="text-[10px] text-gray-500 mt-0.5">Call 116 123 24/7 (United Kingdom)</p>
-                    </div>
-                    <a href="tel:116123" class="px-3.5 py-1.5 rounded-xl bg-brand-coral text-white font-bold text-[10px] shadow-sm hover:bg-brand-coralHover">Call 116 123</a>
-                </div>
-
-                <!-- Shout UK -->
-                <div class="flex items-center justify-between p-3.5 rounded-2xl bg-brand-inputBg border border-gray-100 text-xs">
-                    <div>
-                        <h4 class="font-bold text-brand-slate">Shout Crisis Text (UK)</h4>
-                        <p class="text-[10px] text-gray-500 mt-0.5">Text SHOUT to 85258 (Free, 24/7)</p>
-                    </div>
-                    <a href="sms:85258?body=SHOUT" class="px-3.5 py-1.5 rounded-xl bg-brand-slate text-white font-bold text-[10px] shadow-sm hover:bg-gray-800">Text SHOUT</a>
-                </div>
-            </div>
-
-            <form method="POST" action="dashboard.php">
-                <input type="hidden" name="action" value="clear_crisis">
-                
-                <label class="flex items-start gap-2.5 mb-4 cursor-pointer select-none text-[10px] text-gray-500 leading-normal">
-                    <input type="checkbox" required class="rounded border-gray-300 text-brand-sage focus:ring-brand-sage mt-0.5">
-                    <span>I acknowledge these resources and confirm that I am safe or currently seeking appropriate help.</span>
-                </label>
-
-                <button type="submit" class="w-full py-2.5 rounded-2xl bg-brand-sage hover:bg-brand-sageHover text-white font-bold text-xs shadow-md transition-colors text-center">
-                    Acknowledge & Dismiss Modal
-                </button>
-            </form>
-        </div>
-    </div>
-    <?php endif; ?>
-
-    <!-- VANILLA JAVASCRIPT -->
+    
     <script>
-        // Mood Button selection
-        const moodButtons = document.querySelectorAll('.mood-btn');
-        const moodValueInput = document.getElementById('mood-value');
-        const reflectionContainer = document.getElementById('reflection-container');
-        const moodNotesArea = document.getElementById('mood-notes');
-
-        moodButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                const mood = button.getAttribute('data-mood');
-                moodValueInput.value = mood;
-                
-                moodButtons.forEach(btn => {
-                    btn.classList.remove('border-brand-sage', 'bg-brand-sageLight', 'text-brand-slate', 'scale-105', 'shadow-active');
-                    btn.classList.add('border-gray-100', 'bg-[#FAF9F6]', 'text-gray-500');
+        // Form Logic
+        document.querySelectorAll('.mood-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.mood-btn').forEach(b => {
+                    b.classList.remove('border-brand-sage', 'bg-brand-sageLight');
+                    b.classList.add('border-gray-100', 'bg-[#FAF9F6]');
                 });
-
-                button.classList.remove('border-gray-100', 'bg-[#FAF9F6]', 'text-gray-500');
-                button.classList.add('border-brand-sage', 'bg-brand-sageLight', 'text-brand-slate', 'scale-105', 'shadow-active');
-                
-                showReflectionBox();
-                updateRecommendation(mood);
+                btn.classList.remove('border-gray-100', 'bg-[#FAF9F6]');
+                btn.classList.add('border-brand-sage', 'bg-brand-sageLight');
+                document.getElementById('mood-value').value = btn.getAttribute('data-mood');
             });
-        });
-
-        function updateRecommendation(mood) {
-            const recCard = document.getElementById('recommendation-card');
-            const recText = document.getElementById('recommendation-text');
-            const recLink = document.getElementById('recommendation-link');
-            
-            let msg = '';
-            let lnk = '';
-            let btnText = 'Go';
-
-            switch(mood) {
-                case 'overwhelmed':
-                    msg = "Would you like to try a 3-minute grounding exercise to center your thoughts?";
-                    lnk = "mindbloom.php?action=grounding";
-                    btnText = "Start Grounding";
-                    break;
-                case 'low':
-                    msg = "It's okay to feel low. How about a gentle journaling prompt in MindBloom?";
-                    lnk = "mindbloom.php?action=journal";
-                    btnText = "Open MindBloom";
-                    break;
-                case 'anxious':
-                    msg = "Let's release some of that tension in TrueVent.";
-                    lnk = "truevent.php";
-                    btnText = "Open TrueVent";
-                    break;
-                case 'exhausted':
-                    msg = "Your body needs rest. Would you like to explore sleep strategies in the Academy?";
-                    lnk = "tet_academy.php?topic=sleep";
-                    btnText = "View Lesson";
-                    break;
-                case 'frustrated':
-                    msg = "Release your frustration safely in TrueVent.";
-                    lnk = "truevent.php";
-                    btnText = "Open TrueVent";
-                    break;
-                case 'okay':
-                    msg = "Glad you are doing okay! Want to build your resilience today?";
-                    lnk = "mindbloom.php";
-                    btnText = "Explore MindBloom";
-                    break;
-                case 'grow':
-                    msg = "Ready to learn? Let's check out today's 5-minute wellbeing lesson.";
-                    lnk = "tet_academy.php";
-                    btnText = "Enter Academy";
-                    break;
-                case 'talk':
-                    msg = "Sometimes you just need someone to listen. Connect with a befriender.";
-                    lnk = "tet_circle.php";
-                    btnText = "Connect Now";
-                    break;
-            }
-
-            recText.innerText = msg;
-            recLink.href = lnk;
-            recLink.innerText = btnText;
-            
-            recCard.classList.remove('hidden');
-        }
-
-        function showReflectionBox() {
-            reflectionContainer.style.maxHeight = '500px';
-            reflectionContainer.style.opacity = '1';
-            reflectionContainer.style.overflow = 'visible';
-            reflectionContainer.classList.remove('opacity-0');
-            reflectionContainer.classList.add('mt-6', 'opacity-100');
-            setTimeout(() => { moodNotesArea.focus(); }, 300);
-        }
-
-        // Emergency Modal actions
-        const emergencyModal = document.getElementById('emergency-modal');
-
-        function openEmergencyModal() {
-            emergencyModal.classList.remove('opacity-0', 'pointer-events-none');
-            emergencyModal.querySelector('.relative').classList.remove('scale-95');
-            emergencyModal.querySelector('.relative').classList.add('scale-100');
-        }
-
-        function closeEmergencyModal() {
-            emergencyModal.classList.add('opacity-0', 'pointer-events-none');
-            emergencyModal.querySelector('.relative').classList.remove('scale-100');
-            emergencyModal.querySelector('.relative').classList.add('scale-95');
-        }
-
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && !emergencyModal.classList.contains('opacity-0')) {
-                closeEmergencyModal();
-            }
-        });
-
-        // Speech Transcription Helper
-        function initVoiceTranscription(textareaId, buttonId) {
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if (!SpeechRecognition) {
-                const btn = document.getElementById(buttonId);
-                if (btn) btn.style.display = 'none';
-                return;
-            }
-            const recognition = new SpeechRecognition();
-            recognition.continuous = false;
-            recognition.lang = 'en-US';
-            recognition.interimResults = false;
-            recognition.maxAlternatives = 1;
-            
-            const textarea = document.getElementById(textareaId);
-            const button = document.getElementById(buttonId);
-            let isRecording = false;
-            
-            button.addEventListener('click', (e) => {
-                e.preventDefault();
-                if (isRecording) {
-                    recognition.stop();
-                } else {
-                    recognition.start();
-                }
-            });
-            
-            recognition.onstart = () => {
-                isRecording = true;
-                button.innerHTML = `
-                    <svg class="h-3 w-3 text-brand-coral animate-pulse" fill="currentColor" viewBox="0 0 24 24">
-                        <circle cx="12" cy="12" r="10" />
-                    </svg>
-                    <span class="text-brand-coral font-bold">Listening...</span>
-                `;
-                button.classList.add('bg-brand-coralLight', 'border-brand-coral/20');
-            };
-            
-            recognition.onresult = (event) => {
-                const transcript = event.results[0][0].transcript;
-                if (textarea.value) {
-                    textarea.value += ' ' + transcript;
-                } else {
-                    textarea.value = transcript;
-                }
-                textarea.dispatchEvent(new Event('input'));
-            };
-            
-            recognition.onspeechend = () => {
-                recognition.stop();
-            };
-            
-            recognition.onend = () => {
-                isRecording = false;
-                button.innerHTML = `
-                    <svg class="h-3.5 w-3.5 text-brand-sage" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-                    </svg>
-                    <span>Transcribe Voice</span>
-                `;
-                button.classList.remove('bg-brand-coralLight', 'border-brand-coral/20');
-            };
-            
-            recognition.onerror = (event) => {
-                console.error("Speech recognition error", event.error);
-                recognition.stop();
-            };
-        }
-
-        document.addEventListener('DOMContentLoaded', () => {
-            initVoiceTranscription('mood-notes', 'transcribe-mood-notes');
         });
     </script>
-    <?php include 'includes/global_ai_widget.php'; ?>
+
+    <!-- ONBOARDING TOUR MODAL -->
+    <div id="onboarding-modal" class="fixed inset-0 z-50 bg-brand-slate/80 backdrop-blur-sm hidden items-center justify-center p-4 opacity-0 transition-opacity duration-500">
+        <div class="bg-white rounded-3xl max-w-2xl w-full overflow-hidden shadow-2xl transform scale-95 transition-transform duration-500" id="onboarding-content">
+            <div class="relative h-48 bg-brand-sageLight">
+                <img src="images/landing_hero.png" class="absolute inset-0 w-full h-full object-cover mix-blend-overlay opacity-30">
+                <div class="absolute inset-0 flex items-center justify-center">
+                    <div class="h-20 w-20 bg-white rounded-full flex items-center justify-center shadow-lg">
+                        <img src="logo.svg" class="h-12 w-auto">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="p-8 md:p-12">
+                <div id="tour-step-1">
+                    <span class="text-xs font-bold text-brand-sage uppercase tracking-wider">Welcome to the new</span>
+                    <h2 class="text-3xl font-extrabold font-outfit text-brand-slate mt-1 mb-4">TET Wellbeing Architecture</h2>
+                    <p class="text-gray-500 mb-6 leading-relaxed">We've completely redesigned your experience to be cleaner, deeper, and more intuitive. Your favorite tools haven't disappeared—they are now neatly organized into 4 core pillars.</p>
+                    <button onclick="nextTourStep(2)" class="w-full py-3 bg-brand-sage text-white font-bold rounded-2xl shadow-md hover:bg-brand-sageHover transition-all">Show Me Around</button>
+                </div>
+                
+                <div id="tour-step-2" class="hidden">
+                    <div class="flex items-center gap-4 mb-4">
+                        <div class="h-12 w-12 rounded-xl bg-brand-sageLight text-brand-sage flex items-center justify-center shrink-0">
+                            <i class="fa-solid fa-leaf text-xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold font-outfit text-brand-slate">MindBloom (Self-Care)</h3>
+                            <p class="text-sm text-gray-500 mt-1">Your private sanctuary. You'll find Journaling (TrueVent), Assessments, and Immersive Tools (VR & Ambient) here.</p>
+                        </div>
+                    </div>
+                    <button onclick="nextTourStep(3)" class="w-full mt-6 py-3 bg-brand-slate text-white font-bold rounded-2xl shadow-md hover:bg-gray-700 transition-all">Next</button>
+                </div>
+
+                <div id="tour-step-3" class="hidden">
+                    <div class="flex items-center gap-4 mb-4">
+                        <div class="h-12 w-12 rounded-xl bg-brand-skyLight text-brand-slate flex items-center justify-center shrink-0">
+                            <i class="fa-solid fa-users text-xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold font-outfit text-brand-slate">Community & Care</h3>
+                            <p class="text-sm text-gray-500 mt-1">Connect with others and professionals. The Community Feed, Teletherapy, Befrienders, and Caregiver Hub live here.</p>
+                        </div>
+                    </div>
+                    <button onclick="nextTourStep(4)" class="w-full mt-6 py-3 bg-brand-slate text-white font-bold rounded-2xl shadow-md hover:bg-gray-700 transition-all">Next</button>
+                </div>
+
+                <div id="tour-step-4" class="hidden">
+                    <div class="flex items-center gap-4 mb-4">
+                        <div class="h-12 w-12 rounded-xl bg-brand-coralLight text-brand-coral flex items-center justify-center shrink-0">
+                            <i class="fa-solid fa-graduation-cap text-xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold font-outfit text-brand-slate">Learning Center</h3>
+                            <p class="text-sm text-gray-500 mt-1">Expand your knowledge. Access TET Academy courses, the Streaming Hub, and the Research Centre.</p>
+                        </div>
+                    </div>
+                    <button onclick="closeTour()" class="w-full mt-6 py-3 bg-brand-sage text-white font-bold rounded-2xl shadow-md hover:bg-brand-sageHover transition-all">Got It, Let's Begin!</button>
+                </div>
+            </div>
+            
+            <div class="bg-gray-50 px-8 py-4 border-t border-gray-100 flex justify-center gap-2" id="tour-dots">
+                <div class="h-2 w-2 rounded-full bg-brand-sage transition-all" id="dot-1"></div>
+                <div class="h-2 w-2 rounded-full bg-gray-300 transition-all" id="dot-2"></div>
+                <div class="h-2 w-2 rounded-full bg-gray-300 transition-all" id="dot-3"></div>
+                <div class="h-2 w-2 rounded-full bg-gray-300 transition-all" id="dot-4"></div>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        // Onboarding Tour Logic
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!localStorage.getItem('tet_tour_completed')) {
+                const modal = document.getElementById('onboarding-modal');
+                const content = document.getElementById('onboarding-content');
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+                
+                // Trigger animation
+                setTimeout(() => {
+                    modal.classList.remove('opacity-0');
+                    content.classList.remove('scale-95');
+                }, 50);
+            }
+        });
+
+        function nextTourStep(step) {
+            // Hide all steps
+            for(let i=1; i<=4; i++) {
+                document.getElementById('tour-step-'+i).classList.add('hidden');
+                document.getElementById('dot-'+i).classList.replace('bg-brand-sage', 'bg-gray-300');
+            }
+            // Show target step
+            document.getElementById('tour-step-'+step).classList.remove('hidden');
+            document.getElementById('dot-'+step).classList.replace('bg-gray-300', 'bg-brand-sage');
+        }
+
+        function closeTour() {
+            const modal = document.getElementById('onboarding-modal');
+            const content = document.getElementById('onboarding-content');
+            
+            modal.classList.add('opacity-0');
+            content.classList.add('scale-95');
+            
+            setTimeout(() => {
+                modal.classList.remove('flex');
+                modal.classList.add('hidden');
+                localStorage.setItem('tet_tour_completed', 'true');
+            }, 500);
+        }
+    </script>
 </body>
+
 </html>

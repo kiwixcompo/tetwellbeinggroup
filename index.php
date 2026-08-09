@@ -125,7 +125,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['contact_form'])) {
     <header class="sticky top-0 z-40 w-full border-b border-brand-sage/10 bg-brand-bg/80 backdrop-blur-lg">
         <div class="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
             <!-- Brand Logo -->
-            <a href="#" class="flex items-center transition-transform hover:scale-[1.02] active:scale-95">
+            <a href="javascript:void(0)" onclick="alert('This feature is coming soon!')" class="flex items-center transition-transform hover:scale-[1.02] active:scale-95">
                 <img src="logo.svg" alt="Tet Wellbeing Group" class="h-16 w-auto">
             </a>
 
@@ -209,6 +209,87 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['contact_form'])) {
                     <div class="absolute inset-0 bg-gradient-to-t from-brand-slate/40 to-transparent"></div>
                 </div>
             </div>
+        </section>
+
+        <!-- ANONYMOUS WELLBEING CHECK (GUEST ACCESS) -->
+        <section class="py-16 bg-brand-sageLight/50 border-y border-brand-sage/20 relative overflow-hidden">
+            <div class="mx-auto max-w-4xl px-4 sm:px-6 text-center relative z-10">
+                <h2 class="text-3xl font-bold font-outfit text-brand-slate mb-4">Quick Wellbeing Check</h2>
+                <p class="text-gray-600 mb-8 max-w-2xl mx-auto">Take a moment to check in with yourself. No sign-up required.</p>
+                
+                <div class="bg-white rounded-[2rem] shadow-lg p-8 border border-white max-w-3xl mx-auto" id="guest-check-form-container">
+                    <form id="guest-check-form" onsubmit="handleGuestCheck(event)">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                            <!-- Stress Level -->
+                            <div class="text-left">
+                                <label class="block text-sm font-bold text-brand-slate mb-3">Stress Level Today</label>
+                                <select required class="w-full rounded-xl border-gray-200 bg-gray-50 p-3 text-sm focus:border-brand-sage focus:ring-brand-sage">
+                                    <option value="">Select...</option>
+                                    <option value="low">Low (Calm)</option>
+                                    <option value="moderate">Moderate</option>
+                                    <option value="high">High (Overwhelmed)</option>
+                                </select>
+                            </div>
+                            <!-- Mood -->
+                            <div class="text-left">
+                                <label class="block text-sm font-bold text-brand-slate mb-3">Current Mood</label>
+                                <select required class="w-full rounded-xl border-gray-200 bg-gray-50 p-3 text-sm focus:border-brand-sage focus:ring-brand-sage">
+                                    <option value="">Select...</option>
+                                    <option value="good">Positive / Good</option>
+                                    <option value="neutral">Neutral / Okay</option>
+                                    <option value="bad">Negative / Low</option>
+                                </select>
+                            </div>
+                            <!-- Sleep -->
+                            <div class="text-left">
+                                <label class="block text-sm font-bold text-brand-slate mb-3">Sleep Quality</label>
+                                <select required class="w-full rounded-xl border-gray-200 bg-gray-50 p-3 text-sm focus:border-brand-sage focus:ring-brand-sage">
+                                    <option value="">Select...</option>
+                                    <option value="good">Well Rested</option>
+                                    <option value="average">Average</option>
+                                    <option value="poor">Poor / Interrupted</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button type="submit" class="hover-btn rounded-xl bg-brand-sage px-8 py-3 text-sm font-bold text-white shadow-md hover:bg-brand-sageHover transition-all">
+                            View Summary
+                        </button>
+                    </form>
+
+                    <!-- Summary Results (Hidden initially) -->
+                    <div id="guest-check-results" class="hidden text-center py-4">
+                        <div class="inline-flex h-16 w-16 items-center justify-center rounded-full bg-brand-sageLight text-brand-sage mb-4">
+                            <i class="fa-solid fa-heart-pulse text-2xl"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold font-outfit text-brand-slate mb-2">Check-in Complete</h3>
+                        <p class="text-gray-600 mb-6">Thank you for taking a moment for yourself. Tracking your state daily can significantly improve emotional resilience.</p>
+                        
+                        <div class="bg-gray-50 rounded-xl p-6 border border-gray-100 mb-6">
+                            <p class="text-sm font-semibold text-brand-slate mb-2"><i class="fa-solid fa-lock text-gray-400 mr-2"></i>Unlock Your Personalized Action Plan</p>
+                            <p class="text-xs text-gray-500 mb-4">Create a free account to view your history, receive AI-driven recommendations, and access your tailored wellbeing plan.</p>
+                            <a href="signup.php" class="inline-block hover-btn rounded-xl bg-brand-slate px-6 py-2.5 text-sm font-bold text-white shadow-md hover:bg-brand-slate/90 transition-all">
+                                Create Free Account
+                            </a>
+                        </div>
+                        <button type="button" onclick="resetGuestCheck()" class="text-xs font-bold text-gray-400 hover:text-brand-sage transition-colors">
+                            Retake Check-in
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <script>
+                function handleGuestCheck(e) {
+                    e.preventDefault();
+                    document.getElementById('guest-check-form').classList.add('hidden');
+                    document.getElementById('guest-check-results').classList.remove('hidden');
+                }
+                function resetGuestCheck() {
+                    document.getElementById('guest-check-form').reset();
+                    document.getElementById('guest-check-form').classList.remove('hidden');
+                    document.getElementById('guest-check-results').classList.add('hidden');
+                }
+            </script>
         </section>
 
         <!-- ABOUT SECTION -->
@@ -391,7 +472,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['contact_form'])) {
             
             <div class="flex items-center gap-8 font-semibold">
                 <button onclick="openTermsModal()" class="hover:text-brand-sage transition-colors">Terms of Service</button>
-                <a href="#" class="hover:text-brand-sage transition-colors">Privacy Policy</a>
+                <a href="javascript:void(0)" onclick="alert('This feature is coming soon!')" class="hover:text-brand-sage transition-colors">Privacy Policy</a>
                 <a href="#contact" class="hover:text-brand-sage transition-colors">Contact</a>
             </div>
             

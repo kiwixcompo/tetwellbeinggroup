@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once 'db.php';
+$tab = $_GET['tab'] ?? 'home';
 
 // Check if user is logged in
 if (!isset($_SESSION['user_id'])) {
@@ -17,6 +18,7 @@ $user_id = $_SESSION['user_id'];
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TET Academy - Tet Wellbeing Group</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -51,13 +53,43 @@ $user_id = $_SESSION['user_id'];
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #F7F5F0; }
         h1, h2, h3, h4, h5, h6, .font-heading { font-family: 'Outfit', sans-serif; }
     </style>
+    <link rel="icon" href="logo.svg" type="image/svg+xml">
 </head>
 <body class="text-brand-slate antialiased min-h-screen flex flex-col">
 
-    <!-- Navigation Menu -->
-    <?php require_once 'nav_menu.php'; ?>
+    <?php include 'nav_menu.php'; ?>
 
-    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+    <!-- MAIN BODY CONTENT (Phase 4 Learning Center Layout) -->
+    <main class="flex-grow mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-8 pb-24 md:pb-12 fade-in">
+        
+        <div class="flex flex-col lg:flex-row gap-8">
+            <!-- LEFT SIDEBAR (20%) -->
+            <div class="w-full lg:w-1/4 xl:w-1/5 shrink-0">
+                <div class="sticky top-28 space-y-1">
+                    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider px-4 mb-4">Learning Center</h3>
+                    
+                    <a href="?tab=home" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all <?php echo $tab === 'home' ? 'bg-brand-sageLight text-brand-sage' : 'text-gray-500 hover:bg-gray-50 hover:text-brand-slate'; ?>">
+                        <i class="fa-solid fa-graduation-cap w-5 text-center"></i> 
+                        TET Academy
+                    </a>
+                    
+                    <a href="?tab=streaming" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all <?php echo $tab === 'streaming' ? 'bg-brand-sageLight text-brand-sage' : 'text-gray-500 hover:bg-gray-50 hover:text-brand-slate'; ?>">
+                        <i class="fa-solid fa-play-circle w-5 text-center"></i> 
+                        Streaming Hub
+                    </a>
+                    
+                    <a href="?tab=research" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all <?php echo $tab === 'research' ? 'bg-brand-sageLight text-brand-sage' : 'text-gray-500 hover:bg-gray-50 hover:text-brand-slate'; ?>">
+                        <i class="fa-solid fa-microscope w-5 text-center"></i> 
+                        Research Centre
+                    </a>
+                </div>
+            </div>
+
+            <!-- RIGHT CONTENT AREA (80%) -->
+            <div class="w-full lg:w-3/4 xl:w-4/5">
+                <?php if ($tab === 'home'): ?>
+                    <div class="max-w-4xl mx-auto">
+                        
         <!-- Hero Section -->
         <div class="bg-brand-sageLight rounded-3xl p-8 sm:p-12 mb-10 text-center relative overflow-hidden border border-brand-sage/20 shadow-sm">
             <div class="absolute inset-0 z-0">
@@ -172,103 +204,27 @@ $user_id = $_SESSION['user_id'];
             </div>
 
         </div>
+    
+                    </div>
+                
+                <?php elseif ($tab === 'streaming'): ?>
+                    <div class="bg-[#121212] rounded-[2rem] border border-gray-800 shadow-soft overflow-hidden h-[85vh]">
+                        <iframe src="streaming_hub.php?embed=1" class="w-full h-full border-0"></iframe>
+                    </div>
+                    
+                <?php elseif ($tab === 'research'): ?>
+                    <div class="bg-white rounded-[2rem] border border-[#EBE8E0] shadow-soft overflow-hidden h-[85vh]">
+                        <iframe src="research_hub.php?embed=1" class="w-full h-full border-0"></iframe>
+                    </div>
+                    
+                <?php else: ?>
+                    <div class="text-center py-20">
+                        <h2 class="text-2xl font-bold text-brand-slate mb-4">Module Not Found</h2>
+                        <a href="?tab=home" class="text-brand-sage underline">Return to Learning Center</a>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
     </main>
-
-    <!-- Lesson Modal -->
-    <div id="lessonModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
-        <div class="bg-brand-cardBg rounded-2xl p-8 max-w-md w-full mx-4 shadow-xl border border-brand-sageLight">
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="text-xl font-heading font-bold text-brand-slate">Lesson Player</h3>
-                <button onclick="closeLesson()" class="text-brand-slate opacity-60 hover:opacity-100 transition">
-                    <i data-lucide="x" class="w-6 h-6"></i>
-                </button>
-            </div>
-            <div class="bg-brand-bg rounded-xl p-8 text-center border border-brand-sageLight mb-6">
-                <i data-lucide="play-circle" class="w-16 h-16 text-brand-sage mx-auto mb-4 opacity-50"></i>
-                <p id="lessonTitle" class="text-lg font-medium text-brand-slate mb-2"></p>
-                <p class="text-sm text-brand-coral font-medium">Coming Soon</p>
-            </div>
-            <button onclick="closeLesson()" class="w-full bg-brand-slate text-white py-2 rounded-lg font-medium hover:bg-opacity-90 transition">
-                Close
-            </button>
-        </div>
-    </div>
-
-    <!-- Emergency Modal Placeholder -->
-    <div id="emergencyModal" class="fixed inset-0 bg-black bg-opacity-50 z-[100] hidden flex items-center justify-center backdrop-blur-sm">
-        <div class="bg-white rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl border-t-4 border-brand-coral">
-            <div class="flex items-center justify-center w-16 h-16 bg-brand-coralLight rounded-full mx-auto mb-4">
-                <i data-lucide="phone" class="w-8 h-8 text-brand-coral"></i>
-            </div>
-            <h2 class="text-2xl font-heading font-bold text-center text-brand-slate mb-2">Emergency Contacts</h2>
-            <p class="text-center text-brand-slate opacity-80 mb-6">If you or someone else is in immediate danger, please reach out to these services immediately.</p>
-            
-            <div class="space-y-4 mb-8">
-                <a href="tel:999" class="flex items-center p-4 bg-brand-bg rounded-xl hover:bg-brand-coralLight transition-colors group">
-                    <div class="flex-grow">
-                        <h3 class="font-bold text-brand-slate group-hover:text-brand-coral transition-colors">Emergency Services</h3>
-                        <p class="text-sm text-brand-slate opacity-70">Police, Fire, Ambulance (UK)</p>
-                    </div>
-                    <span class="font-bold text-lg text-brand-coral">999</span>
-                </a>
-                <a href="tel:111" class="flex items-center p-4 bg-brand-bg rounded-xl hover:bg-brand-sageLight transition-colors group">
-                    <div class="flex-grow">
-                        <h3 class="font-bold text-brand-slate group-hover:text-brand-sage transition-colors">NHS Non-Emergency</h3>
-                        <p class="text-sm text-brand-slate opacity-70">Medical advice 24/7</p>
-                    </div>
-                    <span class="font-bold text-lg text-brand-sage">111</span>
-                </a>
-                <a href="tel:116123" class="flex items-center p-4 bg-brand-bg rounded-xl hover:bg-brand-sky hover:bg-opacity-20 transition-colors group">
-                    <div class="flex-grow">
-                        <h3 class="font-bold text-brand-slate group-hover:text-brand-sky transition-colors">Samaritans</h3>
-                        <p class="text-sm text-brand-slate opacity-70">24/7 Mental health support</p>
-                    </div>
-                    <span class="font-bold text-lg text-brand-sky">116 123</span>
-                </a>
-            </div>
-            <button onclick="closeEmergencyModal()" class="w-full bg-brand-slate text-white py-3 rounded-xl font-medium hover:bg-opacity-90 transition-colors">
-                Close
-            </button>
-        </div>
-    </div>
-
-    <!-- AI Companion Widget -->
-    <?php require_once 'includes/global_ai_widget.php'; ?>
-
-    <script>
-        // Initialize Lucide icons
-        lucide.createIcons();
-
-        // Lesson Modal Logic
-        function openLesson(title) {
-            document.getElementById('lessonTitle').textContent = title;
-            document.getElementById('lessonModal').classList.remove('hidden');
-        }
-
-        function closeLesson() {
-            document.getElementById('lessonModal').classList.add('hidden');
-        }
-
-        // Close modal on clicking outside
-        document.getElementById('lessonModal').addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeLesson();
-            }
-        });
-
-        // Emergency Modal Functions
-        function openEmergencyModal() {
-            document.getElementById('emergencyModal').classList.remove('hidden');
-        }
-        
-        function closeEmergencyModal() {
-            document.getElementById('emergencyModal').classList.add('hidden');
-        }
-        
-        // Close emergency modal on background click
-        document.getElementById('emergencyModal').addEventListener('click', function(e) {
-            if(e.target === this) closeEmergencyModal();
-        });
-    </script>
 </body>
 </html>

@@ -690,7 +690,7 @@ if ($db_connected && $pdo) {
                         </div>
                     </button>
                     <!-- Dropdown -->
-                    <div class="absolute right-0 mt-2 w-48 origin-top-right rounded-2xl bg-white p-2 shadow-2xl border border-gray-100 opacity-0 scale-95 pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:pointer-events-auto transition-all duration-200 z-50">
+                    <div class="absolute right-0 mt-2 before:absolute before:-top-2 before:left-0 before:h-2 before:w-full before:content-[''] w-48 origin-top-right rounded-2xl bg-white p-2 shadow-2xl border border-gray-100 opacity-0 scale-95 pointer-events-none group-hover:opacity-100 group-hover:scale-100 group-hover:pointer-events-auto transition-all duration-200 z-50">
                         <a href="dashboard.php" class="block px-3 py-2 text-xs text-gray-600 rounded-xl hover:bg-brand-sageLight hover:text-brand-sage transition-colors font-medium font-outfit">Switch to Client View</a>
                         <a href="specialist_dashboard.php" class="block px-3 py-2 text-xs text-gray-600 rounded-xl hover:bg-brand-sageLight hover:text-brand-sage transition-colors font-medium font-outfit font-medium">Switch to Specialist View</a>
                         <div class="my-1 border-t border-gray-100"></div>

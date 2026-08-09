@@ -4,6 +4,7 @@
  * Authenticated client page for smartwatch synchronization, real-time voice acoustic analysis, and Digital Twin visualization.
  */
 require_once 'db.php';
+require_once 'gating_helper.php';
 require_once 'EmotionalHealthService.php';
 
 // Auth Guard: Redirect to login if user session is not active
@@ -195,49 +196,29 @@ $coping = json_decode($digital_twin['coping_styles'] ?? '[]', true);
     </style>
 </head>
 <body class="min-h-full flex flex-col selection:bg-brand-sage/20 selection:text-brand-slate">
+    <?php if (!isset($_GET['embed'])) { require_once 'nav_menu.php'; } ?>
 
     <!-- TOP NAVIGATION BAR -->
-    <header class="sticky top-0 z-40 w-full border-b border-[#EBE8E0] bg-brand-bg/95 backdrop-blur-md">
-        <div class="mx-auto flex h-20 max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
-            <!-- Brand Logo -->
-            <a href="dashboard.php" class="flex items-center transition-transform hover:scale-[1.01] active:scale-95">
-                <img src="logo.svg" alt="Tet Wellbeing Group" class="h-16 w-auto">
-            </a>
-
-            <!-- Actions -->
-            <div class="flex items-center gap-4">
-                <!-- Emergency Support Button -->
-                <button type="button" onclick="openEmergencyModal()" class="flex items-center gap-2 rounded-2xl bg-brand-coral px-4 py-2 text-sm font-semibold text-white shadow-md transition-all duration-300 hover:bg-brand-coralHover hover:shadow-lg active:scale-95">
-                    <svg class="h-4.5 w-4.5 animate-pulse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-                        <line x1="12" y1="9" x2="12" y2="13"/>
-                        <line x1="12" y1="17" x2="12.01" y2="17"/>
-                    </svg>
-                    <span>Emergency Support</span>
-                </button>
-
-                <!-- Profile Avatar -->
-                <div class="relative group cursor-pointer">
-                    <div class="flex h-10 w-10 items-center justify-center rounded-full border-2 border-brand-sage/20 bg-brand-sageLight text-sm font-bold text-brand-sage transition-all hover:border-brand-sage">
-                        <?php echo $user_initial; ?>
-                    </div>
-                    <div class="absolute right-0 mt-2 w-48 origin-top-right rounded-2xl bg-white p-2 shadow-xl border border-gray-100 opacity-0 scale-95 pointer-events-none transition-all duration-200 group-hover:opacity-100 group-hover:scale-100 group-hover:pointer-events-auto">
-                        <div class="px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Signed in as</div>
-                        <div class="px-3 py-1 font-bold text-brand-slate text-sm truncate"><?php echo htmlspecialchars($user_name); ?></div>
-                        <hr class="my-2 border-gray-100">
-                        <?php if ($user_role === 'admin'): ?>
-                        <a href="admin_dashboard.php" class="block px-3 py-2 text-sm text-brand-sage rounded-xl hover:bg-brand-sageLight transition-colors font-bold">Admin Console</a>
-                        <?php endif; ?>
-                        <a href="#" class="block px-3 py-2 text-sm text-gray-600 rounded-xl hover:bg-brand-bg transition-colors font-semibold">My Profile</a>
-                        <a href="logout.php" class="block px-3 py-2 text-sm text-brand-coral rounded-xl hover:bg-brand-coralLight transition-colors font-bold">Sign Out</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </header>
+    
 
     <!-- MAIN APP CONTAINER -->
     <main class="mx-auto w-full max-w-6xl flex-grow px-4 py-8 sm:px-6 lg:px-8">
+        <?php if (!hasPlan('premium')): renderUpgradeOverlay('Predictive Hub', 'premium'); else: ?>
+        <?php if (!in_array($_SESSION['user_subscription_plan'] ?? 'free', ['premium', 'corporate'])): ?>
+        <div class="fixed inset-0 z-50 bg-brand-slate/80 backdrop-blur-sm flex items-center justify-center p-4">
+            <div class="bg-white rounded-3xl p-8 max-w-lg w-full text-center shadow-2xl">
+                <div class="h-16 w-16 mx-auto bg-brand-sageLight text-brand-sage rounded-full flex items-center justify-center mb-6">
+                    <i class="fa-solid fa-lock text-2xl"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-brand-slate mb-4">Premium Feature</h2>
+                <p class="text-gray-600 mb-8">This feature is part of our Premium digital wellbeing ecosystem. Upgrade your plan to access this tool.</p>
+                <a href="subscription.php" class="inline-block px-8 py-3 bg-brand-sage text-white rounded-2xl font-bold shadow-md hover:bg-brand-sageHover transition-all">Upgrade to Premium</a>
+                <a href="dashboard.php" class="block mt-4 text-sm font-bold text-gray-400 hover:text-brand-slate transition-colors">Return to Dashboard</a>
+            </div>
+        </div>
+        <div class="hidden">
+        <?php endif; ?>
+
         
         <!-- WELCOME SECTION -->
         <div class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -254,8 +235,6 @@ $coping = json_decode($digital_twin['coping_styles'] ?? '[]', true);
         </div>
 
         <!-- APP NAVIGATION TABS -->
-        <?php include 'nav_menu.php'; ?>
-
         <!-- HEALTH WARNINGS NOTIFICATION PANEL -->
         <?php if ($has_warnings): ?>
             <div class="mb-8 space-y-3">
@@ -872,6 +851,11 @@ $coping = json_decode($digital_twin['coping_styles'] ?? '[]', true);
             <?php endif; ?>
 
         </div>
+    
+        <?php if (!in_array($_SESSION['user_subscription_plan'] ?? 'free', ['premium', 'corporate'])): ?>
+        </div>
+        <?php endif; ?>
+<?php endif; ?>
     </main>
 
     <!-- MOBILE NAVIGATION BAR (Sticky Bottom) -->
