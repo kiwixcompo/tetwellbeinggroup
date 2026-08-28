@@ -66,21 +66,31 @@ $user_id = $_SESSION['user_id'];
             <!-- LEFT SIDEBAR (20%) -->
             <div class="w-full lg:w-1/4 xl:w-1/5 shrink-0">
                 <div class="sticky top-28 space-y-1">
+<?php require_once 'gating_helper.php'; ?>
                     <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider px-4 mb-4">Learning Center</h3>
                     
-                    <a href="?tab=home" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all <?php echo $tab === 'home' ? 'bg-brand-sageLight text-brand-sage' : 'text-gray-500 hover:bg-gray-50 hover:text-brand-slate'; ?>">
-                        <i class="fa-solid fa-graduation-cap w-5 text-center"></i> 
-                        TET Academy
+                    <a href="?tab=home" class="flex items-center justify-between px-4 py-3 rounded-2xl text-sm font-bold transition-all <?php echo $tab === 'home' ? 'bg-brand-sageLight text-brand-sage' : 'text-gray-500 hover:bg-gray-50 hover:text-brand-slate'; ?>">
+                        <span class="flex items-center gap-3">
+                            <i class="fa-solid fa-graduation-cap w-5 text-center"></i> 
+                            TET Academy
+                        </span>
+                        <?php echo getPlanBadge('free'); ?>
                     </a>
                     
-                    <a href="?tab=streaming" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all <?php echo $tab === 'streaming' ? 'bg-brand-sageLight text-brand-sage' : 'text-gray-500 hover:bg-gray-50 hover:text-brand-slate'; ?>">
-                        <i class="fa-solid fa-play-circle w-5 text-center"></i> 
-                        Streaming Hub
+                    <a href="?tab=streaming" class="flex items-center justify-between px-4 py-3 rounded-2xl text-sm font-bold transition-all <?php echo $tab === 'streaming' ? 'bg-brand-sageLight text-brand-sage' : 'text-gray-500 hover:bg-gray-50 hover:text-brand-slate'; ?>">
+                        <span class="flex items-center gap-3">
+                            <i class="fa-solid fa-play-circle w-5 text-center"></i> 
+                            Streaming Hub
+                        </span>
+                        <?php echo getPlanBadge('basic'); ?>
                     </a>
                     
-                    <a href="?tab=research" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all <?php echo $tab === 'research' ? 'bg-brand-sageLight text-brand-sage' : 'text-gray-500 hover:bg-gray-50 hover:text-brand-slate'; ?>">
-                        <i class="fa-solid fa-microscope w-5 text-center"></i> 
-                        Research Centre
+                    <a href="?tab=research" class="flex items-center justify-between px-4 py-3 rounded-2xl text-sm font-bold transition-all <?php echo $tab === 'research' ? 'bg-brand-sageLight text-brand-sage' : 'text-gray-500 hover:bg-gray-50 hover:text-brand-slate'; ?>">
+                        <span class="flex items-center gap-3">
+                            <i class="fa-solid fa-microscope w-5 text-center"></i> 
+                            Research Centre
+                        </span>
+                        <?php echo getPlanBadge('guest'); ?>
                     </a>
                 </div>
             </div>

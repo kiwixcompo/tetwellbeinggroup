@@ -81,6 +81,9 @@ $user_name = $_SESSION['user_name'] ?? 'User';
 
     <main class="max-w-3xl mx-auto px-6 mt-8">
         <div class="text-center mb-10">
+            <div class="inline-flex items-center gap-2 mb-2">
+                <?php echo getPlanBadge('guest'); ?>
+            </div>
             <h1 class="text-4xl font-extrabold font-outfit text-white tracking-tight mb-3">Ambient Mixer</h1>
             <p class="text-gray-400">Blend procedural soundscapes for deep focus or restful sleep.</p>
             <p id="audio-status" class="mt-4 inline-block bg-brand-coral/20 text-brand-coral px-3 py-1 rounded-full text-xs font-bold border border-brand-coral/30">Click Play to enable Web Audio</p>

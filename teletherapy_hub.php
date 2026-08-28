@@ -29,7 +29,7 @@ if ($db_connected && $pdo) {
         $user_subscription_plan = $_SESSION['mock_users'][$user_email]['subscription_plan'] ?? 'free';
     }
 }
-$can_book_teletherapy = in_array($user_subscription_plan, ['premium', 'corporate']);
+$can_book_teletherapy = hasPlan('premium');
 
 // Handle AJAX Chat Inquiries
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
@@ -617,12 +617,13 @@ $today_date = date('l, F j, Y');
 
     <!-- MAIN BODY CONTENT -->
     <main class="flex-grow mx-auto w-full max-w-4xl px-4 py-8 pb-24 md:pb-8 fade-in">
-        <?php if (!hasPlan('premium')): renderUpgradeOverlay('Teletherapy Hub', 'premium'); else: ?>
-        
         <!-- Header / Banner Card (The Safe Bridge) -->
         <div class="mb-8 relative overflow-hidden rounded-3xl bg-white border border-[#EBE8E0] shadow-soft p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6">
             <div class="space-y-3 z-10 max-w-lg">
-                <p class="text-xs font-bold tracking-wider text-brand-sage uppercase font-outfit">Ecosystem Layer 3</p>
+                <div class="flex items-center gap-2">
+                    <p class="text-xs font-bold tracking-wider text-brand-sage uppercase font-outfit">Ecosystem Layer 3</p>
+                    <?php echo getPlanBadge('premium'); ?>
+                </div>
                 <h1 class="text-3xl md:text-4xl font-extrabold font-outfit text-brand-slate tracking-tight mt-1">
                     Teletherapy <span class="text-brand-sage">Marketplace</span>
                 </h1>
@@ -964,7 +965,6 @@ $today_date = date('l, F j, Y');
 
         </div>
 
-    <?php endif; ?>
     </main>
 
     <!-- MOBILE NAVIGATION BAR (Sticky Bottom) -->
@@ -1219,50 +1219,83 @@ $today_date = date('l, F j, Y');
     <!-- BOOKING MODAL -->
     <div id="booking-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-all duration-300">
         <!-- Backdrop -->
-        <div class="absolute inset-0 bg-brand-slate/40 backdrop-blur-sm" onclick="closeBookingModal()"></div>
+        <div class="absolute inset-0 bg-brand-slate/50 backdrop-blur-sm" onclick="closeBookingModal()"></div>
         
         <!-- Modal Dialog -->
-        <div class="relative bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl border border-gray-100 transform scale-95 transition-all duration-300">
+        <div class="relative bg-white w-full max-w-lg rounded-3xl p-6 sm:p-8 shadow-2xl border border-gray-100 transform scale-95 transition-all duration-300">
             <!-- Close Button -->
-            <button onclick="closeBookingModal()" class="absolute top-4 right-4 text-gray-400 hover:text-brand-slate transition-colors p-1 rounded-full hover:bg-gray-100">
+            <button onclick="closeBookingModal()" class="absolute top-5 right-5 text-gray-400 hover:text-brand-slate transition-colors p-1 rounded-full hover:bg-gray-100">
                 <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
 
             <!-- Header -->
             <div class="mb-4">
-                <h3 class="text-lg font-bold font-outfit text-brand-slate">Book Teletherapy Session</h3>
+                <div class="flex items-center gap-2 mb-1">
+                    <span class="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-600 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 font-outfit">
+                        <i class="fa-brands fa-paypal"></i> PayPal Escrow Protected
+                    </span>
+                </div>
+                <h3 class="text-xl font-bold font-outfit text-brand-slate">Book Teletherapy Appointment</h3>
                 <p id="booking-therapist-subtitle" class="text-xs text-brand-sage font-semibold mt-0.5">Marcus Vance, LCSW</p>
             </div>
 
             <!-- Form -->
-            <form method="POST" action="teletherapy_hub.php" class="space-y-4">
+            <form method="POST" action="teletherapy_hub.php" id="teletherapy-booking-form" class="space-y-4">
                 <input type="hidden" name="action" value="book_session">
                 <input type="hidden" name="therapist_name" id="modal-therapist-name">
+                <input type="hidden" name="selected_currency" id="selected_currency" value="GBP">
 
-                <div>
-                    <label for="booking_date" class="block text-xs font-semibold text-brand-slate mb-1">Appointment Date</label>
-                    <input 
-                        type="date" 
-                        name="booking_date" 
-                        id="booking_date" 
-                        required 
-                        min="<?php echo date('Y-m-d', strtotime('+1 day')); ?>"
-                        onchange="fetchAvailableSlots()"
-                        class="w-full rounded-xl border border-gray-200 bg-[#FAF9F6] p-3 text-xs focus:border-brand-sage focus:outline-none text-brand-slate"
-                    >
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label for="booking_date" class="block text-xs font-semibold text-brand-slate mb-1">Appointment Date</label>
+                        <input 
+                            type="date" 
+                            name="booking_date" 
+                            id="booking_date" 
+                            required 
+                            min="<?php echo date('Y-m-d', strtotime('+1 day')); ?>"
+                            onchange="fetchAvailableSlots()"
+                            class="w-full rounded-xl border border-gray-200 bg-[#FAF9F6] p-3 text-xs focus:border-brand-sage focus:outline-none text-brand-slate font-medium"
+                        >
+                    </div>
+
+                    <div>
+                        <label for="booking_time" class="block text-xs font-semibold text-brand-slate mb-1">Preferred Time Slot</label>
+                        <select 
+                            name="booking_time" 
+                            id="booking_time" 
+                            required 
+                            disabled
+                            class="w-full rounded-xl border border-gray-200 bg-[#FAF9F6] p-3 text-xs focus:border-brand-sage focus:outline-none text-brand-slate font-semibold disabled:opacity-50"
+                        >
+                            <option value="">Select date first</option>
+                        </select>
+                    </div>
                 </div>
 
-                <div>
-                    <label for="booking_time" class="block text-xs font-semibold text-brand-slate mb-1">Preferred Time Slot</label>
-                    <select 
-                        name="booking_time" 
-                        id="booking_time" 
-                        required 
-                        disabled
-                        class="w-full rounded-xl border border-gray-200 bg-[#FAF9F6] p-3 text-xs focus:border-brand-sage focus:outline-none text-brand-slate font-semibold disabled:opacity-50"
-                    >
-                        <option value="">Please select a date first</option>
-                    </select>
+                <!-- Multi-Currency & Session Fee Calculation -->
+                <div class="p-4 rounded-2xl bg-gradient-to-r from-blue-50/70 to-brand-sageLight/40 border border-blue-100/80 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <span class="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Session Fee</span>
+                            <div class="text-xl font-extrabold font-outfit text-brand-slate" id="display-session-fee">£100.00 GBP</div>
+                        </div>
+                        <div class="text-right">
+                            <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Currency</label>
+                            <select id="currency-selector" onchange="updateCurrencyConversion()" class="text-xs font-bold rounded-xl border border-blue-200 bg-white px-2.5 py-1 text-brand-slate focus:outline-none focus:ring-1 focus:ring-blue-400">
+                                <option value="GBP" data-rate="1" data-symbol="£">GBP (£)</option>
+                                <option value="USD" data-rate="1.30" data-symbol="$">USD ($)</option>
+                                <option value="EUR" data-rate="1.18" data-symbol="€">EUR (€)</option>
+                                <option value="NGN" data-rate="2050" data-symbol="₦">NGN (₦)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Escrow Explanation -->
+                    <div class="flex items-start gap-2 pt-2 border-t border-blue-100/60 text-[11px] text-gray-600 leading-snug">
+                        <i class="fa-solid fa-shield-halved text-blue-500 mt-0.5 shrink-0"></i>
+                        <span><strong>Escrow Guarantee:</strong> Payment is held securely by PayPal in escrow and will only be released to the practitioner 7–14 days after your session is completed.</span>
+                    </div>
                 </div>
 
                 <div>
@@ -1271,17 +1304,18 @@ $today_date = date('l, F j, Y');
                         type="text" 
                         name="insurance_provider" 
                         id="insurance_provider" 
-                        placeholder="e.g. Blue Cross (Leave blank for Self-Pay)"
+                        placeholder="e.g. Bupa, AXA, Cigna (Leave blank for Self-Pay via PayPal)"
                         class="w-full rounded-xl border border-gray-200 bg-[#FAF9F6] p-3 text-xs focus:border-brand-sage focus:outline-none text-brand-slate"
                     >
                 </div>
 
-                <div class="pt-2 flex gap-3">
-                    <button type="button" onclick="closeBookingModal()" class="w-1/2 py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-600 font-semibold text-xs transition-colors">
-                        Cancel
+                <div class="pt-2 flex flex-col gap-2">
+                    <button type="submit" class="w-full py-3.5 rounded-2xl bg-[#0070BA] hover:bg-[#005ea6] text-white font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2 active:scale-95">
+                        <i class="fa-brands fa-paypal text-base"></i>
+                        <span>Authorize with PayPal & Book Session</span>
                     </button>
-                    <button type="submit" class="w-1/2 py-2.5 rounded-xl bg-brand-sage hover:bg-brand-sageHover text-white font-bold text-xs shadow-md transition-colors">
-                        Confirm Session
+                    <button type="button" onclick="closeBookingModal()" class="w-full py-2 text-center text-xs font-semibold text-gray-400 hover:text-brand-slate transition-colors">
+                        Cancel
                     </button>
                 </div>
             </form>
@@ -1333,9 +1367,39 @@ $today_date = date('l, F j, Y');
         const bookingDateInput = document.getElementById('booking_date');
         const bookingTimeSelect = document.getElementById('booking_time');
 
+        let baseFeeGBP = 100.00;
+
+        function updateCurrencyConversion() {
+            const selector = document.getElementById('currency-selector');
+            if (!selector) return;
+            const option = selector.options[selector.selectedIndex];
+            const rate = parseFloat(option.getAttribute('data-rate') || 1);
+            const symbol = option.getAttribute('data-symbol') || '£';
+            const curr = option.value;
+            
+            const converted = (baseFeeGBP * rate).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            const displayEl = document.getElementById('display-session-fee');
+            if (displayEl) {
+                displayEl.textContent = `${symbol}${converted} ${curr}`;
+            }
+            const hiddenCurr = document.getElementById('selected_currency');
+            if (hiddenCurr) {
+                hiddenCurr.value = curr;
+            }
+        }
+
         function openBookingModal(therapistName) {
             modalSubtitle.innerText = therapistName;
             hiddenTherapistInput.value = therapistName;
+            
+            // Look up therapist rate if present
+            const card = document.querySelector(`.therapist-card[data-therapist-name="${therapistName}"]`);
+            if (card && card.dataset.hourlyRate) {
+                baseFeeGBP = parseFloat(card.dataset.hourlyRate);
+            } else {
+                baseFeeGBP = 100.00;
+            }
+            updateCurrencyConversion();
             
             // Reset modal states
             bookingDateInput.value = '';

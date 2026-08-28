@@ -189,6 +189,101 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         }
     }
 
+    // Step 8: Media Upload & External Linking Handler
+    elseif ($action === 'add_streaming_media') {
+        $media_title = trim($_POST['title'] ?? '');
+        $media_desc = trim($_POST['description'] ?? '');
+        $media_cat = intval($_POST['category_id'] ?? 1);
+        $media_url = trim($_POST['media_url'] ?? '');
+        $media_duration = trim($_POST['duration'] ?? '10 Min');
+        $media_tags = trim($_POST['tags'] ?? 'Audio');
+        
+        if (!empty($media_title) && !empty($media_url)) {
+            if ($db_connected && $pdo) {
+                try {
+                    $stmt = $pdo->prepare("INSERT INTO streaming_content (title, description, category_id, media_url, duration, tags, plays_count) VALUES (?, ?, ?, ?, ?, ?, 0)");
+                    $stmt->execute([$media_title, $media_desc, $media_cat, $media_url, $media_duration, $media_tags]);
+                    $action_success = "Media content published successfully to Streaming Hub!";
+                } catch (PDOException $e) {
+                    $action_error = "Database error: " . $e->getMessage();
+                }
+            }
+            if (!isset($_SESSION['mock_streaming_content'])) {
+                $_SESSION['mock_streaming_content'] = [];
+            }
+            $new_id = count($_SESSION['mock_streaming_content']) + 1;
+            $_SESSION['mock_streaming_content'][] = [
+                'id' => $new_id,
+                'title' => $media_title,
+                'description' => $media_desc,
+                'category_id' => $media_cat,
+                'media_url' => $media_url,
+                'duration' => $media_duration,
+                'tags' => $media_tags,
+                'plays_count' => 0
+            ];
+            $action_success = "Media content published successfully to Streaming Hub!";
+        } else {
+            $action_error = "Title and Media URL are required.";
+        }
+    }
+
+    elseif ($action === 'delete_streaming_media' && $target_id) {
+        if ($db_connected && $pdo) {
+            try {
+                $stmt = $pdo->prepare("DELETE FROM streaming_content WHERE id = ?");
+                $stmt->execute([$target_id]);
+            } catch (PDOException $e) {}
+        }
+        if (isset($_SESSION['mock_streaming_content'])) {
+            foreach ($_SESSION['mock_streaming_content'] as $idx => $m) {
+                if ($m['id'] == $target_id) {
+                    unset($_SESSION['mock_streaming_content'][$idx]);
+                    $_SESSION['mock_streaming_content'] = array_values($_SESSION['mock_streaming_content']);
+                    break;
+                }
+            }
+        }
+        $action_success = "Streaming media item removed.";
+    }
+
+    // Step 9: Research Study Vetting Workflow Handler
+    elseif ($action === 'approve_research_study' && $target_id) {
+        if ($db_connected && $pdo) {
+            try {
+                $stmt = $pdo->prepare("UPDATE research_studies SET status = 'active' WHERE id = ?");
+                $stmt->execute([$target_id]);
+            } catch (PDOException $e) {}
+        }
+        if (isset($_SESSION['mock_research_studies'])) {
+            foreach ($_SESSION['mock_research_studies'] as &$st) {
+                if ($st['id'] == $target_id) {
+                    $st['status'] = 'active';
+                    break;
+                }
+            }
+        }
+        $action_success = "Research study approved and published to Learning Center!";
+    }
+
+    elseif ($action === 'reject_research_study' && $target_id) {
+        if ($db_connected && $pdo) {
+            try {
+                $stmt = $pdo->prepare("UPDATE research_studies SET status = 'rejected' WHERE id = ?");
+                $stmt->execute([$target_id]);
+            } catch (PDOException $e) {}
+        }
+        if (isset($_SESSION['mock_research_studies'])) {
+            foreach ($_SESSION['mock_research_studies'] as &$st) {
+                if ($st['id'] == $target_id) {
+                    $st['status'] = 'rejected';
+                    break;
+                }
+            }
+        }
+        $action_success = "Research study rejected.";
+    }
+
     elseif ($action === 'delete_user' && $target_id) {
         if ($target_id == $_SESSION['user_id']) {
             $action_error = "You cannot delete your own administrator account.";
@@ -589,6 +684,30 @@ if ($db_connected && $pdo) {
     } catch (PDOException $e) {}
 } else {
     $caregiver_videos = $_SESSION['mock_caregiver_videos'] ?? [];
+}
+
+// Fetch Streaming Media Library (Step 8)
+$streaming_media = [];
+if ($db_connected && $pdo) {
+    try {
+        $stmt = $pdo->query("SELECT * FROM streaming_content ORDER BY id DESC");
+        $streaming_media = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {}
+}
+if (empty($streaming_media) && isset($_SESSION['mock_streaming_content'])) {
+    $streaming_media = $_SESSION['mock_streaming_content'];
+}
+
+// Fetch Research Studies for Vetting (Step 9)
+$all_research_studies = [];
+if ($db_connected && $pdo) {
+    try {
+        $stmt = $pdo->query("SELECT * FROM research_studies ORDER BY id DESC");
+        $all_research_studies = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {}
+}
+if (empty($all_research_studies) && isset($_SESSION['mock_research_studies'])) {
+    $all_research_studies = $_SESSION['mock_research_studies'];
 }
 ?>
 <!DOCTYPE html>
@@ -1303,6 +1422,173 @@ if ($db_connected && $pdo) {
             </div>
         </div>
 
+        <!-- STEP 8: ADMIN MEDIA UPLOAD & STREAMING PLATFORM MANAGEMENT -->
+        <div class="bg-white rounded-3xl p-6 shadow-soft border border-gray-100 mb-10">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                <div class="flex items-center gap-3">
+                    <div class="h-10 w-10 rounded-2xl bg-brand-sky/20 text-brand-slate flex items-center justify-center font-bold">
+                        <i class="fa-solid fa-photo-film"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold font-outfit text-brand-slate">Media & Streaming Hub Content Management</h3>
+                        <p class="text-xs text-gray-500">Publish third-party video and audio content (YouTube unlisted, Vimeo, SoundCloud) into the Learning Center.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Upload / Embedding Form -->
+            <form method="POST" class="bg-brand-bg/50 p-5 rounded-2xl border border-gray-100 mb-6 grid grid-cols-1 md:grid-cols-12 gap-4">
+                <input type="hidden" name="action" value="add_streaming_media">
+                
+                <div class="md:col-span-4">
+                    <label class="block text-[11px] font-bold text-brand-slate uppercase mb-1">Title</label>
+                    <input type="text" name="title" required placeholder="e.g. Deep Rest Sleep Soundscape" class="w-full text-xs rounded-xl border border-gray-200 p-2.5 bg-white focus:border-brand-sage focus:outline-none">
+                </div>
+
+                <div class="md:col-span-3">
+                    <label class="block text-[11px] font-bold text-brand-slate uppercase mb-1">Category</label>
+                    <select name="category_id" class="w-full text-xs rounded-xl border border-gray-200 p-2.5 bg-white focus:border-brand-sage focus:outline-none">
+                        <option value="1">🧘 Guided Meditation</option>
+                        <option value="2">🌙 Sleep Therapy</option>
+                        <option value="3">🌱 Caregiver Wellbeing</option>
+                        <option value="4">👨‍👩‍👧 Parenting De-escalation</option>
+                        <option value="5">⚡ Anxiety Management</option>
+                    </select>
+                </div>
+
+                <div class="md:col-span-3">
+                    <label class="block text-[11px] font-bold text-brand-slate uppercase mb-1">Duration & Tags</label>
+                    <div class="flex gap-2">
+                        <input type="text" name="duration" placeholder="15 Min" value="15 Min" class="w-1/2 text-xs rounded-xl border border-gray-200 p-2.5 bg-white focus:border-brand-sage focus:outline-none">
+                        <input type="text" name="tags" placeholder="Sleep, Audio" value="Audio" class="w-1/2 text-xs rounded-xl border border-gray-200 p-2.5 bg-white focus:border-brand-sage focus:outline-none">
+                    </div>
+                </div>
+
+                <div class="md:col-span-2 flex items-end">
+                    <button type="submit" class="w-full py-2.5 bg-brand-sage hover:bg-brand-sageHover text-white font-bold rounded-xl text-xs shadow-sm transition-all">
+                        Publish Content
+                    </button>
+                </div>
+
+                <div class="md:col-span-8">
+                    <label class="block text-[11px] font-bold text-brand-slate uppercase mb-1">Third-Party Embed URL / Audio Link</label>
+                    <input type="text" name="media_url" required placeholder="https://www.youtube.com/embed/... or https://player.vimeo.com/video/..." class="w-full text-xs rounded-xl border border-gray-200 p-2.5 bg-white focus:border-brand-sage focus:outline-none font-mono">
+                </div>
+
+                <div class="md:col-span-4">
+                    <label class="block text-[11px] font-bold text-brand-slate uppercase mb-1">Short Description</label>
+                    <input type="text" name="description" placeholder="Brief summary of the session..." class="w-full text-xs rounded-xl border border-gray-200 p-2.5 bg-white focus:border-brand-sage focus:outline-none">
+                </div>
+            </form>
+
+            <!-- Media Library Table -->
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-brand-bg text-[10px] font-bold text-brand-slate uppercase tracking-wider border-b border-gray-100">
+                            <th class="p-3 pl-4">Title</th>
+                            <th class="p-3">Category</th>
+                            <th class="p-3">Duration</th>
+                            <th class="p-3">Plays</th>
+                            <th class="p-3 pr-4 text-right">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100 text-xs">
+                        <?php if (empty($streaming_media)): ?>
+                        <tr><td colspan="5" class="p-6 text-center text-gray-400">No streaming media found.</td></tr>
+                        <?php else: foreach ($streaming_media as $sm): ?>
+                        <tr class="hover:bg-brand-bg/30">
+                            <td class="p-3 pl-4 font-bold text-brand-slate">
+                                <?php echo htmlspecialchars($sm['title']); ?>
+                                <span class="block font-normal text-[10px] text-gray-400 truncate max-w-xs font-mono"><?php echo htmlspecialchars($sm['media_url'] ?? 'Audio Synthesizer'); ?></span>
+                            </td>
+                            <td class="p-3"><span class="px-2 py-0.5 rounded-full bg-brand-sageLight text-brand-sage text-[10px] font-bold">Category #<?php echo htmlspecialchars($sm['category_id'] ?? 1); ?></span></td>
+                            <td class="p-3 text-gray-500 font-medium"><?php echo htmlspecialchars($sm['duration'] ?? '10 Min'); ?></td>
+                            <td class="p-3 font-semibold text-brand-slate"><?php echo intval($sm['plays_count'] ?? 0); ?></td>
+                            <td class="p-3 pr-4 text-right">
+                                <form method="POST" class="inline" onsubmit="return confirm('Delete this media item?');">
+                                    <input type="hidden" name="action" value="delete_streaming_media">
+                                    <input type="hidden" name="target_id" value="<?php echo $sm['id']; ?>">
+                                    <button type="submit" class="px-2.5 py-1 text-brand-coral hover:bg-brand-coralLight rounded-lg text-xs font-bold transition-colors">
+                                        Delete
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        <?php endforeach; endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- STEP 9: RESEARCH STUDY SUBMISSION & VETTING WORKFLOW -->
+        <div class="bg-white rounded-3xl p-6 shadow-soft border border-gray-100 mb-10">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                <div class="flex items-center gap-3">
+                    <div class="h-10 w-10 rounded-2xl bg-brand-sageLight text-brand-sage flex items-center justify-center font-bold">
+                        <i class="fa-solid fa-microscope"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold font-outfit text-brand-slate">Clinical Research Study Vetting Queue</h3>
+                        <p class="text-xs text-gray-500">Review clinical papers and pilot studies submitted by specialists before publishing to the Research Hub.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-brand-bg text-[10px] font-bold text-brand-slate uppercase tracking-wider border-b border-gray-100">
+                            <th class="p-3 pl-4">Study Title</th>
+                            <th class="p-3">Target Participants</th>
+                            <th class="p-3">Status</th>
+                            <th class="p-3 pr-4 text-right">Vetting Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100 text-xs">
+                        <?php if (empty($all_research_studies)): ?>
+                        <tr><td colspan="4" class="p-6 text-center text-gray-400">No research studies found.</td></tr>
+                        <?php else: foreach ($all_research_studies as $rs): 
+                            $status = $rs['status'] ?? 'active';
+                            $badgeClass = ($status === 'active' || $status === 'approved') ? 'bg-brand-sageLight text-brand-sage' : (($status === 'rejected') ? 'bg-brand-coralLight text-brand-coral' : 'bg-amber-100 text-amber-800');
+                        ?>
+                        <tr class="hover:bg-brand-bg/30">
+                            <td class="p-3 pl-4 font-bold text-brand-slate">
+                                <?php echo htmlspecialchars($rs['title']); ?>
+                                <span class="block font-normal text-[11px] text-gray-500 mt-0.5"><?php echo htmlspecialchars($rs['description']); ?></span>
+                            </td>
+                            <td class="p-3 text-gray-600 font-semibold"><?php echo intval($rs['target_participants'] ?? 100); ?> Participants</td>
+                            <td class="p-3">
+                                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase <?php echo $badgeClass; ?>">
+                                    <?php echo htmlspecialchars($status); ?>
+                                </span>
+                            </td>
+                            <td class="p-3 pr-4 text-right space-x-1">
+                                <?php if ($status !== 'active' && $status !== 'approved'): ?>
+                                <form method="POST" class="inline">
+                                    <input type="hidden" name="action" value="approve_research_study">
+                                    <input type="hidden" name="target_id" value="<?php echo $rs['id']; ?>">
+                                    <button type="submit" class="px-2.5 py-1 rounded-lg bg-brand-sage hover:bg-brand-sageHover text-white text-xs font-bold transition-all shadow-sm">
+                                        Approve & Publish
+                                    </button>
+                                </form>
+                                <?php endif; ?>
+                                <?php if ($status !== 'rejected'): ?>
+                                <form method="POST" class="inline">
+                                    <input type="hidden" name="action" value="reject_research_study">
+                                    <input type="hidden" name="target_id" value="<?php echo $rs['id']; ?>">
+                                    <button type="submit" class="px-2.5 py-1 rounded-lg bg-gray-100 hover:bg-brand-coralLight text-gray-500 hover:text-brand-coral text-xs font-semibold transition-all">
+                                        Reject
+                                    </button>
+                                </form>
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                        <?php endforeach; endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
         <!-- DEVELOPER SIMULATOR CARD -->
         <div class="bg-white rounded-3xl p-6 shadow-soft border border-gray-100 mb-10 flex flex-col md:flex-row md:items-center justify-between gap-6 font-outfit">

@@ -75,23 +75,12 @@ if (!isset($_SESSION['user_id'])) {
 
     <!-- MAIN CONTENT -->
     <main class="flex-grow <?php echo isset($_GET['embed']) ? 'pt-6' : 'pt-28'; ?> pb-20 px-4 sm:px-6 lg:px-8 max-w-3xl mx-auto w-full">
-        <?php if (($_SESSION['user_subscription_plan'] ?? 'free') === 'free'): ?>
-        <div class="fixed inset-0 z-50 bg-brand-slate/80 backdrop-blur-sm flex items-center justify-center p-4">
-            <div class="bg-white rounded-3xl p-8 max-w-lg w-full text-center shadow-2xl">
-                <div class="h-16 w-16 mx-auto bg-brand-sageLight text-brand-sage rounded-full flex items-center justify-center mb-6">
-                    <i class="fa-solid fa-lock text-2xl"></i>
-                </div>
-                <h2 class="text-2xl font-bold text-brand-slate mb-4">Basic Feature</h2>
-                <p class="text-gray-600 mb-8">This feature requires a Basic or Premium plan. Upgrade your plan to access this tool.</p>
-                <a href="subscription.php" class="inline-block px-8 py-3 bg-brand-sage text-white rounded-2xl font-bold shadow-md hover:bg-brand-sageHover transition-all">Upgrade to Basic</a>
-                <a href="dashboard.php" class="block mt-4 text-sm font-bold text-gray-400 hover:text-brand-slate transition-colors">Return to Dashboard</a>
-            </div>
-        </div>
-        <div class="hidden">
-        <?php endif; ?>
-
-        
         <div class="text-center mb-10">
+            <div class="inline-flex items-center gap-2 mb-3">
+                <span class="px-3 py-1 rounded-full text-xs font-bold font-outfit uppercase tracking-wider bg-sky-500/20 text-sky-300 border border-sky-500/30">
+                    <i class="fa-solid fa-star text-[10px] text-sky-400"></i> Basic Plan (£9.99/mo in Production)
+                </span>
+            </div>
             <h1 class="text-3xl md:text-4xl font-extrabold text-white tracking-tight mb-3">TrueVent</h1>
             <p class="text-gray-400 max-w-xl mx-auto">This is a zero-judgment zone. What you type or say here is completely private. Release your frustration and let it go.</p>
         </div>
@@ -114,11 +103,6 @@ if (!isset($_SESSION['user_id'])) {
                 <button onclick="releaseVent()" class="px-8 py-3 rounded-2xl bg-brand-coral hover:bg-brand-coralHover text-white font-bold text-sm shadow-md transition-all">Release It</button>
             </div>
         </div>
-
-    
-        <?php if (($_SESSION['user_subscription_plan'] ?? 'free') === 'free'): ?>
-        </div>
-        <?php endif; ?>
 </main>
 
     <!-- SUCCESS MODAL -->

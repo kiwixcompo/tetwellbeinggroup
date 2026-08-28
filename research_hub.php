@@ -142,6 +142,14 @@ if ($db_connected && $pdo) {
     $studies = $_SESSION['mock_research_studies'] ?? [];
 }
 
+// Filter published studies for standard users (Step 9 Vetting Policy)
+if ($user_role !== 'admin' && $user_role !== 'specialist') {
+    $studies = array_filter($studies, function($s) {
+        $st = $s['status'] ?? 'active';
+        return ($st === 'active' || $st === 'approved');
+    });
+}
+
 // Calculate participant counts per study
 $study_participant_counts = [];
 $user_consented_studies = [];
@@ -381,7 +389,10 @@ $active_tab = $_GET['tab'] ?? 'population';
         <!-- TITLE SPOT -->
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
             <div>
-                <span class="px-3 py-1 rounded-full bg-brand-sage/10 text-brand-sage border border-brand-sage/20 font-bold text-xs uppercase tracking-wider font-outfit">Ecosystem Layer 7</span>
+                <div class="flex items-center gap-2 mb-1">
+                    <span class="px-3 py-1 rounded-full bg-brand-sage/10 text-brand-sage border border-brand-sage/20 font-bold text-xs uppercase tracking-wider font-outfit">Ecosystem Layer 7</span>
+                    <?php echo getPlanBadge('guest'); ?>
+                </div>
                 <h2 class="text-3xl font-extrabold font-outfit text-brand-slate mt-2">Mental Health Research Centre</h2>
                 <p class="text-sm text-gray-600 mt-1 leading-relaxed max-w-2xl">
                     Population analytics, clinical efficacy evaluation, and anonymous trend data tracking for evidence-based policymaking.

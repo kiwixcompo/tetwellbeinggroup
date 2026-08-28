@@ -951,14 +951,14 @@ if (!isset($_SESSION['mock_availability'])) {
     ];
 }
 
-if (!isset($_SESSION['mock_community_circles'])) {
+if (!isset($_SESSION['mock_community_circles']) || count($_SESSION['mock_community_circles']) < 10) {
     $_SESSION['mock_community_circles'] = [
         [
             'id' => 1,
             'slug' => 'general',
             'name' => 'General Wellbeing Circle',
-            'description' => 'A welcoming space for general discussions about mindfulness, work-life balance, and self-care.',
-            'category' => 'general',
+            'description' => 'A welcoming space for general discussions about mindfulness, daily balance, and self-care.',
+            'category' => 'General',
             'champion_name' => 'Marcus Vance, LCSW',
             'champion_avatar' => 'M'
         ],
@@ -967,7 +967,7 @@ if (!isset($_SESSION['mock_community_circles'])) {
             'slug' => 'caregiver-respite',
             'name' => 'Respite & Carer Circle',
             'description' => 'For family and professional caregivers to share struggles, respite tips, and recovery strategies.',
-            'category' => 'caregiver',
+            'category' => 'Caregiving',
             'champion_name' => 'Clara Green',
             'champion_avatar' => 'C'
         ],
@@ -976,7 +976,7 @@ if (!isset($_SESSION['mock_community_circles'])) {
             'slug' => 'mindfulness',
             'name' => 'Meditation & Peace Circle',
             'description' => 'Practice positive grounding, share breathing scripts, and explore daily mindfulness exercises.',
-            'category' => 'mindfulness',
+            'category' => 'Mindfulness',
             'champion_name' => 'Marcus Vance, LCSW',
             'champion_avatar' => 'M'
         ],
@@ -985,8 +985,7 @@ if (!isset($_SESSION['mock_community_circles'])) {
             'slug' => 'daily-wins',
             'name' => 'Positivity & Gratitude Log',
             'description' => 'Focus on the bright side. Post your daily micro-successes, small wins, and gratitude notes.',
-            'subscription_plan' => 'premium',
-            'category' => 'positivity',
+            'category' => 'Positivity',
             'champion_name' => 'Clara Green',
             'champion_avatar' => 'C'
         ],
@@ -995,18 +994,99 @@ if (!isset($_SESSION['mock_community_circles'])) {
             'slug' => 'dementia-support',
             'name' => 'Dementia Carers Support Circle',
             'description' => 'Specialized safe space for clinical and home caregivers supporting individuals with dementia.',
-            'category' => 'caregiver',
-            'champion_name' => 'Marcus Vance, LCSW',
-            'champion_avatar' => 'M'
+            'category' => 'Caregiving',
+            'champion_name' => 'Dr. Aris Thorne',
+            'champion_avatar' => 'A'
         ],
         [
             'id' => 6,
             'slug' => 'student-stress',
-            'name' => 'Student Anxiety Resolution Circle',
-            'description' => 'Peer support circle for nursing and clinical students coping with shift pressures and caseload stress.',
-            'category' => 'student',
+            'name' => 'Student Anxiety & Pressure Circle',
+            'description' => 'Peer support circle for college and university students coping with exams, deadlines, and caseload stress.',
+            'category' => 'Academic',
+            'champion_name' => 'Maya Lin, MSW',
+            'champion_avatar' => 'M'
+        ],
+        [
+            'id' => 7,
+            'slug' => 'workplace-burnout',
+            'name' => 'Workplace Stress & Burnout Circle',
+            'description' => 'Strategies, peer listening, and boundary-setting discussions for professionals navigating burnout and corporate fatigue.',
+            'category' => 'Workplace',
+            'champion_name' => 'David Okafor, CPCC',
+            'champion_avatar' => 'D'
+        ],
+        [
+            'id' => 8,
+            'slug' => 'grief-loss',
+            'name' => 'Grief, Loss & Bereavement Circle',
+            'description' => 'A tender, compassionate space for anyone moving through the journey of loss, bereavement, and life transitions.',
+            'category' => 'Bereavement',
+            'champion_name' => 'Sarah Jenkins, Thanatologist',
+            'champion_avatar' => 'S'
+        ],
+        [
+            'id' => 9,
+            'slug' => 'mens-mental-health',
+            'name' => "Men's Mental Health & Open Talk",
+            'description' => 'A confidential, stigma-free forum for men to discuss vulnerability, emotional resilience, fatherhood, and pressure.',
+            'category' => "Men's Health",
+            'champion_name' => 'James Harrison, Peer Lead',
+            'champion_avatar' => 'J'
+        ],
+        [
+            'id' => 10,
+            'slug' => 'new-parents',
+            'name' => 'New Parents & Postpartum Circle',
+            'description' => 'Support, reassurance, and shared stories for expecting and new parents experiencing sleepless nights and postpartum emotions.',
+            'category' => 'Parenting',
+            'champion_name' => 'Elena Rostova, Doula',
+            'champion_avatar' => 'E'
+        ],
+        [
+            'id' => 11,
+            'slug' => 'sleep-recovery',
+            'name' => 'Sleep Recovery & Insomnia Circle',
+            'description' => 'Techniques, habits, and evening calming routines to overcome sleep anxiety and achieve deeper nightly rest.',
+            'category' => 'Sleep',
+            'champion_name' => 'Dr. Aris Thorne',
+            'champion_avatar' => 'A'
+        ],
+        [
+            'id' => 12,
+            'slug' => 'chronic-pain',
+            'name' => 'Chronic Illness & Pain Support',
+            'description' => 'Compassionate peer community for individuals managing invisible illnesses, chronic pain, fibromyalgia, and fatigue.',
+            'category' => 'Health',
+            'champion_name' => 'Rachel Sterling, OTR/L',
+            'champion_avatar' => 'R'
+        ],
+        [
+            'id' => 13,
+            'slug' => 'overthinking',
+            'name' => 'Overthinking & Calming Anxiety',
+            'description' => 'Tools, CBT tips, and peer check-ins to break rumination loops, catastrophic thoughts, and panic spikes.',
+            'category' => 'Anxiety',
+            'champion_name' => 'Maya Lin, MSW',
+            'champion_avatar' => 'M'
+        ],
+        [
+            'id' => 14,
+            'slug' => 'social-confidence',
+            'name' => 'Social Anxiety & Confidence Circle',
+            'description' => 'Gentle exposure challenges, encouragement, and peer support to conquer social hesitation and build authentic confidence.',
+            'category' => 'Growth',
             'champion_name' => 'Marcus Vance, LCSW',
             'champion_avatar' => 'M'
+        ],
+        [
+            'id' => 15,
+            'slug' => 'lgbtq-safe-space',
+            'name' => 'LGBTQ+ Affirming Safe Space',
+            'description' => 'An inclusive sanctuary celebrating identity, community connection, coming-out journeys, and intersectional wellness.',
+            'category' => 'Identity',
+            'champion_name' => 'Kai Jordan, Peer Advocate',
+            'champion_avatar' => 'K'
         ]
     ];
 }

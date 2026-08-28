@@ -350,7 +350,7 @@ $today_date = date('l, F j, Y');
                     <h3 class="font-bold text-lg">TET Navigator</h3>
                 </div>
                 <p class="text-sm text-gray-200 mb-4">Next Step: Complete your daily check-in to update your wellbeing score.</p>
-                <button class="w-full py-2 bg-white text-brand-slate font-bold rounded-xl hover:bg-brand-sageLight transition-colors">Begin Navigator</button>
+                <button onclick="startSectionTour()" class="w-full py-2 bg-white text-brand-slate font-bold rounded-xl hover:bg-brand-sageLight transition-colors shadow-sm active:scale-95">Begin Navigator Tour</button>
             </div>
         </div>
 

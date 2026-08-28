@@ -591,26 +591,14 @@ $today_date = date('l, F j, Y');
 
     <!-- MAIN BODY CONTENT -->
     <main class="flex-grow mx-auto w-full max-w-4xl px-4 py-8 pb-24 md:pb-8 fade-in">
-        <?php if (!in_array($_SESSION['user_subscription_plan'] ?? 'free', ['premium', 'corporate'])): ?>
-        <div class="fixed inset-0 z-50 bg-brand-slate/80 backdrop-blur-sm flex items-center justify-center p-4">
-            <div class="bg-white rounded-3xl p-8 max-w-lg w-full text-center shadow-2xl">
-                <div class="h-16 w-16 mx-auto bg-brand-sageLight text-brand-sage rounded-full flex items-center justify-center mb-6">
-                    <i class="fa-solid fa-lock text-2xl"></i>
-                </div>
-                <h2 class="text-2xl font-bold text-brand-slate mb-4">Premium Feature</h2>
-                <p class="text-gray-600 mb-8">This feature is part of our Premium digital wellbeing ecosystem. Upgrade your plan to access this tool.</p>
-                <a href="subscription.php" class="inline-block px-8 py-3 bg-brand-sage text-white rounded-2xl font-bold shadow-md hover:bg-brand-sageHover transition-all">Upgrade to Premium</a>
-                <a href="dashboard.php" class="block mt-4 text-sm font-bold text-gray-400 hover:text-brand-slate transition-colors">Return to Dashboard</a>
-            </div>
-        </div>
-        <div class="hidden">
-        <?php endif; ?>
-
-        
         <!-- Header / Banner Card (The Generational Anchor) -->
         <div class="mb-8 relative overflow-hidden rounded-3xl bg-white border border-[#EBE8E0] shadow-soft p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6">
             <div class="space-y-3 z-10 max-w-lg">
-                <p class="text-xs font-bold tracking-wider text-brand-sage uppercase font-outfit">Ecosystem Layer 1</p>
+                <?php require_once 'gating_helper.php'; ?>
+                <div class="flex items-center gap-2">
+                    <p class="text-xs font-bold tracking-wider text-brand-sage uppercase font-outfit">Ecosystem Layer 1</p>
+                    <?php echo getPlanBadge('free'); ?>
+                </div>
                 <h1 class="text-3xl md:text-4xl font-extrabold font-outfit text-brand-slate tracking-tight mt-1">
                     Caregiver <span class="text-brand-sage">Wellbeing Hub</span>
                 </h1>

@@ -174,6 +174,10 @@ if (isset($_GET['joined'])) $success_msg = "Successfully RSVP'd/Joined the virtu
                     </svg>
                 </div>
                 <div class="relative px-8 py-16 sm:px-16 sm:py-24 text-center">
+                    <?php require_once 'gating_helper.php'; ?>
+                    <div class="inline-flex items-center gap-2 mb-3">
+                        <?php echo getPlanBadge('basic'); ?>
+                    </div>
                     <h1 class="font-outfit text-4xl sm:text-5xl font-bold tracking-tight mb-4">Befriender Support Network</h1>
                     <p class="text-lg sm:text-xl text-brand-sageLight max-w-2xl mx-auto opacity-90">No one should have to face life's challenges alone. Connect with peers who understand your journey.</p>
                 </div>
@@ -189,30 +193,105 @@ if (isset($_GET['joined'])) $success_msg = "Successfully RSVP'd/Joined the virtu
 
             <!-- Tab 1: Match Me -->
             <div id="content-match_me" class="tab-content active">
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                
+                <!-- Companion Type Selector Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8">
+                    <!-- AI Companion Card -->
+                    <div class="bg-white rounded-3xl p-6 shadow-card border-2 border-brand-coral/20 flex flex-col justify-between hover:border-brand-coral transition-all group">
+                        <div class="flex items-start gap-4 mb-4">
+                            <div class="h-14 w-14 rounded-2xl bg-brand-coralLight text-brand-coral flex items-center justify-center text-2xl shrink-0 group-hover:scale-105 transition-transform">
+                                <i class="fa-solid fa-face-smile"></i>
+                            </div>
+                            <div>
+                                <span class="text-[10px] font-bold uppercase tracking-wider text-brand-coral bg-brand-coral/10 px-2.5 py-0.5 rounded-full">Instant 24/7 AI Peer</span>
+                                <h3 class="text-xl font-bold font-outfit text-brand-slate mt-1">AI Befriender (Maya & Alex)</h3>
+                                <p class="text-xs text-gray-500 mt-1 leading-relaxed">
+                                    Need someone to talk with right now? Choose between Maya (warm & caring) or Alex (grounded & friendly) for authentic 1-on-1 peer conversations with realistic voices.
+                                </p>
+                            </div>
+                        </div>
+                        <div class="pt-4 border-t border-gray-100 flex items-center justify-between">
+                            <span class="text-xs font-semibold text-gray-400">Available 24/7</span>
+                            <a href="ai_befriender.php" class="px-5 py-2.5 rounded-xl bg-brand-coral hover:bg-brand-coralHover text-white font-bold text-xs transition-all shadow-sm active:scale-95 flex items-center gap-2">
+                                <i class="fa-solid fa-comments"></i> Chat with AI Befriender
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Human Peer Befriender Card -->
+                    <div class="bg-white rounded-3xl p-6 shadow-card border-2 border-brand-coral/20 flex flex-col justify-between hover:border-brand-coral transition-all group">
+                        <div class="flex items-start gap-4 mb-4">
+                            <div class="h-14 w-14 rounded-2xl bg-brand-coralLight text-brand-coral flex items-center justify-center text-2xl shrink-0 group-hover:scale-105 transition-transform">
+                                🤝
+                            </div>
+                            <div>
+                                <span class="text-[10px] font-bold uppercase tracking-wider text-brand-coral bg-brand-coral/10 px-2.5 py-0.5 rounded-full">Human Peer Match</span>
+                                <h3 class="text-xl font-bold font-outfit text-brand-slate mt-1">Human Befriender</h3>
+                                <p class="text-xs text-gray-500 mt-1 leading-relaxed">
+                                    Prefer a human connection? Filter by background, language, and shared lived experience below to schedule a check-in.
+                                </p>
+                            </div>
+                        </div>
+                        <div class="pt-4 border-t border-gray-100 flex items-center justify-between">
+                            <span class="text-xs font-semibold text-gray-400">Verified Volunteers</span>
+                            <a href="#human-match-section" class="px-5 py-2.5 rounded-xl bg-brand-coral hover:bg-brand-coralHover text-white font-bold text-xs transition-all shadow-sm active:scale-95 flex items-center gap-2">
+                                <i class="fa-solid fa-sliders"></i> Filter Peers Below
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="human-match-section" class="grid grid-cols-1 lg:grid-cols-3 gap-8 pt-2">
                     <!-- Filters -->
                     <div class="lg:col-span-1">
-                        <div class="bg-white rounded-2xl shadow-card p-6 sticky top-28">
-                            <h2 class="text-xl font-outfit font-bold text-brand-slate mb-6">Find Your Match</h2>
-                            <form method="GET" class="space-y-4">
+                        <div class="bg-white rounded-3xl shadow-card p-6 sticky top-28 border border-[#EBE8E0]">
+                            <div class="flex items-center justify-between mb-4">
+                                <h2 class="text-lg font-outfit font-bold text-brand-slate">Peer Match Filters</h2>
+                                <span class="text-[10px] font-bold text-brand-sage uppercase bg-brand-sageLight px-2 py-0.5 rounded-md">Human</span>
+                            </div>
+                            <form method="GET" class="space-y-3.5">
                                 <div>
-                                    <label class="block text-sm font-semibold text-gray-700 mb-2">Language</label>
-                                    <select class="w-full rounded-xl border border-gray-200 bg-brand-inputBg px-4 py-2.5 text-sm focus:border-brand-sage focus:ring-1 focus:ring-brand-sage outline-none transition-all">
+                                    <label class="block text-xs font-bold text-brand-slate mb-1">Language</label>
+                                    <select class="w-full rounded-xl border border-gray-200 bg-brand-inputBg px-3.5 py-2 text-xs focus:border-brand-sage focus:ring-1 focus:ring-brand-sage outline-none transition-all text-brand-slate">
                                         <option>Any Language</option>
                                         <option>English</option>
                                         <option>Spanish</option>
                                         <option>Urdu</option>
-                                        <option>Mandarin</option>
-                                        <option>Portuguese</option>
-                                        <option>Punjabi</option>
-                                        <option>French</option>
                                         <option>Arabic</option>
-                                        <option>Hindi</option>
+                                        <option>Yoruba</option>
+                                        <option>Hausa</option>
+                                        <option>Igbo</option>
+                                        <option>French</option>
+                                        <option>Mandarin</option>
+                                        <option>Punjabi</option>
                                     </select>
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-semibold text-gray-700 mb-2">Shared Experience</label>
-                                    <select class="w-full rounded-xl border border-gray-200 bg-brand-inputBg px-4 py-2.5 text-sm focus:border-brand-sage focus:ring-1 focus:ring-brand-sage outline-none transition-all">
+                                    <label class="block text-xs font-bold text-brand-slate mb-1">Culture / Background</label>
+                                    <select class="w-full rounded-xl border border-gray-200 bg-brand-inputBg px-3.5 py-2 text-xs focus:border-brand-sage focus:ring-1 focus:ring-brand-sage outline-none transition-all text-brand-slate">
+                                        <option>Any / No Preference</option>
+                                        <option>British / European</option>
+                                        <option>African (West/East/South)</option>
+                                        <option>South Asian (Pakistani/Indian/Bengali)</option>
+                                        <option>Caribbean</option>
+                                        <option>East / Southeast Asian</option>
+                                        <option>Middle Eastern / Arab</option>
+                                        <option>Latin American</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-brand-slate mb-1">Age Range</label>
+                                    <select class="w-full rounded-xl border border-gray-200 bg-brand-inputBg px-3.5 py-2 text-xs focus:border-brand-sage focus:ring-1 focus:ring-brand-sage outline-none transition-all text-brand-slate">
+                                        <option>Any Age Range</option>
+                                        <option>18–25 years</option>
+                                        <option>26–40 years</option>
+                                        <option>41–60 years</option>
+                                        <option>60+ years</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-brand-slate mb-1">Shared Experience</label>
+                                    <select class="w-full rounded-xl border border-gray-200 bg-brand-inputBg px-3.5 py-2 text-xs focus:border-brand-sage focus:ring-1 focus:ring-brand-sage outline-none transition-all text-brand-slate">
                                         <option>Any Experience</option>
                                         <option>Caregiving</option>
                                         <option>Bereavement</option>
@@ -222,15 +301,15 @@ if (isset($_GET['joined'])) $success_msg = "Successfully RSVP'd/Joined the virtu
                                     </select>
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-semibold text-gray-700 mb-2">Gender Preference</label>
-                                    <select class="w-full rounded-xl border border-gray-200 bg-brand-inputBg px-4 py-2.5 text-sm focus:border-brand-sage focus:ring-1 focus:ring-brand-sage outline-none transition-all">
+                                    <label class="block text-xs font-bold text-brand-slate mb-1">Gender Preference</label>
+                                    <select class="w-full rounded-xl border border-gray-200 bg-brand-inputBg px-3.5 py-2 text-xs focus:border-brand-sage focus:ring-1 focus:ring-brand-sage outline-none transition-all text-brand-slate">
                                         <option>No Preference</option>
                                         <option>Female</option>
                                         <option>Male</option>
                                         <option>Non-binary</option>
                                     </select>
                                 </div>
-                                <button type="button" class="w-full rounded-xl bg-brand-sage py-3 text-sm font-bold text-white transition-all hover:bg-brand-sageHover hover:shadow-md mt-4">
+                                <button type="button" onclick="alert('Filters applied to peer list.')" class="w-full rounded-xl bg-brand-sage py-2.5 text-xs font-bold text-white transition-all hover:bg-brand-sageHover hover:shadow-md mt-3">
                                     Filter Matches
                                 </button>
                             </form>

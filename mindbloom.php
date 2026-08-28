@@ -87,34 +87,50 @@ $tab = $_GET['tab'] ?? 'home';
             <!-- LEFT SIDEBAR (20%) -->
             <div class="w-full lg:w-1/4 xl:w-1/5 shrink-0">
                 <div class="sticky top-28 space-y-1">
+<?php require_once 'gating_helper.php'; ?>
                     <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider px-4 mb-4">MindBloom Self-Care</h3>
                     
-                    <a href="?tab=home" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all <?php echo $tab === 'home' ? 'bg-brand-sageLight text-brand-sage' : 'text-gray-500 hover:bg-gray-50 hover:text-brand-slate'; ?>">
-                        <i class="fa-solid fa-leaf w-5 text-center"></i> 
-                        MindBloom Core
+                    <a href="?tab=home" class="flex items-center justify-between px-4 py-3 rounded-2xl text-sm font-bold transition-all <?php echo $tab === 'home' ? 'bg-brand-sageLight text-brand-sage' : 'text-gray-500 hover:bg-gray-50 hover:text-brand-slate'; ?>">
+                        <span class="flex items-center gap-3">
+                            <i class="fa-solid fa-leaf w-5 text-center"></i> 
+                            MindBloom Core
+                        </span>
+                        <?php echo getPlanBadge('free'); ?>
                     </a>
                     
-                    <a href="?tab=truevent" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all <?php echo $tab === 'truevent' ? 'bg-brand-sageLight text-brand-sage' : 'text-gray-500 hover:bg-gray-50 hover:text-brand-slate'; ?>">
-                        <i class="fa-solid fa-book-open w-5 text-center"></i> 
-                        Journaling (TrueVent)
+                    <a href="?tab=truevent" class="flex items-center justify-between px-4 py-3 rounded-2xl text-sm font-bold transition-all <?php echo $tab === 'truevent' ? 'bg-brand-sageLight text-brand-sage' : 'text-gray-500 hover:bg-gray-50 hover:text-brand-slate'; ?>">
+                        <span class="flex items-center gap-3">
+                            <i class="fa-solid fa-book-open w-5 text-center"></i> 
+                            Journaling (TrueVent)
+                        </span>
+                        <?php echo getPlanBadge('basic'); ?>
                     </a>
                     
-                    <a href="?tab=assessments" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all <?php echo $tab === 'assessments' ? 'bg-brand-sageLight text-brand-sage' : 'text-gray-500 hover:bg-gray-50 hover:text-brand-slate'; ?>">
-                        <i class="fa-solid fa-clipboard-check w-5 text-center"></i> 
-                        Clinical Check-ins
+                    <a href="?tab=assessments" class="flex items-center justify-between px-4 py-3 rounded-2xl text-sm font-bold transition-all <?php echo $tab === 'assessments' ? 'bg-brand-sageLight text-brand-sage' : 'text-gray-500 hover:bg-gray-50 hover:text-brand-slate'; ?>">
+                        <span class="flex items-center gap-3">
+                            <i class="fa-solid fa-clipboard-check w-5 text-center"></i> 
+                            Clinical Check-ins
+                        </span>
+                        <?php echo getPlanBadge('free'); ?>
                     </a>
                     
                     <div class="pt-4 mt-2 border-t border-gray-100">
                         <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider px-4 mb-2">Immersive Tools</h3>
                         
-                        <a href="?tab=vr" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all <?php echo $tab === 'vr' ? 'bg-brand-sageLight text-brand-sage' : 'text-gray-500 hover:bg-gray-50 hover:text-brand-slate'; ?>">
-                            <i class="fa-solid fa-vr-cardboard w-5 text-center"></i> 
-                            VR Resilience
+                        <a href="?tab=vr" class="flex items-center justify-between px-4 py-3 rounded-2xl text-sm font-bold transition-all <?php echo $tab === 'vr' ? 'bg-brand-sageLight text-brand-sage' : 'text-gray-500 hover:bg-gray-50 hover:text-brand-slate'; ?>">
+                            <span class="flex items-center gap-3">
+                                <i class="fa-solid fa-vr-cardboard w-5 text-center"></i> 
+                                VR Resilience
+                            </span>
+                            <?php echo getPlanBadge('premium'); ?>
                         </a>
                         
-                        <a href="?tab=ambient" class="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold transition-all <?php echo $tab === 'ambient' ? 'bg-brand-sageLight text-brand-sage' : 'text-gray-500 hover:bg-gray-50 hover:text-brand-slate'; ?>">
-                            <i class="fa-solid fa-music w-5 text-center"></i> 
-                            Ambient Mixer
+                        <a href="?tab=ambient" class="flex items-center justify-between px-4 py-3 rounded-2xl text-sm font-bold transition-all <?php echo $tab === 'ambient' ? 'bg-brand-sageLight text-brand-sage' : 'text-gray-500 hover:bg-gray-50 hover:text-brand-slate'; ?>">
+                            <span class="flex items-center gap-3">
+                                <i class="fa-solid fa-music w-5 text-center"></i> 
+                                Ambient Mixer
+                            </span>
+                            <?php echo getPlanBadge('guest'); ?>
                         </a>
                     </div>
                 </div>

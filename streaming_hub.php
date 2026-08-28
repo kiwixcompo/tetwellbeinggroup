@@ -16,28 +16,39 @@ $user_id = $_SESSION['user_id'] ?? 0;
 $user_role = $_SESSION['user_role'] ?? 'client';
 $user_name = $_SESSION['user_name'] ?? 'Staff Member';
 
-// Handle Play Increment via POST (AJAX)
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'play_track') {
+// Handle Play & Interaction Event Logging via POST (AJAX)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+    $action_type = $_POST['action'];
     $track_id = intval($_POST['track_id'] ?? 0);
-    if ($track_id > 0) {
-        if ($db_connected && $pdo) {
-            try {
-                $stmt = $pdo->prepare("UPDATE streaming_content SET plays_count = plays_count + 1 WHERE id = ?");
-                $stmt->execute([$track_id]);
-            } catch (PDOException $e) {}
-        } else {
-            foreach ($_SESSION['mock_streaming_content'] as &$c) {
-                if ($c['id'] == $track_id) {
-                    $c['plays_count']++;
-                    break;
+
+    if ($track_id > 0 && in_array($action_type, ['play_track', 'skip_track', 'complete_track', 'pause_track'])) {
+        if (!isset($_SESSION['user_content_interactions'])) {
+            $_SESSION['user_content_interactions'] = [];
+        }
+        $_SESSION['user_content_interactions'][] = [
+            'track_id' => $track_id,
+            'event' => $action_type,
+            'timestamp' => time()
+        ];
+
+        if ($action_type === 'play_track') {
+            if ($db_connected && $pdo) {
+                try {
+                    $stmt = $pdo->prepare("UPDATE streaming_content SET plays_count = plays_count + 1 WHERE id = ?");
+                    $stmt->execute([$track_id]);
+                } catch (PDOException $e) {}
+            } else {
+                foreach ($_SESSION['mock_streaming_content'] as &$c) {
+                    if ($c['id'] == $track_id) {
+                        $c['plays_count']++;
+                        break;
+                    }
                 }
             }
         }
-        echo json_encode(['success' => true]);
-    } else {
-        echo json_encode(['success' => false]);
+        echo json_encode(['success' => true, 'event' => $action_type]);
+        exit;
     }
-    exit;
 }
 
 // Fetch categories
@@ -75,12 +86,18 @@ usort($all_content, function($a, $b) {
     return $b['plays_count'] - $a['plays_count'];
 });
 
-// Calculate AI recommendations based on user biometrics / stress spikes
+// Calculate AI recommendations based on user biometrics / stress spikes & telemetry scans
 $rec_category_id = 1; // Default: Guided Meditation
 $rec_reason = "Based on standard positive psychology. Centering sessions ground your daily workflow.";
 $warnings_list = [];
 
-if ($db_connected && $pdo) {
+// 1. Check Voice Stress Analyzer trigger
+$voice_stress_score = $_SESSION['last_voice_stress_score'] ?? 72; // Simulated or recent scan
+if ($voice_stress_score >= 70) {
+    $rec_category_id = 5; // Anxiety Management & Calming
+    $rec_reason = "⚡ Voice Stress Analyzer logged an acute stress spike ({$voice_stress_score}%). Prioritizing nervous system downregulation audio.";
+    $warnings_list[] = "Acoustic Voice Stress ({$voice_stress_score}%) detected";
+} elseif ($db_connected && $pdo) {
     try {
         // Query latest telemetry
         $stmt = $pdo->prepare("SELECT sleep_hours, heart_rate_variability FROM user_telemetry_logs WHERE user_id = ? ORDER BY date DESC LIMIT 1");
@@ -188,7 +205,10 @@ $active_tab = $_GET['tab'] ?? 'browse';
         <!-- TITLE BANNER -->
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8 border-b border-white/5 pb-6">
             <div>
-                <span class="px-3 py-1 rounded-full bg-brand-sage/20 text-brand-sage border border-brand-sage/35 font-bold text-xs uppercase tracking-wider font-outfit">Ecosystem Layer 6</span>
+                <div class="flex items-center gap-2 mb-1">
+                    <span class="px-3 py-1 rounded-full bg-brand-sage/20 text-brand-sage border border-brand-sage/35 font-bold text-xs uppercase tracking-wider font-outfit">Ecosystem Layer 6</span>
+                    <?php echo getPlanBadge('basic'); ?>
+                </div>
                 <h2 class="text-3xl font-extrabold font-outfit text-white mt-2">Wellbeing Streaming Platform</h2>
                 <p class="text-sm text-gray-400 mt-1 leading-relaxed max-w-2xl">
                     "Mental Health Netflix" - browse, search, and stream guided meditations, therapeutic talks, and relaxing sleep therapy tracks.

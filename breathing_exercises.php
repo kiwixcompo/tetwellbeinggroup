@@ -66,6 +66,9 @@ $user_name = $_SESSION['user_name'] ?? 'User';
     <main class="flex-grow flex flex-col items-center justify-center max-w-4xl mx-auto px-6 w-full mt-4">
         
         <div class="text-center mb-12">
+            <div class="inline-flex items-center gap-2 mb-2">
+                <?php echo getPlanBadge('guest'); ?>
+            </div>
             <h1 class="text-4xl font-extrabold font-outfit text-brand-slate mb-3">Breathe</h1>
             <p class="text-gray-500 max-w-lg mx-auto">Follow the circle to regulate your nervous system. Inhale as it expands, exhale as it shrinks.</p>
         </div>

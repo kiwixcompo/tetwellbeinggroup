@@ -338,52 +338,6 @@ if (isset($_GET['invite_error']))     { $toast_type = 'error';   $toast_message 
      MAIN BODY
 ════════════════════════════════════════════════════════════════════════════ -->
 <main class="flex-grow mx-auto w-full max-w-6xl px-4 py-8 pb-24 md:pb-12">
-        <?php if (!hasPlan('corporate')): renderUpgradeOverlay('Corporate Portal', 'corporate'); else: ?>
-
-<?php if (!$is_corporate): ?>
-<!-- ═══════════════════════════════════════════════════════════════════════════
-     UPGRADE GATE — Non-corporate users
-════════════════════════════════════════════════════════════════════════════ -->
-<div class="fade-in flex flex-col items-center justify-center min-h-[60vh] text-center gap-8 max-w-lg mx-auto">
-    <div class="w-24 h-24 rounded-full bg-brand-sageLight flex items-center justify-center shadow-soft mx-auto">
-        <svg class="w-12 h-12 text-brand-sage" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
-        </svg>
-    </div>
-    <div>
-        <h1 class="text-3xl font-extrabold font-outfit text-brand-slate mb-3">Corporate Portal</h1>
-        <p class="text-gray-500 text-base leading-relaxed mb-2">
-            The <strong class="text-brand-slate">Corporate Wellness Portal</strong> is exclusively available on the <span class="text-brand-sage font-bold">Corporate Plan</span>.
-        </p>
-        <p class="text-gray-400 text-sm">Unlock organisation-wide wellness tracking, staff management, and analytics for your team.</p>
-    </div>
-    <div class="bg-white rounded-3xl border border-[#EBE8E0] shadow-card p-6 w-full text-left">
-        <h3 class="font-bold text-brand-slate font-outfit mb-4 text-lg">What's included in Corporate Plan</h3>
-        <ul class="space-y-3 text-sm text-gray-600">
-            <?php foreach ([
-                ['🏢', 'Organisation-wide wellness dashboard'],
-                ['👥', 'Unlimited staff invitations & roster management'],
-                ['📊', 'Wellbeing analytics & engagement reports'],
-                ['💳', 'Shared session credit pool for the whole team'],
-                ['🤝', 'Dedicated corporate support line'],
-            ] as [$icon, $text]): ?>
-            <li class="flex items-center gap-3">
-                <span class="text-xl"><?php echo $icon; ?></span>
-                <span><?php echo $text; ?></span>
-            </li>
-            <?php endforeach; ?>
-        </ul>
-    </div>
-    <div class="flex flex-col sm:flex-row gap-3 w-full">
-        <a href="dashboard.php" class="flex-1 text-center px-6 py-3 rounded-2xl border border-[#EBE8E0] text-brand-slate font-semibold hover:bg-white transition-all font-outfit">← Back to Dashboard</a>
-        <a href="javascript:void(0)" onclick="alert('This feature is coming soon!')" class="flex-1 text-center px-6 py-3 rounded-2xl bg-brand-sage text-white font-bold hover:bg-brand-sageHover transition-all shadow-active font-outfit">Upgrade to Corporate</a>
-    </div>
-</div>
-
-<?php else: ?>
-<!-- ═══════════════════════════════════════════════════════════════════════════
-     DASHBOARD — Corporate users
-════════════════════════════════════════════════════════════════════════════ -->
 
 <!-- Toast Notification -->
 <?php if (!empty($toast_message)): ?>
@@ -852,10 +806,6 @@ if (isset($_GET['invite_error']))     { $toast_type = 'error';   $toast_message 
     </div>
 </div>
 <!-- ═══ End Corporate Dashboard ═══ -->
-
-<?php endif; // end $is_corporate ?>
-
-<?php endif; ?>
     </main>
 
 <!-- ═══════════════════════════════════════════════════════════════════════════

@@ -156,28 +156,14 @@ $total_minutes = round($total_minutes, 1);
 
     <!-- MAIN APP CONTAINER -->
     <main class="mx-auto w-full max-w-6xl flex-grow px-4 py-8 sm:px-6 lg:px-8">
-        <?php if (!hasPlan('premium')): renderUpgradeOverlay('Vr Resilience', 'premium'); else: ?>
-        <?php if (!in_array($_SESSION['user_subscription_plan'] ?? 'free', ['premium', 'corporate'])): ?>
-        <div class="fixed inset-0 z-50 bg-brand-slate/80 backdrop-blur-sm flex items-center justify-center p-4">
-            <div class="bg-white rounded-3xl p-8 max-w-lg w-full text-center shadow-2xl">
-                <div class="h-16 w-16 mx-auto bg-brand-sageLight text-brand-sage rounded-full flex items-center justify-center mb-6">
-                    <i class="fa-solid fa-lock text-2xl"></i>
-                </div>
-                <h2 class="text-2xl font-bold text-brand-slate mb-4">Premium Feature</h2>
-                <p class="text-gray-600 mb-8">This feature is part of our Premium digital wellbeing ecosystem. Upgrade your plan to access this tool.</p>
-                <a href="subscription.php" class="inline-block px-8 py-3 bg-brand-sage text-white rounded-2xl font-bold shadow-md hover:bg-brand-sageHover transition-all">Upgrade to Premium</a>
-                <a href="dashboard.php" class="block mt-4 text-sm font-bold text-gray-400 hover:text-brand-slate transition-colors">Return to Dashboard</a>
-            </div>
-        </div>
-        <div class="hidden">
-        <?php endif; ?>
-
-        
         <!-- WELCOME SECTION -->
         <div class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div>
-                <span class="px-3 py-1 rounded-full bg-brand-sageLight text-brand-sage font-bold text-xs uppercase tracking-wider font-outfit">Virtual Reality</span>
-                <h2 class="text-3xl font-bold font-outfit text-brand-slate mt-2">VR Resilience Centre</h2>
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="px-3 py-1 rounded-full bg-brand-sageLight text-brand-sage font-bold text-xs uppercase tracking-wider font-outfit">Virtual Reality</span>
+                    <?php echo getPlanBadge('premium'); ?>
+                </div>
+                <h2 class="text-3xl font-bold font-outfit text-brand-slate mt-1">VR Resilience Centre</h2>
                 <p class="text-sm text-gray-500 mt-1 leading-relaxed max-w-2xl">
                     Immersive WebXR 3D sensory environments for self-regulation. Works on any browser, with mouse drag controls, or paired directly with a VR headset.
                 </p>
@@ -469,11 +455,6 @@ $total_minutes = round($total_minutes, 1);
             </div>
 
         </div>
-    
-        <?php if (!in_array($_SESSION['user_subscription_plan'] ?? 'free', ['premium', 'corporate'])): ?>
-        </div>
-        <?php endif; ?>
-<?php endif; ?>
     </main>
 
     <!-- ACTIVE PLAYER JS CONTROL SCRIPTS -->

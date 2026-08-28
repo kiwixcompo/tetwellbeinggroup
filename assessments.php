@@ -58,29 +58,15 @@ $is_premium = isset($_SESSION['user_subscription_plan']) && $_SESSION['user_subs
         <!-- Hero Section -->
         <div class="bg-brand-sageLight rounded-3xl p-8 sm:p-12 mb-10 text-center relative overflow-hidden border border-brand-sage/20 shadow-sm">
             <div class="relative z-10 max-w-2xl mx-auto">
+                <div class="inline-flex items-center gap-2 mb-2">
+                    <?php echo getPlanBadge('free'); ?>
+                </div>
                 <h1 class="text-4xl sm:text-5xl font-heading font-bold text-brand-slate mb-4">Self Assessments</h1>
                 <p class="text-lg text-brand-slate opacity-80 max-w-xl mx-auto">
                     Clinically validated tools to help you better understand your mental health.
                 </p>
             </div>
         </div>
-
-        <?php if (!$is_premium): ?>
-        <div class="bg-brand-cardBg rounded-3xl p-8 sm:p-12 mb-10 text-center shadow-sm border border-brand-sageLight">
-            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-brand-bg text-gray-400 mb-6">
-                <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
-            </div>
-            <h2 class="text-2xl font-heading font-bold text-brand-slate mb-4">Premium Feature</h2>
-            <p class="text-brand-slate opacity-80 max-w-xl mx-auto mb-8">
-                Clinical self-assessments (PHQ-9 and GAD-7) are available exclusively to our Professional and Corporate members. Upgrade today to unlock full access.
-            </p>
-            <a href="subscription.php" class="inline-block bg-brand-sage text-white py-3 px-8 rounded-xl font-medium hover:bg-brand-sageHover transition">
-                View Upgrade Options
-            </a>
-        </div>
-        <?php else: ?>
 
         <div id="assessment-list" class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             <!-- PHQ-9 Card -->
@@ -125,8 +111,6 @@ $is_premium = isset($_SESSION['user_subscription_plan']) && $_SESSION['user_subs
                 <!-- Results injected here -->
             </div>
         </div>
-        
-        <?php endif; ?>
 
     </main>
 

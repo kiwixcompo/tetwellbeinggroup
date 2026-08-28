@@ -61,7 +61,18 @@ $user_role = $_SESSION['user_role'] ?? 'user';
         </nav>
 
         <!-- Right: Profile & Settings -->
-        <div class="flex shrink-0 items-center gap-4">
+        <div class="flex shrink-0 items-center gap-3 sm:gap-4">
+            <!-- Preview Mode Badge -->
+            <span class="hidden xl:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/80 text-[11px] font-bold font-outfit shadow-sm" title="All features are currently unlocked for testing. Badges show the required production plan.">
+                <i class="fa-solid fa-unlock text-emerald-500 text-[10px]"></i> All Features Unlocked (Preview)
+            </span>
+
+            <!-- On-Demand Walkthrough / Section Guide Trigger -->
+            <button onclick="startSectionTour()" class="flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-brand-sageLight text-brand-sage hover:bg-brand-sage hover:text-white text-xs font-bold transition-all shadow-sm active:scale-95 group" title="Interactive Section Guide">
+                <i class="fa-solid fa-circle-question text-sm group-hover:rotate-12 transition-transform"></i>
+                <span class="hidden sm:inline font-outfit">Show Me Around</span>
+            </button>
+
             <!-- Mobile Menu Toggle (Visible only on mobile) -->
             <button class="md:hidden p-2 text-gray-500 hover:text-brand-slate" onclick="document.getElementById('mobile-menu').classList.toggle('hidden')">
                 <i class="fa-solid fa-bars text-xl"></i>
@@ -80,6 +91,10 @@ $user_role = $_SESSION['user_role'] ?? 'user';
                             <p class="text-xs text-gray-400 font-semibold uppercase tracking-wider">Signed in as</p>
                             <p class="text-sm font-bold text-brand-slate truncate"><?php echo htmlspecialchars($user_name); ?></p>
                         </div>
+
+                        <button onclick="startSectionTour()" class="flex items-center gap-2 px-3 py-2 text-sm text-brand-sage rounded-xl hover:bg-brand-sageLight transition-colors font-semibold text-left w-full">
+                            <i class="fa-solid fa-compass w-4 text-center"></i> Show Me Around
+                        </button>
                         
                         <a href="subscription.php" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 rounded-xl hover:bg-gray-50 transition-colors font-medium">
                             <i class="fa-solid fa-file-invoice-dollar w-4 text-center"></i> Subscription & Billing
@@ -110,9 +125,19 @@ $user_role = $_SESSION['user_role'] ?? 'user';
 <!-- Mobile Dropdown Menu -->
 <div id="mobile-menu" class="hidden md:hidden bg-white border-b border-gray-100 absolute w-full z-40 shadow-lg pb-4">
     <div class="flex flex-col px-4 pt-2 pb-4 space-y-1">
+        <button onclick="startSectionTour(); document.getElementById('mobile-menu').classList.add('hidden');" class="flex items-center gap-2 text-left px-4 py-3 rounded-xl text-base font-semibold bg-brand-sageLight text-brand-sage">
+            <i class="fa-solid fa-compass"></i> Show Me Around Tour
+        </button>
         <a href="dashboard.php" class="block px-4 py-3 rounded-xl text-base font-semibold <?php echo $active_pillar === 'dashboard' ? 'bg-brand-sageLight text-brand-sage' : 'text-gray-600 hover:bg-gray-50'; ?>">My TET</a>
         <a href="mindbloom.php" class="block px-4 py-3 rounded-xl text-base font-semibold <?php echo $active_pillar === 'mindbloom' ? 'bg-brand-sageLight text-brand-sage' : 'text-gray-600 hover:bg-gray-50'; ?>">MindBloom</a>
         <a href="community.php" class="block px-4 py-3 rounded-xl text-base font-semibold <?php echo $active_pillar === 'community' ? 'bg-brand-sageLight text-brand-sage' : 'text-gray-600 hover:bg-gray-50'; ?>">Community & Care</a>
         <a href="tet_academy.php" class="block px-4 py-3 rounded-xl text-base font-semibold <?php echo $active_pillar === 'academy' ? 'bg-brand-sageLight text-brand-sage' : 'text-gray-600 hover:bg-gray-50'; ?>">Learning Center</a>
     </div>
 </div>
+
+<?php 
+// Include the global section guide overlay & script
+require_once __DIR__ . '/includes/section_guide.php'; 
+// Include the global voice-to-text input module
+require_once __DIR__ . '/includes/voice_to_text.php';
+?>

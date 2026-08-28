@@ -568,6 +568,9 @@ if (!$loaded_from_db && isset($_SESSION['mock_ai_chats'])) {
             }
         }
     </script>
+    <!-- Marked.js for clean AI Markdown rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    
     <style>
         body {
             background-color: #F7F5F0;
@@ -582,6 +585,16 @@ if (!$loaded_from_db && isset($_SESSION['mock_ai_chats'])) {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
+        /* Rich rendered AI content styling */
+        .ai-prose p { margin-bottom: 0.5rem; line-height: 1.6; }
+        .ai-prose p:last-child { margin-bottom: 0; }
+        .ai-prose ul { list-style-type: disc; padding-left: 1.25rem; margin: 0.5rem 0; }
+        .ai-prose ol { list-style-type: decimal; padding-left: 1.25rem; margin: 0.5rem 0; }
+        .ai-prose li { margin-bottom: 0.25rem; }
+        .ai-prose strong { font-weight: 700; color: #264653; }
+        .ai-prose em { font-style: italic; color: #475569; }
+        .ai-prose blockquote { border-left: 3px solid #5E8C71; padding-left: 0.75rem; margin: 0.5rem 0; font-style: italic; color: #64748B; }
+
         .breathing-circle {
             transition: transform 4s linear;
         }
@@ -626,7 +639,10 @@ if (!$loaded_from_db && isset($_SESSION['mock_ai_chats'])) {
         <!-- Header Banner -->
         <div class="mb-8 relative overflow-hidden rounded-3xl bg-white border border-[#EBE8E0] shadow-soft p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6">
             <div class="space-y-2 z-10 max-w-2xl">
-                <p class="text-xs font-bold tracking-wider text-brand-sage uppercase font-outfit"><?php echo $today_date; ?></p>
+                <div class="flex items-center gap-2">
+                    <p class="text-xs font-bold tracking-wider text-brand-sage uppercase font-outfit"><?php echo $today_date; ?></p>
+                    <?php echo getPlanBadge('basic'); ?>
+                </div>
                 <h1 class="text-3xl font-extrabold font-outfit text-brand-slate tracking-tight mt-1">
                     <?php echo $t['title']; ?>
                 </h1>
@@ -662,16 +678,48 @@ if (!$loaded_from_db && isset($_SESSION['mock_ai_chats'])) {
             <!-- Left & Middle: Chat Pane (Col-span 2) -->
             <div class="lg:col-span-2 flex flex-col h-[600px] bg-white rounded-3xl border border-[#EBE8E0] shadow-soft overflow-hidden">
                 <!-- Chat Header -->
-                <div class="p-4 border-b border-[#EBE8E0] bg-brand-sageLight/30 flex items-center gap-3">
-                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-brand-sage/10 text-brand-sage text-lg">
-                        🤖
-                    </div>
-                    <div>
-                        <h3 class="font-bold text-sm text-brand-slate">Wellbeing Companion (AI)</h3>
-                        <div class="flex items-center gap-1.5">
-                            <span class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                            <span class="text-[10px] text-gray-400 font-semibold uppercase tracking-wider">Online & Listening</span>
+                <div class="p-4 border-b border-[#EBE8E0] bg-brand-sageLight/30 flex flex-wrap items-center justify-between gap-3">
+                    <div class="flex items-center gap-3">
+                        <div id="companion-avatar-icon" class="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-brand-sage/10 text-brand-sage text-lg font-bold">
+                            👩
                         </div>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h3 id="companion-title" class="font-bold text-sm text-brand-slate">Female Companion</h3>
+                                <div class="flex items-center bg-white/80 p-0.5 rounded-xl border border-gray-200 text-xs">
+                                    <button type="button" onclick="setCompanionGender('female')" id="btn-comp-female" class="px-2 py-0.5 rounded-lg bg-brand-sage text-white font-bold text-[10px] transition-all">👩 Female</button>
+                                    <button type="button" onclick="setCompanionGender('male')" id="btn-comp-male" class="px-2 py-0.5 rounded-lg text-gray-500 hover:text-brand-slate font-medium text-[10px] transition-all">👨 Male</button>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-1.5 mt-0.5">
+                                <span class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                                <span class="text-[10px] text-gray-400 font-semibold uppercase tracking-wider">Online & Listening</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Voice Selector & Auto-Send/Auto-Read Options -->
+                    <div class="flex flex-wrap items-center gap-2 text-xs">
+                        <div class="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-xl border border-gray-200">
+                            <i class="fa-solid fa-volume-high text-brand-sage text-[11px]"></i>
+                            <select id="companion-voice-select" onchange="onCompanionVoiceSelected(this.value)" class="text-[11px] font-medium bg-transparent text-brand-slate outline-none max-w-[130px] sm:max-w-[180px] truncate">
+                                <option value="">Loading voices...</option>
+                            </select>
+                        </div>
+
+                        <label class="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-xl border border-gray-200 cursor-pointer select-none" title="Auto-submit speech after talking">
+                            <input type="checkbox" id="companion-auto-submit" onchange="toggleCompanionAutoSubmit(this.checked)" class="rounded text-brand-sage focus:ring-brand-sage h-3.5 w-3.5">
+                            <span class="text-[11px] font-bold text-brand-slate flex items-center gap-1">
+                                <i class="fa-solid fa-bolt text-amber-500 text-[10px]"></i> Auto-Send
+                            </span>
+                        </label>
+
+                        <label class="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-xl border border-gray-200 cursor-pointer select-none" title="Automatically read response aloud with voice">
+                            <input type="checkbox" id="companion-auto-read" onchange="toggleCompanionAutoRead(this.checked)" class="rounded text-brand-sage focus:ring-brand-sage h-3.5 w-3.5">
+                            <span class="text-[11px] font-bold text-brand-slate flex items-center gap-1">
+                                <i class="fa-solid fa-volume-high text-brand-sage text-[10px]"></i> Auto-Read
+                            </span>
+                        </label>
                     </div>
                 </div>
 
@@ -885,17 +933,164 @@ if (!$loaded_from_db && isset($_SESSION['mock_ai_chats'])) {
             window.location.href = `ai_companion.php?lang=${newLang}`;
         }
 
+        // Voice Engine & Selection
+        let availableVoices = [];
+        let selectedCompanionVoice = null;
+        let activeCompanionGender = 'female';
+        let autoSubmitEnabled = localStorage.getItem('tet_companion_auto_submit') === 'true';
+        let autoReadEnabled = localStorage.getItem('tet_companion_auto_read') !== 'false';
+        const autoSubmitCheckbox = document.getElementById('companion-auto-submit');
+        if (autoSubmitCheckbox) autoSubmitCheckbox.checked = autoSubmitEnabled;
+        const autoReadCheckbox = document.getElementById('companion-auto-read');
+        if (autoReadCheckbox) autoReadCheckbox.checked = autoReadEnabled;
+
+        function detectVoiceGender(voice) {
+            const name = (voice.name || '').toLowerCase();
+            const femaleKeywords = [
+                'female', 'woman', 'girl', 'jenny', 'samantha', 'zira', 'aria', 'karen', 'moira', 
+                'victoria', 'fiona', 'tessa', 'sangeeta', 'heera', 'hazel', 'susan', 'cathy', 
+                'allison', 'ava', 'amira', 'stephanie', 'hannah', 'mia', 'emma', 'chloe', 'zoe', 
+                'sophia', 'olivia', 'lucy', 'alice', 'katya', 'helena', 'monica', 'paulina', 
+                'yasmin', 'noora', 'ayumi', 'haruka', 'yuna', 'kyoko', 'joana', 'laura', 'marta'
+            ];
+            const maleKeywords = [
+                'male', 'man', 'boy', 'guy', 'daniel', 'david', 'george', 'mark', 'alex', 'rishi', 
+                'fred', 'bruce', 'tom', 'ralph', 'oliver', 'william', 'james', 'ryan', 'eric', 
+                'stefan', 'thomas', 'arthur', 'cosimo', 'diego', 'jorge', 'juan', 'pablo', 'manuel'
+            ];
+
+            for (const kw of femaleKeywords) {
+                if (name.includes(kw)) return 'female';
+            }
+            for (const kw of maleKeywords) {
+                if (name.includes(kw)) return 'male';
+            }
+            if (name.includes('google')) {
+                if (name.includes('female')) return 'female';
+                if (name.includes('male')) return 'male';
+                return 'female';
+            }
+            return 'unspecified';
+        }
+
+        function setCompanionGender(gender) {
+            activeCompanionGender = gender;
+            const btnFemale = document.getElementById('btn-comp-female');
+            const btnMale = document.getElementById('btn-comp-male');
+            const titleEl = document.getElementById('companion-title');
+            const avatarEl = document.getElementById('companion-avatar-icon');
+
+            if (gender === 'female') {
+                if (btnFemale) btnFemale.className = 'px-2 py-0.5 rounded-lg bg-brand-sage text-white font-bold text-[10px] transition-all';
+                if (btnMale) btnMale.className = 'px-2 py-0.5 rounded-lg text-gray-500 hover:text-brand-slate font-medium text-[10px] transition-all';
+                if (titleEl) titleEl.textContent = 'Female Companion';
+                if (avatarEl) avatarEl.textContent = '👩';
+            } else {
+                if (btnMale) btnMale.className = 'px-2 py-0.5 rounded-lg bg-brand-slate text-white font-bold text-[10px] transition-all';
+                if (btnFemale) btnFemale.className = 'px-2 py-0.5 rounded-lg text-gray-500 hover:text-brand-slate font-medium text-[10px] transition-all';
+                if (titleEl) titleEl.textContent = 'Male Companion';
+                if (avatarEl) avatarEl.textContent = '👨';
+            }
+
+            populateRealisticCompanionVoices();
+        }
+
+        function populateRealisticCompanionVoices() {
+            if (!availableVoices.length) return;
+            const selectEl = document.getElementById('companion-voice-select');
+            if (!selectEl) return;
+            selectEl.innerHTML = '';
+
+            let filtered = availableVoices.filter(v => {
+                const g = detectVoiceGender(v);
+                return g === activeCompanionGender;
+            });
+
+            if (filtered.length === 0) {
+                filtered = availableVoices.filter(v => v.lang.startsWith('en') || v.lang.startsWith(currentLang));
+            }
+
+            filtered.sort((a, b) => {
+                const aNat = a.name.includes('Natural') || a.name.includes('Google') || a.name.includes('Premium');
+                const bNat = b.name.includes('Natural') || b.name.includes('Google') || b.name.includes('Premium');
+                if (aNat && !bNat) return -1;
+                if (!aNat && bNat) return 1;
+                return a.name.localeCompare(b.name);
+            });
+
+            filtered.forEach(v => {
+                const opt = document.createElement('option');
+                opt.value = v.name;
+                opt.textContent = `${v.name} (${v.lang})`;
+                selectEl.appendChild(opt);
+            });
+
+            const savedVoice = localStorage.getItem(`tet_companion_voice_${activeCompanionGender}`);
+            let chosen = filtered.find(v => v.name === savedVoice) || filtered[0];
+            if (chosen) {
+                selectedCompanionVoice = chosen;
+                selectEl.value = chosen.name;
+            }
+        }
+
+        function loadRealisticCompanionVoices() {
+            if (!('speechSynthesis' in window)) return;
+            const voices = window.speechSynthesis.getVoices();
+            if (!voices || voices.length === 0) return;
+
+            availableVoices = voices;
+            populateRealisticCompanionVoices();
+        }
+
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.onvoiceschanged = loadRealisticCompanionVoices;
+            loadRealisticCompanionVoices();
+        }
+
+        function onCompanionVoiceSelected(name) {
+            selectedCompanionVoice = availableVoices.find(v => v.name === name) || null;
+            if (selectedCompanionVoice) {
+                localStorage.setItem(`tet_companion_voice_${activeCompanionGender}`, selectedCompanionVoice.name);
+            }
+        }
+
+        function toggleCompanionAutoSubmit(isChecked) {
+            autoSubmitEnabled = isChecked;
+            localStorage.setItem('tet_companion_auto_submit', isChecked ? 'true' : 'false');
+        }
+
+        function toggleCompanionAutoRead(isChecked) {
+            autoReadEnabled = isChecked;
+            localStorage.setItem('tet_companion_auto_read', isChecked ? 'true' : 'false');
+            if (!isChecked && 'speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+            }
+        }
+
+        function formatAiResponseHtml(rawText) {
+            if (typeof marked !== 'undefined' && typeof marked.parse === 'function') {
+                marked.setOptions({ breaks: true, gfm: true });
+                return `<div class="ai-prose">${marked.parse(rawText)}</div>`;
+            }
+            let formatted = rawText
+                .replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-brand-slate">$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/^- (.*$)/gim, '<li class="ml-4 list-disc">$1</li>')
+                .replace(/\n\n/g, '</p><p class="mt-2">');
+            return `<div class="ai-prose"><p>${formatted}</p></div>`;
+        }
+
         // Web Speech Recognition Integration
         let recognition = null;
         let isTranscribing = false;
+        let silenceTimer = null;
 
         if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
             const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
             recognition = new SpeechRec();
-            recognition.continuous = false;
-            recognition.interimResults = false;
+            recognition.continuous = true;
+            recognition.interimResults = true;
 
-            // Map standard code to speech locale
             const localeMap = {
                 'en': 'en-US',
                 'fr': 'fr-FR',
@@ -909,24 +1104,49 @@ if (!$loaded_from_db && isset($_SESSION['mock_ai_chats'])) {
 
             recognition.onstart = () => {
                 isTranscribing = true;
-                document.getElementById('mic-icon').classList.add('text-brand-coral', 'animate-pulse');
+                const micIcon = document.getElementById('mic-icon');
+                if (micIcon) micIcon.classList.add('text-brand-coral', 'animate-pulse');
                 document.getElementById('chat-input').placeholder = "Listening... Speak now.";
             };
 
             recognition.onend = () => {
                 isTranscribing = false;
-                document.getElementById('mic-icon').classList.remove('text-brand-coral', 'animate-pulse');
+                const micIcon = document.getElementById('mic-icon');
+                if (micIcon) micIcon.classList.remove('text-brand-coral', 'animate-pulse');
                 document.getElementById('chat-input').placeholder = "<?php echo $t['placeholder']; ?>";
             };
 
             recognition.onresult = (event) => {
-                const text = event.results[0][0].transcript;
-                document.getElementById('chat-input').value = text;
+                let finalTranscript = '';
+                let interimTranscript = '';
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) {
+                        finalTranscript += event.results[i][0].transcript;
+                    } else {
+                        interimTranscript += event.results[i][0].transcript;
+                    }
+                }
+                const spoken = (finalTranscript || interimTranscript).trim();
+                if (spoken) {
+                    document.getElementById('chat-input').value = spoken;
+                }
+
+                // If Auto-Submit is enabled, trigger submission on speech pause
+                if (autoSubmitEnabled && spoken) {
+                    clearTimeout(silenceTimer);
+                    silenceTimer = setTimeout(() => {
+                        if (isTranscribing && document.getElementById('chat-input').value.trim().length > 0) {
+                            toggleSpeech();
+                            sendMessage(new Event('submit'));
+                        }
+                    }, 1400);
+                }
             };
 
             recognition.onerror = () => {
                 isTranscribing = false;
-                document.getElementById('mic-icon').classList.remove('text-brand-coral', 'animate-pulse');
+                const micIcon = document.getElementById('mic-icon');
+                if (micIcon) micIcon.classList.remove('text-brand-coral', 'animate-pulse');
                 document.getElementById('chat-input').placeholder = "<?php echo $t['placeholder']; ?>";
             };
         }
@@ -937,41 +1157,53 @@ if (!$loaded_from_db && isset($_SESSION['mock_ai_chats'])) {
                 return;
             }
             if (isTranscribing) {
-                recognition.stop();
+                try { recognition.stop(); } catch(e){}
             } else {
-                recognition.start();
+                try { recognition.start(); } catch(e){}
             }
         }
 
-        // Text-To-Speech (TTS) Integration
-        function speakText(text) {
+        // Text-To-Speech (TTS) Integration with Continuous Loop Callback
+        function speakText(text, onCompleteCallback) {
             if (!('speechSynthesis' in window)) {
-                alert("Text-to-Speech is not supported in this browser.");
+                if (onCompleteCallback) onCompleteCallback();
                 return;
             }
-            window.speechSynthesis.cancel(); // Stop current speech
-            const utterance = new SpeechSynthesisUtterance(text);
-            const localeMap = {
-                'en': 'en-US',
-                'fr': 'fr-FR',
-                'ar': 'ar-SA',
-                'sw': 'sw-KE',
-                'ha': 'en-US',
-                'yo': 'en-US',
-                'ig': 'en-US',
-                'es': 'es-ES',
-                'ur': 'ur-PK',
-                'zh': 'zh-CN',
-                'pt': 'pt-PT',
-                'pa': 'hi-IN' // pa-IN might not be universally supported, fallback
-            };
-            utterance.lang = localeMap[currentLang] || 'en-US';
+            window.speechSynthesis.cancel();
+            const cleanSpeechText = text.replace(/[*_#`~>-]/g, ' ').replace(/\s+/g, ' ').trim();
+            const utterance = new SpeechSynthesisUtterance(cleanSpeechText);
+            
+            if (selectedCompanionVoice) {
+                utterance.voice = selectedCompanionVoice;
+            } else {
+                const localeMap = {
+                    'en': 'en-US',
+                    'fr': 'fr-FR',
+                    'ar': 'ar-SA',
+                    'sw': 'sw-KE',
+                    'ha': 'en-US',
+                    'yo': 'en-US',
+                    'ig': 'en-US',
+                    'es': 'es-ES',
+                    'ur': 'ur-PK',
+                    'zh': 'zh-CN',
+                    'pt': 'pt-PT',
+                    'pa': 'hi-IN'
+                };
+                utterance.lang = localeMap[currentLang] || 'en-US';
+            }
+
+            if (onCompleteCallback) {
+                utterance.onend = onCompleteCallback;
+                utterance.onerror = onCompleteCallback;
+            }
+
             window.speechSynthesis.speak(utterance);
         }
 
         // Send Message via AJAX
         function sendMessage(event) {
-            event.preventDefault();
+            if (event) event.preventDefault();
             const inputField = document.getElementById('chat-input');
             const messageText = inputField.value.trim();
             if (!messageText) return;
@@ -995,16 +1227,13 @@ if (!$loaded_from_db && isset($_SESSION['mock_ai_chats'])) {
             const typing = document.getElementById('typing-indicator');
             typing.classList.remove('hidden');
 
-            // Send POST request
-            
             // Puter.js AI Chat
-            let prompt = `Respond natively in this language code: ${currentLang}. You are a wellbeing companion. The user says: ${messageText}`;
+            let prompt = `Respond warmly in language: ${currentLang}. You are a wellbeing companion. The user says: ${messageText}`;
             
             puter.ai.chat(prompt)
             .then(response => {
                 let ai_response_text = response?.message?.content || response;
                 
-                // Silently log to server history (optional, retaining old logic structure)
                 const formData = new FormData();
                 formData.append('action', 'send_message');
                 formData.append('message', messageText);
@@ -1012,18 +1241,17 @@ if (!$loaded_from_db && isset($_SESSION['mock_ai_chats'])) {
                 fetch('ai_companion.php', { method: 'POST', body: formData }).catch(e=>console.log(e));
 
                 let data = { status: 'success', ai_message: ai_response_text };
-
                 typing.classList.add('hidden');
                 
                 if (data.status === 'success') {
-                    // Render AI bubble
+                    // Render AI bubble with clean markdown formatting
                     const aiHtml = `
                         <div class="flex items-start gap-3 max-w-[85%] fade-in">
                             <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-brand-sageLight text-brand-sage text-xs">
                                 🤖
                             </div>
-                            <div class="rounded-2xl rounded-tl-none bg-brand-bg px-4 py-3 text-sm text-brand-slate leading-relaxed shadow-sm relative group">
-                                ${escapeHtml(data.ai_message)}
+                            <div class="rounded-2xl rounded-tl-none bg-brand-bg px-4 py-3 text-sm text-brand-slate leading-relaxed shadow-sm relative group w-full">
+                                ${formatAiResponseHtml(data.ai_message)}
                                 <button onclick="speakText(this.dataset.text)" data-text="${escapeHtml(data.ai_message)}" class="absolute top-2 right-2 text-gray-400 hover:text-brand-sage transition-colors opacity-0 group-hover:opacity-100" title="Listen">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072M18.364 5.636a9 9 0 010 12.728M11 19L5 13H2V7h3l6-6v18z"></path></svg>
                                 </button>
@@ -1033,8 +1261,24 @@ if (!$loaded_from_db && isset($_SESSION['mock_ai_chats'])) {
                     container.insertAdjacentHTML('beforeend', aiHtml);
                     container.scrollTop = container.scrollHeight;
 
-                    // Automatically play the response
-                    speakText(data.ai_message);
+                    // Automatically play response with continuous listening loop
+                    if (autoReadEnabled) {
+                        speakText(data.ai_message, () => {
+                            if (autoSubmitEnabled) {
+                                setTimeout(() => {
+                                    if (recognition && !isTranscribing) {
+                                        toggleSpeech();
+                                    }
+                                }, 500);
+                            }
+                        });
+                    } else if (autoSubmitEnabled) {
+                        setTimeout(() => {
+                            if (recognition && !isTranscribing) {
+                                toggleSpeech();
+                            }
+                        }, 500);
+                    }
 
                     // If crisis flagged
                     if (data.is_crisis) {
