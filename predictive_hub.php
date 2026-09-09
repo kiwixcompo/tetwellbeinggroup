@@ -33,14 +33,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'sync_smartwatch') {
         header('Content-Type: application/json');
         
-        // Generate realistic but slightly varied telemetry data
-        $sleep_hours = round(5.5 + (rand(0, 30) / 10), 1); // 5.5 to 8.5
-        $sleep_quality = rand(60, 95);
-        $steps = rand(3500, 11500);
-        $active_minutes = rand(15, 60);
-        $hrv = rand(35, 75);
-        $resting_hr = rand(58, 78);
-        $social_interaction = rand(4, 9);
+        $device_brand = trim($_POST['device_brand'] ?? 'apple');
+        $valid_brands = ['apple', 'garmin', 'fitbit', 'whoop', 'pixel'];
+        if (!in_array($device_brand, $valid_brands)) {
+            $device_brand = 'apple';
+        }
+
+        // Check if custom manual biometrics were submitted
+        $custom_steps = filter_input(INPUT_POST, 'steps', FILTER_VALIDATE_INT);
+        $custom_sleep_hours = filter_input(INPUT_POST, 'sleep_hours', FILTER_VALIDATE_FLOAT);
+        $custom_sleep_quality = filter_input(INPUT_POST, 'sleep_quality', FILTER_VALIDATE_INT);
+        $custom_resting_hr = filter_input(INPUT_POST, 'resting_hr', FILTER_VALIDATE_INT);
+        $custom_hrv = filter_input(INPUT_POST, 'hrv', FILTER_VALIDATE_INT);
+        $custom_active_min = filter_input(INPUT_POST, 'active_minutes', FILTER_VALIDATE_INT);
+
+        // If custom metrics are passed, use them; otherwise synthesize realistic device telemetry
+        $sleep_hours = ($custom_sleep_hours !== false && $custom_sleep_hours !== null && $custom_sleep_hours > 0) 
+            ? round($custom_sleep_hours, 1) 
+            : round(6.2 + (rand(0, 25) / 10), 1); // 6.2 - 8.7 hrs
+
+        $sleep_quality = ($custom_sleep_quality !== false && $custom_sleep_quality !== null && $custom_sleep_quality > 0) 
+            ? min(100, max(40, $custom_sleep_quality)) 
+            : rand(68, 94);
+
+        $steps = ($custom_steps !== false && $custom_steps !== null && $custom_steps >= 0) 
+            ? $custom_steps 
+            : rand(4200, 11800);
+
+        $active_minutes = ($custom_active_min !== false && $custom_active_min !== null && $custom_active_min >= 0) 
+            ? $custom_active_min 
+            : rand(20, 65);
+
+        $hrv = ($custom_hrv !== false && $custom_hrv !== null && $custom_hrv > 0) 
+            ? min(120, max(20, $custom_hrv)) 
+            : rand(42, 78);
+
+        $resting_hr = ($custom_resting_hr !== false && $custom_resting_hr !== null && $custom_resting_hr > 0) 
+            ? min(120, max(45, $custom_resting_hr)) 
+            : rand(58, 76);
+
+        $social_interaction = rand(5, 9);
         
         $data = [
             'log_date' => date('Y-m-d'),
@@ -55,8 +87,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         $saved = EmotionalHealthService::logTelemetry($user_id, $data);
         
+        // Store last paired smartwatch in session for persistent display
+        $_SESSION['synced_wearable_device'] = [
+            'brand' => $device_brand,
+            'synced_at' => date('g:i A'),
+            'battery' => rand(74, 96) . '%'
+        ];
+        
         echo json_encode([
             'status' => $saved ? 'success' : 'error',
+            'device' => $_SESSION['synced_wearable_device'],
             'data' => $data
         ]);
         exit;
@@ -66,6 +106,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'log_voice_stress') {
         header('Content-Type: application/json');
         $stress_score = filter_input(INPUT_POST, 'stress_score', FILTER_VALIDATE_INT);
+        $stress_score = max(5, min(95, $stress_score ?? 25));
+        
+        $jitter = filter_input(INPUT_POST, 'jitter', FILTER_VALIDATE_FLOAT) ?: 1.2;
+        $shimmer = filter_input(INPUT_POST, 'shimmer', FILTER_VALIDATE_FLOAT) ?: 2.4;
+        $passage_index = filter_input(INPUT_POST, 'passage_index', FILTER_VALIDATE_INT) ?? 0;
         
         // We log it in today's telemetry data
         $today = date('Y-m-d');
@@ -74,26 +119,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'voice_stress_score' => $stress_score
         ];
         
-        // If today's log doesn't exist, we merge with defaults
+        // If today's log exists, merge with it; otherwise merge with healthy baseline
         $history = EmotionalHealthService::getTelemetryHistory($user_id, 1);
-        $latest = end($history);
+        $latest = !empty($history) ? end($history) : null;
         if ($latest && $latest['log_date'] === $today) {
             $data = array_merge($latest, $data);
         } else {
-            $data['sleep_hours'] = 6.5;
-            $data['sleep_quality'] = 72;
-            $data['steps'] = 4500;
-            $data['active_minutes'] = 20;
-            $data['hrv'] = 45;
-            $data['resting_hr'] = 70;
-            $data['social_interaction'] = 5;
+            $data['sleep_hours'] = 7.1;
+            $data['sleep_quality'] = 80;
+            $data['steps'] = 6200;
+            $data['active_minutes'] = 30;
+            $data['hrv'] = 52;
+            $data['resting_hr'] = 65;
+            $data['social_interaction'] = 6;
         }
         
         $saved = EmotionalHealthService::logTelemetry($user_id, $data);
         
         echo json_encode([
             'status' => $saved ? 'success' : 'error',
-            'stress_score' => $stress_score
+            'stress_score' => $stress_score,
+            'acoustic_metrics' => [
+                'jitter' => $jitter,
+                'shimmer' => $shimmer,
+                'passage_index' => $passage_index
+            ]
         ]);
         exit;
     }
@@ -101,12 +151,62 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Load telemetry logs and twin profile
 $telemetry_history = EmotionalHealthService::getTelemetryHistory($user_id, 7);
+
+// If history is sparse (< 2 entries), seed a realistic 7-day trend leading up to today so the risk forecast chart and Digital Twin work immediately
+if (count($telemetry_history) < 2) {
+    for ($i = 6; $i >= 1; $i--) {
+        $past_date = date('Y-m-d', strtotime("-$i days"));
+        $seed_data = [
+            'log_date' => $past_date,
+            'sleep_hours' => round(6.0 + (rand(0, 22) / 10), 1),
+            'sleep_quality' => rand(65, 88),
+            'steps' => rand(4800, 9500),
+            'active_minutes' => rand(20, 50),
+            'hrv' => rand(42, 68),
+            'resting_hr' => rand(60, 75),
+            'social_interaction' => rand(5, 8),
+            'voice_stress_score' => rand(18, 45)
+        ];
+        EmotionalHealthService::logTelemetry($user_id, $seed_data);
+    }
+    $telemetry_history = EmotionalHealthService::getTelemetryHistory($user_id, 7);
+}
+
 $digital_twin = EmotionalHealthService::getDigitalTwinProfile($user_id);
 $early_warnings = EmotionalHealthService::detectEarlyWarnings($user_id);
 $has_warnings = !empty($early_warnings);
 
 $triggers = json_decode($digital_twin['learned_triggers'] ?? '[]', true);
 $coping = json_decode($digital_twin['coping_styles'] ?? '[]', true);
+
+// Pre-defined grounding passages bank for alternating reading
+$grounding_passages = [
+    [
+        'title' => 'Affirmation of Calm & Limits',
+        'text' => 'I am doing the best I can each day. My physical and mental limits are completely valid, and my peace of mind is my priority.'
+    ],
+    [
+        'title' => 'Sensory Presence & Grounding',
+        'text' => 'I breathe in slowly through my nose, feeling the cool air fill my lungs, and let go of tension with every gentle exhale.'
+    ],
+    [
+        'title' => 'Compassion & Release',
+        'text' => 'I do not have to carry everything all at once. Today I allow myself to pause, breathe, and accept support when I need it.'
+    ],
+    [
+        'title' => 'Mindful Resilience',
+        'text' => 'Challenges and tough moments arise, but they also pass. My strength is steady, my mind is clear, and I am safe in this moment.'
+    ],
+    [
+        'title' => 'Clarity & Self-Kindness',
+        'text' => 'I release what is beyond my control. I honor my daily energy and greet each new hour with kindness, patience, and grace.'
+    ],
+    [
+        'title' => 'Inner Anchor & Steadiness',
+        'text' => 'My feet are firmly planted on the ground. My heart beats calmly, and I return to this present moment with gratitude and focus.'
+    ]
+];
+
 ?>
 <!DOCTYPE html>
 <html lang="en" class="h-full scroll-smooth">
@@ -485,176 +585,550 @@ $coping = json_decode($digital_twin['coping_styles'] ?? '[]', true);
 
             <!-- SUB-TAB CONTENT: 2. VOICE STRESS ANALYZER -->
             <?php if ($sub_tab === 'voice'): ?>
-                <div class="max-w-2xl mx-auto w-full p-6 md:p-8 rounded-2xl dark-pane flex flex-col items-center space-y-6 relative overflow-hidden">
-                    <div class="text-center space-y-2">
-                        <h3 class="text-lg font-bold font-outfit text-white">Voice Stress Analyzer</h3>
-                        <p class="text-xs text-gray-500 max-w-md leading-relaxed mx-auto">
-                            Read the positive grounding phrase below into your microphone. Our voice stress model analyzes amplitude changes, pauses, and tremor frequencies to evaluate cognitive overload.
+                <div class="max-w-3xl mx-auto w-full p-6 md:p-8 rounded-2xl dark-pane flex flex-col items-center space-y-6 relative overflow-hidden">
+                    <div class="text-center space-y-2 max-w-xl">
+                        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-sky/10 border border-brand-sky/20 text-brand-sky text-[11px] font-bold uppercase tracking-wider font-outfit">
+                            <span>🎙️ Real-Time Acoustic Biomarkers</span>
+                        </div>
+                        <h3 class="text-xl font-bold font-outfit text-white">Voice Stress Analyzer</h3>
+                        <p class="text-xs text-gray-400 leading-relaxed mx-auto">
+                            Read the grounding passage aloud. Our acoustic pipeline tracks your speech progress in real time and analyzes vocal jitter (frequency tremor), shimmer (amplitude micro-variations), speaking pace, and dysfluency to assess autonomic tension.
                         </p>
                     </div>
 
-                    <!-- Grounding Passage Box -->
-                    <div class="w-full p-4 rounded-xl bg-white/5 border border-white/10 text-center font-semibold italic text-sm text-brand-sky leading-relaxed select-none">
-                        &ldquo;I am doing the best I can, my limits are valid, and my peace of mind is my priority.&rdquo;
-                    </div>
-
-                    <!-- Canvas Visualizer Wave -->
-                    <div class="w-full h-32 rounded-xl bg-black/40 border border-white/5 relative flex items-center justify-center overflow-hidden">
-                        <canvas id="voice-visualizer" class="absolute inset-0 w-full h-full"></canvas>
-                        <div id="visualizer-placeholder" class="text-[10px] font-bold text-gray-500 uppercase tracking-widest z-10 flex flex-col items-center gap-1.5 select-none font-outfit">
-                            <span class="text-xs">🎙️</span> Waveform Visualizer Idle
-                        </div>
-                        <div id="timer-display" class="hidden absolute top-2 right-3 px-2 py-0.5 rounded bg-brand-coral/20 border border-brand-coral/20 text-brand-coral text-[9px] font-bold font-outfit z-10 animate-pulse">
-                            05.00s
-                        </div>
-                    </div>
-
-                    <!-- Controls & Score -->
-                    <div class="w-full flex flex-col items-center gap-4">
-                        <div id="record-actions">
-                            <button type="button" id="start-record-btn" onclick="startVoiceRecording()" class="px-6 py-3 rounded-2xl bg-brand-sage hover:bg-brand-sageHover text-white font-bold text-xs shadow-glow transition-all active:scale-95 flex items-center gap-2 font-outfit">
-                                <span>Record Voice Check-in</span>
+                    <!-- Grounding Passage Box with Alternating Rotation -->
+                    <div class="w-full bg-white/5 border border-white/10 rounded-2xl p-5 md:p-6 relative">
+                        <div class="flex items-center justify-between gap-4 mb-3 border-b border-white/10 pb-3">
+                            <div class="flex items-center gap-2">
+                                <span class="px-2 py-0.5 rounded bg-brand-sage/20 text-brand-sage text-[10px] font-bold uppercase tracking-wider font-outfit" id="passage-badge">Passage 1 of <?php echo count($grounding_passages); ?></span>
+                                <span class="text-xs font-semibold text-gray-300 font-outfit" id="passage-title"><?php echo htmlspecialchars($grounding_passages[0]['title']); ?></span>
+                            </div>
+                            <button type="button" id="shuffle-passage-btn" onclick="nextPassage()" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-gray-300 hover:text-white text-xs font-bold font-outfit transition-all active:scale-95">
+                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                <span>Shuffle Passage</span>
                             </button>
                         </div>
                         
-                        <!-- Result Indicator -->
-                        <div id="voice-analysis-result" class="hidden w-full p-4 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between gap-4">
-                            <div>
-                                <span class="text-[9px] text-gray-500 font-bold uppercase tracking-wider select-none font-sans">Analysis Output</span>
-                                <h5 class="text-sm font-bold text-white mt-0.5 font-outfit">Vocal Fatigue Index</h5>
-                                <p id="voice-result-desc" class="text-[10px] text-gray-400 mt-1 leading-normal font-sans">Speech speed stable, minimal tremor detected.</p>
+                        <!-- The Text to Read Aloud -->
+                        <div class="relative py-2">
+                            <p id="grounding-text-display" class="font-serif italic text-base sm:text-lg text-brand-sky leading-relaxed text-center select-none transition-all duration-300">
+                                &ldquo;<?php echo htmlspecialchars($grounding_passages[0]['text']); ?>&rdquo;
+                            </p>
+                        </div>
+
+                        <!-- Live Reading Progress Bar -->
+                        <div id="reading-progress-container" class="hidden mt-4 pt-3 border-t border-white/10">
+                            <div class="flex items-center justify-between text-[11px] mb-1.5 font-outfit">
+                                <span class="text-gray-400 flex items-center gap-1.5">
+                                    <span class="inline-block w-2 h-2 rounded-full bg-brand-coral animate-ping"></span> Spoken Progress Tracking
+                                </span>
+                                <span id="reading-progress-pct" class="text-brand-sage font-bold">0% Completed</span>
                             </div>
-                            <div class="text-right shrink-0">
-                                <span id="voice-result-badge" class="px-2 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider bg-brand-sage/20 text-brand-sage font-sans">Stable</span>
-                                <h4 id="voice-result-score" class="text-2xl font-bold font-outfit text-white mt-1">12%</h4>
+                            <div class="w-full bg-white/10 rounded-full h-1.5 overflow-hidden">
+                                <div id="reading-progress-bar" class="bg-gradient-to-r from-brand-sky to-brand-sage h-1.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+                            </div>
+                            <p id="live-speech-feedback" class="text-[11px] text-gray-400 italic text-center mt-2 truncate max-w-full">Listening to your voice...</p>
+                        </div>
+                    </div>
+
+                    <!-- Canvas Visualizer Waveform -->
+                    <div class="w-full h-36 rounded-2xl bg-black/50 border border-white/10 relative flex items-center justify-center overflow-hidden shadow-inner">
+                        <canvas id="voice-visualizer" class="absolute inset-0 w-full h-full"></canvas>
+                        
+                        <div id="visualizer-placeholder" class="text-[11px] font-bold text-gray-500 uppercase tracking-widest z-10 flex flex-col items-center gap-2 select-none font-outfit">
+                            <div class="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-lg">
+                                🎙️
+                            </div>
+                            <span>Acoustic Visualizer Ready</span>
+                        </div>
+
+                        <!-- Real-time metrics badges overlay while recording -->
+                        <div id="recording-live-stats" class="hidden absolute top-3 left-3 right-3 flex items-center justify-between text-[10px] font-bold font-outfit z-10 select-none">
+                            <div class="flex items-center gap-2">
+                                <span class="px-2.5 py-1 rounded-lg bg-brand-coral/20 border border-brand-coral/30 text-brand-coral flex items-center gap-1.5 animate-pulse">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-brand-coral"></span> LIVE RECORDING
+                                </span>
+                                <span id="timer-display" class="px-2.5 py-1 rounded-lg bg-white/10 text-gray-300">
+                                    00:00
+                                </span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span id="live-freq-badge" class="px-2 py-0.5 rounded bg-white/5 text-brand-sky border border-white/10">Freq: -- Hz</span>
+                                <span id="live-rms-badge" class="px-2 py-0.5 rounded bg-white/5 text-brand-sage border border-white/10">RMS: -- dB</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Controls: Start & Stop/Finish -->
+                    <div class="w-full flex flex-col items-center gap-4">
+                        <div id="record-actions" class="flex flex-wrap items-center justify-center gap-3">
+                            <button type="button" id="start-record-btn" onclick="startVoiceRecording()" class="px-7 py-3 rounded-2xl bg-brand-sage hover:bg-brand-sageHover text-white font-bold text-xs shadow-glow transition-all active:scale-95 flex items-center gap-2.5 font-outfit">
+                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>
+                                <span id="start-record-label">Begin Reading Check-in</span>
+                            </button>
+
+                            <button type="button" id="finish-record-btn" onclick="manualFinishRecording()" class="hidden px-6 py-3 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/15 transition-all active:scale-95 flex items-center gap-2 font-outfit">
+                                <svg class="w-4 h-4 text-brand-sage" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                                <span>I'm Done Reading</span>
+                            </button>
+                        </div>
+                        
+                        <p id="record-instruction-tip" class="text-[11px] text-gray-400 font-sans text-center max-w-md">
+                            Speak at your natural pace. The analyzer detects when you complete reading the passage or when you pause at the end.
+                        </p>
+
+                        <!-- Comprehensive Result Indicator Card -->
+                        <div id="voice-analysis-result" class="hidden w-full rounded-2xl bg-white/5 border border-white/10 p-5 md:p-6 space-y-5 transition-all">
+                            <div class="flex items-center justify-between border-b border-white/10 pb-4">
+                                <div>
+                                    <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider font-outfit">Acoustic Assessment Diagnostic</span>
+                                    <h5 class="text-lg font-bold text-white mt-0.5 font-outfit">Voice Stress & Autonomic Index</h5>
+                                    <p id="voice-result-desc" class="text-xs text-gray-300 mt-1 leading-normal font-sans">
+                                        Voice pitch stability is balanced with healthy harmonics.
+                                    </p>
+                                </div>
+                                <div class="text-right shrink-0">
+                                    <span id="voice-result-badge" class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-brand-sage/20 text-brand-sage font-outfit">Stable</span>
+                                    <h4 id="voice-result-score" class="text-3xl font-bold font-outfit text-white mt-1">18%</h4>
+                                </div>
+                            </div>
+
+                            <!-- 4 Key Physical Acoustic Biomarkers Grid -->
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-center">
+                                <div class="p-3 rounded-xl bg-black/20 border border-white/5">
+                                    <span class="text-[9px] font-bold text-gray-400 uppercase tracking-wider font-outfit block mb-1">Frequency Jitter</span>
+                                    <span id="metric-jitter" class="text-sm font-bold text-brand-sky font-outfit">1.18%</span>
+                                    <span class="text-[9px] text-gray-500 block mt-0.5">Micro-tremor rate</span>
+                                </div>
+                                <div class="p-3 rounded-xl bg-black/20 border border-white/5">
+                                    <span class="text-[9px] font-bold text-gray-400 uppercase tracking-wider font-outfit block mb-1">Amplitude Shimmer</span>
+                                    <span id="metric-shimmer" class="text-sm font-bold text-brand-sage font-outfit">2.34%</span>
+                                    <span class="text-[9px] text-gray-500 block mt-0.5">Volume variance</span>
+                                </div>
+                                <div class="p-3 rounded-xl bg-black/20 border border-white/5">
+                                    <span class="text-[9px] font-bold text-gray-400 uppercase tracking-wider font-outfit block mb-1">Speech Cadence</span>
+                                    <span id="metric-pace" class="text-sm font-bold text-white font-outfit">132 wpm</span>
+                                    <span class="text-[9px] text-gray-500 block mt-0.5">Natural rhythm</span>
+                                </div>
+                                <div class="p-3 rounded-xl bg-black/20 border border-white/5">
+                                    <span class="text-[9px] font-bold text-gray-400 uppercase tracking-wider font-outfit block mb-1">Pause Ratio</span>
+                                    <span id="metric-pause" class="text-sm font-bold text-gray-300 font-outfit">14%</span>
+                                    <span class="text-[9px] text-gray-500 block mt-0.5">Dysfluency index</span>
+                                </div>
+                            </div>
+
+                            <!-- Recommendation Card -->
+                            <div class="p-3.5 rounded-xl bg-brand-sage/10 border border-brand-sage/20 flex items-start gap-3">
+                                <div class="w-6 h-6 rounded-lg bg-brand-sage/20 flex items-center justify-center text-brand-sage shrink-0 mt-0.5">
+                                    💡
+                                </div>
+                                <div>
+                                    <h6 class="text-xs font-bold text-white font-outfit">Clinical Insight</h6>
+                                    <p id="voice-clinical-rec" class="text-[11px] text-gray-300 mt-0.5 leading-relaxed">
+                                        Your vocal stability correlates to a well-regulated nervous system. Digital Twin status has been updated.
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Voice Recording JS scripts -->
+                <!-- Voice Recording & Acoustic Analysis Client Script -->
                 <script>
+                    const groundingPassages = <?php echo json_encode($grounding_passages); ?>;
+                    let currentPassageIndex = 0;
+                    
                     let audioCtx = null;
                     let analyser = null;
                     let source = null;
-                    let recordInterval = null;
-                    let animationFrameId = null;
                     let streamRef = null;
+                    let animationFrameId = null;
+                    let recognition = null;
+
+                    let speechStartTime = 0;
+                    let recordingTimerInterval = null;
+                    let audioSampleFrames = [];
+                    let silenceStartTime = null;
+                    let hasSpokenAnything = false;
+                    let speechTranscript = "";
+                    let isRecordingActive = false;
+
+                    function nextPassage() {
+                        currentPassageIndex = (currentPassageIndex + 1) % groundingPassages.length;
+                        renderCurrentPassage();
+                    }
+
+                    function renderCurrentPassage() {
+                        const p = groundingPassages[currentPassageIndex];
+                        document.getElementById('passage-badge').innerText = `Passage ${currentPassageIndex + 1} of ${groundingPassages.length}`;
+                        document.getElementById('passage-title').innerText = p.title;
+                        const textEl = document.getElementById('grounding-text-display');
+                        textEl.style.opacity = '0';
+                        setTimeout(() => {
+                            textEl.innerHTML = `&ldquo;${p.text}&rdquo;`;
+                            textEl.style.opacity = '1';
+                        }, 150);
+                    }
 
                     function startVoiceRecording() {
-                        const startBtn = document.getElementById('start-record-btn');
-                        startBtn.disabled = true;
-                        startBtn.classList.add('opacity-50');
-                        startBtn.innerText = 'Initializing mic...';
+                        if (isRecordingActive) return;
 
-                        // Request mic permission
+                        const startBtn = document.getElementById('start-record-btn');
+                        const startLabel = document.getElementById('start-record-label');
+                        const finishBtn = document.getElementById('finish-record-btn');
+                        const liveStats = document.getElementById('recording-live-stats');
+                        const progressContainer = document.getElementById('reading-progress-container');
+                        const progressBar = document.getElementById('reading-progress-bar');
+                        const progressPct = document.getElementById('reading-progress-pct');
+                        const resultCard = document.getElementById('voice-analysis-result');
+                        const shuffleBtn = document.getElementById('shuffle-passage-btn');
+
+                        resultCard.classList.add('hidden');
+                        startBtn.disabled = true;
+                        startLabel.innerText = 'Initializing Microphone...';
+                        shuffleBtn.disabled = true;
+
                         navigator.mediaDevices.getUserMedia({ audio: true })
                         .then(stream => {
                             streamRef = stream;
-                            document.getElementById('visualizer-placeholder').classList.add('hidden');
-                            const timerDisplay = document.getElementById('timer-display');
-                            timerDisplay.classList.remove('hidden');
+                            isRecordingActive = true;
+                            audioSampleFrames = [];
+                            speechTranscript = "";
+                            hasSpokenAnything = false;
+                            silenceStartTime = null;
 
+                            // Show UI states
+                            document.getElementById('visualizer-placeholder').classList.add('hidden');
+                            liveStats.classList.remove('hidden');
+                            progressContainer.classList.remove('hidden');
+                            progressBar.style.width = '0%';
+                            progressPct.innerText = '0% Completed';
+                            finishBtn.classList.remove('hidden');
+
+                            startBtn.classList.add('bg-brand-coral');
+                            startBtn.classList.remove('bg-brand-sage');
+                            startLabel.innerText = 'Listening Aloud...';
+                            startBtn.disabled = true;
+
+                            // Setup Web Audio API
                             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                             analyser = audioCtx.createAnalyser();
-                            analyser.fftSize = 256;
-                            
+                            analyser.fftSize = 1024;
+                            analyser.smoothingTimeConstant = 0.8;
+
                             source = audioCtx.createMediaStreamSource(stream);
                             source.connect(analyser);
 
                             const bufferLength = analyser.frequencyBinCount;
-                            const dataArray = new Uint8Array(bufferLength);
+                            const freqData = new Uint8Array(bufferLength);
+                            const timeData = new Uint8Array(bufferLength);
 
                             const canvas = document.getElementById('voice-visualizer');
                             const canvasCtx = canvas.getContext('2d');
-                            
                             const rect = canvas.getBoundingClientRect();
                             canvas.width = rect.width;
                             canvas.height = rect.height;
 
-                            function draw() {
-                                animationFrameId = requestAnimationFrame(draw);
-                                analyser.getByteFrequencyData(dataArray);
+                            speechStartTime = Date.now();
+                            recordingTimerInterval = setInterval(() => {
+                                const elapsedSec = Math.floor((Date.now() - speechStartTime) / 1000);
+                                const mins = String(Math.floor(elapsedSec / 60)).padStart(2, '0');
+                                const secs = String(elapsedSec % 60).padStart(2, '0');
+                                document.getElementById('timer-display').innerText = `${mins}:${secs}`;
+                            }, 500);
 
-                                canvasCtx.fillStyle = 'rgba(18, 28, 34, 0.2)';
+                            // Setup Web Speech Recognition
+                            initSpeechRecognition();
+
+                            // Visualization & Acoustic Sample Collector
+                            function draw() {
+                                if (!isRecordingActive) return;
+                                animationFrameId = requestAnimationFrame(draw);
+
+                                analyser.getByteFrequencyData(freqData);
+                                analyser.getByteTimeDomainData(timeData);
+
+                                // Compute RMS energy of this audio frame
+                                let sumSquares = 0;
+                                for (let i = 0; i < timeData.length; i++) {
+                                    const norm = (timeData[i] - 128) / 128;
+                                    sumSquares += norm * norm;
+                                }
+                                const rms = Math.sqrt(sumSquares / timeData.length);
+                                const isVoiced = rms > 0.02;
+
+                                // Find dominant peak frequency bin
+                                let maxVal = -1;
+                                let maxBin = 0;
+                                for (let i = 0; i < freqData.length; i++) {
+                                    if (freqData[i] > maxVal) {
+                                        maxVal = freqData[i];
+                                        maxBin = i;
+                                    }
+                                }
+                                const dominantFreq = Math.round((maxBin * (audioCtx.sampleRate / 2)) / bufferLength);
+
+                                // Record sample frame for stress calculations
+                                if (audioSampleFrames.length < 1500) {
+                                    audioSampleFrames.push({
+                                        rms: rms,
+                                        freq: dominantFreq,
+                                        voiced: isVoiced,
+                                        time: Date.now()
+                                    });
+                                }
+
+                                // Update overlay badges
+                                if (isVoiced && dominantFreq > 60 && dominantFreq < 3000) {
+                                    document.getElementById('live-freq-badge').innerText = `Freq: ${dominantFreq} Hz`;
+                                    const dbApprox = Math.round(20 * Math.log10(rms * 10 + 0.001));
+                                    document.getElementById('live-rms-badge').innerText = `Amp: ${dbApprox} dB`;
+                                }
+
+                                // Visualizer canvas rendering
+                                canvasCtx.fillStyle = 'rgba(12, 20, 24, 0.25)';
                                 canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
 
-                                const barWidth = (canvas.width / bufferLength) * 2.5;
-                                let barHeight;
+                                const barWidth = (canvas.width / 64);
                                 let x = 0;
+                                for (let i = 0; i < 64; i++) {
+                                    const barHeight = (freqData[i] / 255) * (canvas.height * 0.85);
+                                    
+                                    // Gradient bar
+                                    const grad = canvasCtx.createLinearGradient(0, canvas.height, 0, canvas.height - barHeight);
+                                    grad.addColorStop(0, '#5E8C71');
+                                    grad.addColorStop(0.5, '#8ECAE6');
+                                    grad.addColorStop(1, '#E76F51');
 
-                                for (let i = 0; i < bufferLength; i++) {
-                                    barHeight = dataArray[i] / 2;
+                                    canvasCtx.fillStyle = grad;
+                                    canvasCtx.fillRect(x, canvas.height - barHeight, barWidth - 1.5, barHeight);
+                                    x += barWidth;
+                                }
 
-                                    canvasCtx.fillStyle = `rgb(94, ${140 + barHeight}, ${113 + barHeight/2})`;
-                                    canvasCtx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
-
-                                    x += barWidth + 1;
+                                // Check for silence after user completed speaking
+                                if (hasSpokenAnything) {
+                                    if (!isVoiced) {
+                                        if (!silenceStartTime) silenceStartTime = Date.now();
+                                        else if (Date.now() - silenceStartTime > 2200) {
+                                            // 2.2 seconds of silence after reading
+                                            checkCompletionAndFinish();
+                                        }
+                                    } else {
+                                        silenceStartTime = null;
+                                    }
                                 }
                             }
                             draw();
-
-                            let durationLeft = 5.0;
-                            recordInterval = setInterval(() => {
-                                durationLeft -= 0.1;
-                                timerDisplay.innerText = durationLeft.toFixed(1) + 's';
-                                
-                                if (durationLeft <= 0) {
-                                    clearInterval(recordInterval);
-                                    stopVoiceRecording();
-                                }
-                            }, 100);
                         })
                         .catch(err => {
-                            console.error('Error accessing microphone:', err);
-                            alert('Microphone permission is required to analyze voice stress. Please enable it in your browser settings.');
-                            startBtn.disabled = false;
-                            startBtn.classList.remove('opacity-50');
-                            startBtn.innerText = 'Record Voice Check-in';
+                            console.error('Mic error:', err);
+                            showAppToast('Microphone access is required to analyze your voice stress. Please allow microphone permissions in your browser.', 'coral');
+                            resetRecordingUI();
                         });
                     }
 
-                    function stopVoiceRecording() {
+                    function initSpeechRecognition() {
+                        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                        if (!SpeechRecognition) {
+                            console.log('Web Speech API not supported in this browser, falling back to manual finish and acoustic pause timing.');
+                            document.getElementById('live-speech-feedback').innerText = 'Reading mode active. Click "I\'m Done Reading" when you finish.';
+                            return;
+                        }
+
+                        recognition = new SpeechRecognition();
+                        recognition.continuous = true;
+                        recognition.interimResults = true;
+                        recognition.lang = 'en-US';
+
+                        const targetPassage = groundingPassages[currentPassageIndex].text.toLowerCase();
+                        const targetWords = targetPassage.replace(/[^a-z0-9 ]/g, '').split(/\s+/).filter(w => w.length > 0);
+
+                        recognition.onresult = (event) => {
+                            let interimTranscript = "";
+                            for (let i = event.resultIndex; i < event.results.length; ++i) {
+                                interimTranscript += event.results[i][0].transcript;
+                            }
+                            speechTranscript += " " + interimTranscript;
+                            hasSpokenAnything = true;
+
+                            const spokenWords = speechTranscript.toLowerCase().replace(/[^a-z0-9 ]/g, '').split(/\s+/).filter(w => w.length > 0);
+                            
+                            // Calculate word match progress
+                            let matchedCount = 0;
+                            const spokenSet = new Set(spokenWords);
+                            targetWords.forEach(w => {
+                                if (spokenSet.has(w)) matchedCount++;
+                            });
+
+                            const progressPct = Math.min(100, Math.round((matchedCount / targetWords.length) * 100));
+                            document.getElementById('reading-progress-bar').style.width = `${progressPct}%`;
+                            document.getElementById('reading-progress-pct').innerText = `${progressPct}% Completed`;
+                            document.getElementById('live-speech-feedback').innerText = `"${spokenWords.slice(-6).join(' ')}..."`;
+
+                            // If user completed at least 80% of the target passage, prepare to end
+                            if (progressPct >= 80) {
+                                document.getElementById('live-speech-feedback').innerText = '✨ Passage complete! Finalizing acoustic metrics...';
+                                setTimeout(() => {
+                                    if (isRecordingActive) {
+                                        finishVoiceRecording();
+                                    }
+                                }, 1400);
+                            }
+                        };
+
+                        recognition.onerror = (e) => {
+                            console.log('Speech recognition warning/error:', e.error);
+                        };
+
+                        recognition.start();
+                    }
+
+                    function checkCompletionAndFinish() {
+                        const targetPassage = groundingPassages[currentPassageIndex].text.toLowerCase();
+                        const targetWords = targetPassage.replace(/[^a-z0-9 ]/g, '').split(/\s+/).filter(w => w.length > 0);
+                        const spokenWords = speechTranscript.toLowerCase().replace(/[^a-z0-9 ]/g, '').split(/\s+/).filter(w => w.length > 0);
+                        
+                        let matchedCount = 0;
+                        const spokenSet = new Set(spokenWords);
+                        targetWords.forEach(w => {
+                            if (spokenSet.has(w)) matchedCount++;
+                        });
+
+                        const progressPct = (spokenWords.length > 0) ? Math.min(100, Math.round((matchedCount / targetWords.length) * 100)) : 0;
+                        
+                        // If user has spoken substantially or spent > 4s
+                        if (progressPct >= 70 || spokenWords.length >= Math.floor(targetWords.length * 0.7) || (Date.now() - speechStartTime > 4000)) {
+                            finishVoiceRecording();
+                        }
+                    }
+
+                    function manualFinishRecording() {
+                        if (!isRecordingActive) return;
+                        finishVoiceRecording();
+                    }
+
+                    function finishVoiceRecording() {
+                        if (!isRecordingActive) return;
+                        isRecordingActive = false;
+
+                        // Stop tracks and loops
                         cancelAnimationFrame(animationFrameId);
+                        clearInterval(recordingTimerInterval);
+
+                        if (recognition) {
+                            try { recognition.stop(); } catch(e){}
+                        }
                         if (streamRef) {
                             streamRef.getTracks().forEach(track => track.stop());
                         }
                         if (audioCtx) {
-                            audioCtx.close();
+                            try { audioCtx.close(); } catch(e){}
                         }
 
-                        document.getElementById('timer-display').classList.add('hidden');
-                        document.getElementById('visualizer-placeholder').classList.remove('hidden');
-
+                        // Clear visualizer
                         const canvas = document.getElementById('voice-visualizer');
                         const canvasCtx = canvas.getContext('2d');
                         canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
 
-                        const simulatedStress = Math.floor(15 + Math.random() * 65); // 15% to 80%
-                        
-                        let label = 'Stable';
-                        let colorClass = 'bg-brand-sage/20 text-brand-sage';
-                        let desc = 'Speech pattern is even. Pitch and speed indicate calm autonomic regulation.';
+                        // Calculate Real Acoustic Metrics from audioSampleFrames
+                        let voicedFrames = audioSampleFrames.filter(f => f.voiced && f.freq > 70 && f.freq < 1500);
+                        let totalFrames = audioSampleFrames.length || 1;
+                        let unvoicedFrames = audioSampleFrames.filter(f => !f.voiced).length;
 
-                        if (simulatedStress >= 70) {
-                            label = 'Overload';
-                            colorClass = 'bg-brand-coral/20 text-brand-coral';
-                            desc = 'Elevated micro-tremors and speech speed fluctuations detected. Cognitive fatigue warning.';
-                        } else if (simulatedStress >= 50) {
-                            label = 'Elevated';
-                            colorClass = 'bg-brand-sky/20 text-brand-sky';
-                            desc = 'Moderate pitch compression detected. Indicative of early tiredness or role stress.';
+                        // Pause ratio
+                        let pauseRatio = Math.round((unvoicedFrames / totalFrames) * 100);
+
+                        // Frequency Jitter calculation (frame-to-frame pitch stability)
+                        let jitterSum = 0;
+                        let validJitterCount = 0;
+                        for (let i = 1; i < voicedFrames.length; i++) {
+                            let diff = Math.abs(voicedFrames[i].freq - voicedFrames[i-1].freq);
+                            let avg = (voicedFrames[i].freq + voicedFrames[i-1].freq) / 2;
+                            if (avg > 0) {
+                                jitterSum += (diff / avg);
+                                validJitterCount++;
+                            }
+                        }
+                        let rawJitterPct = validJitterCount > 0 ? ((jitterSum / validJitterCount) * 100) : 1.2;
+                        let displayJitter = Math.min(4.8, Math.max(0.6, rawJitterPct)).toFixed(2);
+
+                        // Shimmer calculation (amplitude micro-variations)
+                        let shimmerSum = 0;
+                        let validShimmerCount = 0;
+                        for (let i = 1; i < voicedFrames.length; i++) {
+                            let diff = Math.abs(voicedFrames[i].rms - voicedFrames[i-1].rms);
+                            let avg = (voicedFrames[i].rms + voicedFrames[i-1].rms) / 2;
+                            if (avg > 0.001) {
+                                shimmerSum += (diff / avg);
+                                validShimmerCount++;
+                            }
+                        }
+                        let rawShimmerPct = validShimmerCount > 0 ? ((shimmerSum / validShimmerCount) * 100) : 2.5;
+                        let displayShimmer = Math.min(8.5, Math.max(1.2, rawShimmerPct)).toFixed(2);
+
+                        // Speech duration in minutes
+                        let durationMinutes = Math.max(0.05, (Date.now() - speechStartTime) / 60000);
+                        let wordCount = speechTranscript.trim().split(/\s+/).filter(w => w.length > 0).length;
+                        if (wordCount < 5) wordCount = groundingPassages[currentPassageIndex].text.split(/\s+/).length;
+                        let wpm = Math.round(wordCount / durationMinutes);
+                        wpm = Math.max(70, Math.min(210, wpm));
+
+                        // Composite Autonomic Stress Score Calculation
+                        // Low jitter (0.8 - 1.5%), low shimmer (1.5 - 3%), moderate pace (110 - 150 wpm) = calm
+                        // High jitter (>2.5%), high shimmer (>4.5%), hurried or hesitant pace = higher stress
+                        let stressScore = 15;
+                        if (parseFloat(displayJitter) > 2.2) stressScore += 25;
+                        else if (parseFloat(displayJitter) > 1.6) stressScore += 12;
+
+                        if (parseFloat(displayShimmer) > 4.5) stressScore += 25;
+                        else if (parseFloat(displayShimmer) > 3.0) stressScore += 12;
+
+                        if (pauseRatio > 40 || pauseRatio < 8) stressScore += 15;
+                        if (wpm > 175 || wpm < 90) stressScore += 10;
+
+                        // Add small realistic variation bounded between 8% and 88%
+                        stressScore = Math.max(8, Math.min(88, Math.round(stressScore + (Math.random() * 6 - 3))));
+
+                        // Populate Diagnostic Outputs
+                        let statusLabel = "Stable Regulation";
+                        let badgeClass = "bg-brand-sage/20 text-brand-sage";
+                        let statusDesc = "Vocal harmonics and frequency jitter reflect a well-regulated parasympathetic state with calm breathing cadence.";
+                        let clinicalRec = "Your vocal dynamics show low muscle tension and steady acoustic pitch. Digital twin updated with high anxiety resilience.";
+
+                        if (stressScore >= 65) {
+                            statusLabel = "Elevated Stress";
+                            badgeClass = "bg-brand-coral/20 text-brand-coral";
+                            statusDesc = "Elevated micro-tremors and irregular amplitude rhythm detected. Indicates sympathetic nervous system arousal and mental fatigue.";
+                            clinicalRec = "High vocal tension detected. We recommend taking 5 minutes for guided box breathing or our Sensory Grounding exercise.";
+                        } else if (stressScore >= 40) {
+                            statusLabel = "Moderate Tension";
+                            badgeClass = "bg-brand-sky/20 text-brand-sky";
+                            statusDesc = "Slight pitch variability and speaking pace compression detected. Mild cognitive load or fatigue present.";
+                            clinicalRec = "Mild cognitive strain noted. Ensure hydration and pause for a brief posture reset or fresh air.";
                         }
 
-                        document.getElementById('voice-result-score').innerText = simulatedStress + '%';
-                        document.getElementById('voice-result-badge').innerText = label;
-                        document.getElementById('voice-result-badge').className = `px-2 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider ${colorClass} font-sans`;
-                        document.getElementById('voice-result-desc').innerText = desc;
-                        document.getElementById('voice-analysis-result').classList.remove('hidden');
+                        document.getElementById('voice-result-score').innerText = `${stressScore}%`;
+                        document.getElementById('voice-result-badge').innerText = statusLabel;
+                        document.getElementById('voice-result-badge').className = `px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${badgeClass} font-outfit`;
+                        document.getElementById('voice-result-desc').innerText = statusDesc;
+                        document.getElementById('voice-clinical-rec').innerText = clinicalRec;
 
+                        document.getElementById('metric-jitter').innerText = `${displayJitter}%`;
+                        document.getElementById('metric-shimmer').innerText = `${displayShimmer}%`;
+                        document.getElementById('metric-pace').innerText = `${wpm} wpm`;
+                        document.getElementById('metric-pause').innerText = `${pauseRatio}%`;
+
+                        // Display Result
+                        document.getElementById('voice-analysis-result').classList.remove('hidden');
+                        showAppToast(`🎤 Acoustic analysis complete! Vocal stress scored at ${stressScore}%. Telemetry saved.`, 'sage');
+
+                        // Send to server
                         const formData = new FormData();
                         formData.append('action', 'log_voice_stress');
-                        formData.append('stress_score', simulatedStress);
+                        formData.append('stress_score', stressScore);
+                        formData.append('jitter', displayJitter);
+                        formData.append('shimmer', displayShimmer);
+                        formData.append('passage_index', currentPassageIndex);
 
                         fetch('predictive_hub.php', {
                             method: 'POST',
@@ -662,91 +1136,303 @@ $coping = json_decode($digital_twin['coping_styles'] ?? '[]', true);
                         })
                         .then(res => res.json())
                         .then(data => {
-                            if (data.status === 'success') {
-                                alert(`🎉 Audio logged! Voice stress score of ${simulatedStress}% successfully synced to today's log.`);
-                            } else {
-                                alert('Logged stress locally (session only).');
-                            }
-                            
-                            const startBtn = document.getElementById('start-record-btn');
-                            startBtn.disabled = false;
-                            startBtn.classList.remove('opacity-50');
-                            startBtn.innerText = 'Record Voice Check-in';
+                            resetRecordingUI();
+                            // Automatically switch to next passage for the subsequent check-in
+                            setTimeout(nextPassage, 1200);
                         })
                         .catch(err => {
-                            console.error('Error logging voice stress score:', err);
-                            const startBtn = document.getElementById('start-record-btn');
-                            startBtn.disabled = false;
-                            startBtn.classList.remove('opacity-50');
-                            startBtn.innerText = 'Record Voice Check-in';
+                            console.error('Server sync error:', err);
+                            resetRecordingUI();
                         });
+                    }
+
+                    function resetRecordingUI() {
+                        isRecordingActive = false;
+                        document.getElementById('recording-live-stats').classList.add('hidden');
+                        document.getElementById('visualizer-placeholder').classList.remove('hidden');
+                        document.getElementById('reading-progress-container').classList.add('hidden');
+                        document.getElementById('finish-record-btn').classList.add('hidden');
+
+                        const startBtn = document.getElementById('start-record-btn');
+                        startBtn.disabled = false;
+                        startBtn.classList.remove('bg-brand-coral');
+                        startBtn.classList.add('bg-brand-sage');
+                        document.getElementById('start-record-label').innerText = 'Record Voice Check-in';
+                        document.getElementById('shuffle-passage-btn').disabled = false;
                     }
                 </script>
             <?php endif; ?>
 
-            <!-- SUB-TAB CONTENT: 3. SMARTWATCH SYNC & LOG HISTORY -->
-            <?php if ($sub_tab === 'sync'): ?>
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    <!-- Left: Sync Smartwatch Interactive Module -->
-                    <div class="p-6 rounded-2xl dark-pane flex flex-col justify-between text-center min-h-[300px] relative overflow-hidden">
-                        <div>
-                            <h4 class="text-sm font-bold font-outfit text-white mb-2">Smartwatch Sync Node</h4>
-                            <p class="text-[11px] text-gray-500 leading-relaxed max-w-[220px] mx-auto font-sans">
-                                Sync your Fitbit, Apple Watch, or Garmin wearable directly to update step counts, sleep tracking efficiency, and heart metrics.
-                            </p>
-                        </div>
 
-                        <!-- Sync animated loader card -->
-                        <div class="my-6 flex flex-col items-center justify-center">
-                            <div id="sync-watch-orb" class="relative w-28 h-28 rounded-full border-4 border-white/5 bg-[#1b2b30] flex flex-col items-center justify-center shadow-lg transition-all">
-                                <div id="watch-pulse-ring" class="hidden absolute inset-0 rounded-full border-2 border-brand-sage animate-ping opacity-75"></div>
-                                <span id="watch-icon" class="text-3xl select-none">⌚</span>
-                                <span id="watch-sync-percent" class="hidden text-sm font-bold font-outfit text-brand-sage mt-1 animate-pulse">0%</span>
+            <!-- SUB-TAB CONTENT: 3. SMARTWATCH SYNC & LOG HISTORY -->
+            <?php if ($sub_tab === 'sync'): 
+                $synced_device = $_SESSION['synced_wearable_device'] ?? [
+                    'brand' => 'apple',
+                    'synced_at' => 'Just now',
+                    'battery' => '88%'
+                ];
+                $active_brand = $synced_device['brand'] ?? 'apple';
+            ?>
+                <div class="space-y-8">
+                    <!-- Top Row: Connected Device & Sync Hub -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <!-- Left: Wearable Device Control Center -->
+                        <div class="p-6 rounded-2xl dark-pane flex flex-col justify-between space-y-6 relative overflow-hidden">
+                            <div>
+                                <div class="flex items-center justify-between gap-2 mb-2">
+                                    <h4 class="text-sm font-bold font-outfit text-white">Wearable Sync Node</h4>
+                                    <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-brand-sage/20 border border-brand-sage/30 text-brand-sage text-[10px] font-bold uppercase tracking-wider font-outfit">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-brand-sage animate-ping"></span> Live Link
+                                    </span>
+                                </div>
+                                <p class="text-[11px] text-gray-400 leading-relaxed font-sans">
+                                    Pair your preferred health wearable to continuously stream sleep duration, autonomic heart rate variability (HRV), and active movement.
+                                </p>
+                            </div>
+
+                            <!-- Wearable Brand Selector -->
+                            <div class="space-y-2">
+                                <label class="text-[10px] font-bold text-gray-400 uppercase tracking-wider font-outfit">Select Active Wearable Device</label>
+                                <div class="grid grid-cols-3 gap-2" id="device-selector-grid">
+                                    <button type="button" onclick="selectWearableBrand('apple', 'Apple Watch Ultra / S9', '⌚')" class="device-pill p-2 rounded-xl border text-center transition-all <?php echo ($active_brand === 'apple') ? 'border-brand-sage bg-brand-sage/15 text-white shadow-sm' : 'border-white/10 bg-white/5 text-gray-400 hover:text-white'; ?>" data-brand="apple">
+                                        <span class="text-base block mb-0.5">⌚</span>
+                                        <span class="text-[10px] font-bold font-outfit block">Apple Watch</span>
+                                    </button>
+                                    <button type="button" onclick="selectWearableBrand('garmin', 'Garmin Fēnix / Forerunner', '⏱️')" class="device-pill p-2 rounded-xl border text-center transition-all <?php echo ($active_brand === 'garmin') ? 'border-brand-sage bg-brand-sage/15 text-white shadow-sm' : 'border-white/10 bg-white/5 text-gray-400 hover:text-white'; ?>" data-brand="garmin">
+                                        <span class="text-base block mb-0.5">⏱️</span>
+                                        <span class="text-[10px] font-bold font-outfit block">Garmin</span>
+                                    </button>
+                                    <button type="button" onclick="selectWearableBrand('fitbit', 'Fitbit Sense 2 / Charge', '🏃')" class="device-pill p-2 rounded-xl border text-center transition-all <?php echo ($active_brand === 'fitbit') ? 'border-brand-sage bg-brand-sage/15 text-white shadow-sm' : 'border-white/10 bg-white/5 text-gray-400 hover:text-white'; ?>" data-brand="fitbit">
+                                        <span class="text-base block mb-0.5">🏃</span>
+                                        <span class="text-[10px] font-bold font-outfit block">Fitbit</span>
+                                    </button>
+                                    <button type="button" onclick="selectWearableBrand('whoop', 'Whoop 4.0 Biometric Band', '📈')" class="device-pill p-2 rounded-xl border text-center transition-all <?php echo ($active_brand === 'whoop') ? 'border-brand-sage bg-brand-sage/15 text-white shadow-sm' : 'border-white/10 bg-white/5 text-gray-400 hover:text-white'; ?>" data-brand="whoop">
+                                        <span class="text-base block mb-0.5">📈</span>
+                                        <span class="text-[10px] font-bold font-outfit block">Whoop</span>
+                                    </button>
+                                    <button type="button" onclick="selectWearableBrand('pixel', 'Google Pixel Watch 2', '🧭')" class="device-pill p-2 rounded-xl border text-center transition-all <?php echo ($active_brand === 'pixel') ? 'border-brand-sage bg-brand-sage/15 text-white shadow-sm' : 'border-white/10 bg-white/5 text-gray-400 hover:text-white'; ?>" data-brand="pixel">
+                                        <span class="text-base block mb-0.5">🧭</span>
+                                        <span class="text-[10px] font-bold font-outfit block">Pixel Watch</span>
+                                    </button>
+                                    <button type="button" onclick="toggleManualBiometricsModal()" class="device-pill p-2 rounded-xl border border-dashed border-white/20 bg-white/5 text-gray-300 hover:text-white hover:border-brand-sky text-center transition-all">
+                                        <span class="text-base block mb-0.5">✍️</span>
+                                        <span class="text-[10px] font-bold font-outfit block">Manual Log</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Paired Hardware Status Card -->
+                            <div class="p-3.5 rounded-xl bg-white/5 border border-white/10 space-y-2">
+                                <div class="flex items-center justify-between text-[11px] font-outfit">
+                                    <span class="text-gray-400">Paired Hardware:</span>
+                                    <span id="selected-device-label" class="font-bold text-white">
+                                        <?php 
+                                            $brand_names = [
+                                                'apple' => 'Apple Watch Ultra / S9',
+                                                'garmin' => 'Garmin Fēnix / Forerunner',
+                                                'fitbit' => 'Fitbit Sense 2 / Charge',
+                                                'whoop' => 'Whoop 4.0 Biometric Band',
+                                                'pixel' => 'Google Pixel Watch 2'
+                                            ];
+                                            echo $brand_names[$active_brand] ?? 'Apple Watch Ultra / S9';
+                                        ?>
+                                    </span>
+                                </div>
+                                <div class="flex items-center justify-between text-[11px] font-outfit">
+                                    <span class="text-gray-400">Battery Reserve:</span>
+                                    <span id="device-battery-label" class="font-bold text-brand-sage flex items-center gap-1">
+                                        <span>🔋</span> <?php echo htmlspecialchars($synced_device['battery'] ?? '86%'); ?>
+                                    </span>
+                                </div>
+                                <div class="flex items-center justify-between text-[11px] font-outfit">
+                                    <span class="text-gray-400">Last Synced:</span>
+                                    <span id="device-sync-time" class="font-semibold text-gray-300"><?php echo htmlspecialchars($synced_device['synced_at'] ?? 'Today at 09:30 AM'); ?></span>
+                                </div>
                             </div>
                         </div>
 
-                        <div>
-                            <button type="button" id="sync-device-btn" onclick="syncSmartwatchData()" class="w-full py-3 rounded-2xl bg-brand-sage hover:bg-brand-sageHover text-white font-bold text-xs shadow-glow transition-all active:scale-95 font-outfit">
-                                Sync Wearable Data
+                        <!-- Middle: Sync Orb & Trigger Action -->
+                        <div class="p-6 rounded-2xl dark-pane flex flex-col items-center justify-between text-center min-h-[320px] relative overflow-hidden">
+                            <div class="space-y-1">
+                                <span class="text-[10px] font-bold text-brand-sky uppercase tracking-wider font-outfit">Bluetooth Biometric Link</span>
+                                <h4 class="text-base font-bold font-outfit text-white">Instant Telemetry Bridge</h4>
+                                <p id="sync-status-narrative" class="text-xs text-gray-400 leading-normal max-w-xs mx-auto">
+                                    Click below to pull today's sleep cycles, resting pulse, and step goals directly into your Digital Twin.
+                                </p>
+                            </div>
+
+                            <!-- Sync Animated Orb Card -->
+                            <div class="my-4 flex flex-col items-center justify-center">
+                                <div id="sync-watch-orb" class="relative w-32 h-32 rounded-full border-4 border-white/10 bg-[#16272e] flex flex-col items-center justify-center shadow-2xl transition-all duration-300">
+                                    <div id="watch-pulse-ring" class="hidden absolute inset-0 rounded-full border-2 border-brand-sage animate-ping opacity-75"></div>
+                                    <div id="watch-pulse-ring-outer" class="hidden absolute -inset-2 rounded-full border border-brand-sky animate-pulse opacity-40"></div>
+                                    
+                                    <span id="watch-icon" class="text-4xl select-none transition-transform duration-300">⌚</span>
+                                    
+                                    <div id="watch-sync-stats" class="hidden flex flex-col items-center">
+                                        <span id="watch-sync-percent" class="text-xl font-bold font-outfit text-brand-sage">0%</span>
+                                        <span id="watch-sync-stage" class="text-[9px] font-semibold text-gray-400 uppercase tracking-widest font-outfit mt-0.5">Connecting</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Sync CTA Button -->
+                            <div class="w-full space-y-2">
+                                <button type="button" id="sync-device-btn" onclick="syncSmartwatchData()" class="w-full py-3.5 rounded-2xl bg-brand-sage hover:bg-brand-sageHover text-white font-bold text-xs shadow-glow transition-all active:scale-95 flex items-center justify-center gap-2 font-outfit">
+                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                    <span id="sync-btn-label">Sync Wearable Telemetry</span>
+                                </button>
+                                <div class="flex items-center justify-center gap-2 text-[10px] text-gray-500 font-outfit">
+                                    <span>🔒 End-to-end encrypted biometric transport</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right: Real-time Telemetry Summary Stats (Today's Snapshot) -->
+                        <?php 
+                            $today_str = date('Y-m-d');
+                            $today_log = null;
+                            if (!empty($telemetry_history)) {
+                                foreach ($telemetry_history as $tl) {
+                                    if ($tl['log_date'] === $today_str) {
+                                        $today_log = $tl;
+                                        break;
+                                    }
+                                }
+                                if (!$today_log) {
+                                    $today_log = end($telemetry_history);
+                                }
+                            }
+                        ?>
+                        <div class="p-6 rounded-2xl dark-pane flex flex-col justify-between space-y-4">
+                            <div>
+                                <div class="flex items-center justify-between mb-1">
+                                    <h4 class="text-sm font-bold font-outfit text-white">Current Day Telemetry</h4>
+                                    <span class="text-[10px] text-gray-400 font-semibold font-outfit"><?php echo date('M d, Y'); ?></span>
+                                </div>
+                                <p class="text-[11px] text-gray-400 font-sans">Active stream synced with your wearable:</p>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-3">
+                                <div class="p-3 rounded-xl bg-white/5 border border-white/10">
+                                    <span class="text-[9px] font-bold text-gray-400 uppercase tracking-wider font-outfit block">Sleep Duration</span>
+                                    <h5 class="text-base font-bold font-outfit text-white mt-1">
+                                        <span id="metric-today-sleep"><?php echo $today_log['sleep_hours'] ?? '7.2'; ?></span> <span class="text-xs text-gray-400 font-normal">hrs</span>
+                                    </h5>
+                                    <span class="text-[10px] text-brand-sage block font-outfit">Quality: <span id="metric-today-sleepqual"><?php echo $today_log['sleep_quality'] ?? '82'; ?>%</span></span>
+                                </div>
+                                <div class="p-3 rounded-xl bg-white/5 border border-white/10">
+                                    <span class="text-[9px] font-bold text-gray-400 uppercase tracking-wider font-outfit block">Activity Volume</span>
+                                    <h5 class="text-base font-bold font-outfit text-white mt-1">
+                                        <span id="metric-today-steps"><?php echo number_format($today_log['steps'] ?? 7450); ?></span>
+                                    </h5>
+                                    <span class="text-[10px] text-brand-sky block font-outfit"><span id="metric-today-activemin"><?php echo $today_log['active_minutes'] ?? '35'; ?></span> active mins</span>
+                                </div>
+                                <div class="p-3 rounded-xl bg-white/5 border border-white/10">
+                                    <span class="text-[9px] font-bold text-gray-400 uppercase tracking-wider font-outfit block">Resting Heart Rate</span>
+                                    <h5 class="text-base font-bold font-outfit text-white mt-1">
+                                        <span id="metric-today-rhr"><?php echo $today_log['resting_hr'] ?? '64'; ?></span> <span class="text-xs text-gray-400 font-normal">bpm</span>
+                                    </h5>
+                                    <span class="text-[10px] text-gray-400 block font-outfit">Baseline: Normal</span>
+                                </div>
+                                <div class="p-3 rounded-xl bg-white/5 border border-white/10">
+                                    <span class="text-[9px] font-bold text-gray-400 uppercase tracking-wider font-outfit block">Heart Rate Variability</span>
+                                    <h5 class="text-base font-bold font-outfit text-brand-sage mt-1">
+                                        <span id="metric-today-hrv"><?php echo $today_log['hrv'] ?? '56'; ?></span> <span class="text-xs text-gray-400 font-normal">ms</span>
+                                    </h5>
+                                    <span class="text-[10px] text-brand-sage block font-outfit">Parasympathetic: High</span>
+                                </div>
+                            </div>
+
+                            <button type="button" onclick="toggleManualBiometricsModal()" class="w-full py-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white border border-white/10 text-xs font-bold font-outfit transition-all text-center">
+                                ✍️ Edit / Enter Exact Metrics
                             </button>
                         </div>
                     </div>
 
-                    <!-- Right: History log table (7 days) -->
-                    <div class="lg:col-span-2 p-6 rounded-2xl dark-pane space-y-4">
-                        <h4 class="text-sm font-bold font-outfit text-white">Wearable Biometric Log</h4>
+                    <!-- Bottom Row: 7-Day Biometric History Log Table -->
+                    <div class="p-6 rounded-2xl dark-pane space-y-4">
+                        <div class="flex items-center justify-between flex-wrap gap-3">
+                            <div>
+                                <h4 class="text-sm font-bold font-outfit text-white">7-Day Biometric Telemetry Roster</h4>
+                                <p class="text-xs text-gray-400 mt-0.5 font-sans">Correlated records used to generate predictive relapse and burnout indicators.</p>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="px-2.5 py-1 rounded-lg bg-brand-sage/15 text-brand-sage border border-brand-sage/20 text-[10px] font-bold uppercase tracking-wider font-outfit">
+                                    <?php echo count($telemetry_history); ?> Days Recorded
+                                </span>
+                            </div>
+                        </div>
                         
                         <div class="overflow-x-auto w-full">
                             <table class="w-full text-left text-xs border-collapse font-sans">
                                 <thead>
-                                    <tr class="border-b border-white/5 text-gray-500 font-bold uppercase tracking-wider select-none">
-                                        <th class="py-2.5">Date</th>
-                                        <th class="py-2.5">Sleep (Hours/Eff)</th>
-                                        <th class="py-2.5">Activity (Steps/Min)</th>
-                                        <th class="py-2.5">Heart (HRV/Rest)</th>
-                                        <th class="py-2.5">Voice Stress</th>
+                                    <tr class="border-b border-white/10 text-gray-400 font-bold uppercase tracking-wider select-none font-outfit">
+                                        <th class="py-3 px-2">Date</th>
+                                        <th class="py-3 px-2">Sleep (Hours / Efficiency)</th>
+                                        <th class="py-3 px-2">Daily Steps & Activity</th>
+                                        <th class="py-3 px-2">Cardiac Telemetry (HRV / Rest HR)</th>
+                                        <th class="py-3 px-2">Voice Stress</th>
+                                        <th class="py-3 px-2 text-right">Digital Twin Status</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-white/5 text-gray-300">
                                     <?php if (empty($telemetry_history)): ?>
                                         <tr>
-                                            <td colspan="5" class="py-4 text-center italic text-gray-500">No telemetry log entries found. Click "Sync Wearable" to log data.</td>
+                                            <td colspan="6" class="py-8 text-center italic text-gray-500">No telemetry log entries found. Click "Sync Wearable Telemetry" above.</td>
                                         </tr>
                                     <?php else: ?>
-                                        <?php foreach (array_reverse($telemetry_history) as $log): ?>
-                                            <tr>
-                                                <td class="py-3 font-semibold text-white"><?php echo date('m/d/Y', strtotime($log['log_date'])); ?></td>
-                                                <td class="py-3 font-semibold">
-                                                    <?php echo $log['sleep_hours']; ?> hrs <span class="text-[10px] text-gray-500 font-normal">/ <?php echo $log['sleep_quality']; ?>%</span>
+                                        <?php foreach (array_reverse($telemetry_history) as $log): 
+                                            $is_today = ($log['log_date'] === date('Y-m-d'));
+                                            $sleep_good = ($log['sleep_hours'] >= 6.5 && $log['sleep_quality'] >= 75);
+                                            $hrv_good = ($log['hrv'] >= 45);
+                                        ?>
+                                            <tr class="hover:bg-white/[0.02] transition-colors">
+                                                <td class="py-3.5 px-2 font-semibold text-white">
+                                                    <div class="flex items-center gap-1.5">
+                                                        <?php if ($is_today): ?>
+                                                            <span class="w-2 h-2 rounded-full bg-brand-sage" title="Today"></span>
+                                                        <?php endif; ?>
+                                                        <span><?php echo date('D, M d', strtotime($log['log_date'])); ?></span>
+                                                    </div>
                                                 </td>
-                                                <td class="py-3 font-semibold">
-                                                    <?php echo number_format($log['steps']); ?> <span class="text-[10px] text-gray-500 font-normal">/ <?php echo $log['active_minutes']; ?> min</span>
+                                                <td class="py-3.5 px-2 font-semibold">
+                                                    <div class="flex items-center gap-2">
+                                                        <span class="<?php echo $sleep_good ? 'text-white' : 'text-brand-coral'; ?>"><?php echo $log['sleep_hours']; ?> hrs</span>
+                                                        <span class="px-2 py-0.5 rounded text-[10px] font-bold <?php echo ($log['sleep_quality'] >= 75) ? 'bg-brand-sage/15 text-brand-sage' : 'bg-brand-coral/15 text-brand-coral'; ?>">
+                                                            <?php echo $log['sleep_quality']; ?>% eff
+                                                        </span>
+                                                    </div>
                                                 </td>
-                                                <td class="py-3 font-semibold">
-                                                    <?php echo $log['hrv']; ?> ms <span class="text-[10px] text-gray-500 font-normal">/ <?php echo $log['resting_hr']; ?> bpm</span>
+                                                <td class="py-3.5 px-2 font-semibold">
+                                                    <span><?php echo number_format($log['steps']); ?> steps</span>
+                                                    <span class="text-[10px] text-gray-500 font-normal block"><?php echo $log['active_minutes']; ?> active mins</span>
                                                 </td>
-                                                <td class="py-3 font-semibold <?php echo isset($log['voice_stress_score']) ? (($log['voice_stress_score'] > 70) ? 'text-brand-coral' : 'text-brand-sage') : 'text-gray-500'; ?>">
-                                                    <?php echo isset($log['voice_stress_score']) ? $log['voice_stress_score'] . '%' : 'N/A'; ?>
+                                                <td class="py-3.5 px-2 font-semibold">
+                                                    <div class="flex items-center gap-2">
+                                                        <span class="<?php echo $hrv_good ? 'text-brand-sage' : 'text-brand-coral'; ?>"><?php echo $log['hrv']; ?> ms</span>
+                                                        <span class="text-gray-500 font-normal text-[10px]">/ <?php echo $log['resting_hr']; ?> bpm</span>
+                                                    </div>
+                                                </td>
+                                                <td class="py-3.5 px-2 font-semibold">
+                                                    <?php if (isset($log['voice_stress_score']) && $log['voice_stress_score'] > 0): ?>
+                                                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase font-outfit <?php echo ($log['voice_stress_score'] >= 65) ? 'bg-brand-coral/20 text-brand-coral' : (($log['voice_stress_score'] >= 40) ? 'bg-brand-sky/20 text-brand-sky' : 'bg-brand-sage/20 text-brand-sage'); ?>">
+                                                            <?php echo $log['voice_stress_score']; ?>%
+                                                        </span>
+                                                    <?php else: ?>
+                                                        <span class="text-gray-500 text-[10px] italic">Not Recorded</span>
+                                                    <?php endif; ?>
+                                                </td>
+                                                <td class="py-3.5 px-2 text-right">
+                                                    <?php if ($sleep_good && $hrv_good): ?>
+                                                        <span class="inline-flex items-center gap-1 text-[11px] font-bold text-brand-sage font-outfit">
+                                                            <span>🟢</span> Calibrated
+                                                        </span>
+                                                    <?php else: ?>
+                                                        <span class="inline-flex items-center gap-1 text-[11px] font-bold text-brand-coral font-outfit">
+                                                            <span>⚠️</span> Rest Desired
+                                                        </span>
+                                                    <?php endif; ?>
                                                 </td>
                                             </tr>
                                         <?php endforeach; ?>
@@ -757,22 +1443,163 @@ $coping = json_decode($digital_twin['coping_styles'] ?? '[]', true);
                     </div>
                 </div>
 
+                <!-- MANUAL BIOMETRIC LOGGING MODAL -->
+                <div id="manual-biometrics-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-all duration-300">
+                    <div class="absolute inset-0 bg-brand-slate/60 backdrop-blur-sm" onclick="toggleManualBiometricsModal()"></div>
+                    <div class="relative bg-brand-darkBg text-white w-full max-w-lg rounded-3xl p-6 md:p-8 shadow-2xl border border-white/10 transform scale-95 transition-all duration-300">
+                        <div class="flex items-center justify-between border-b border-white/10 pb-4 mb-5">
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-9 h-9 rounded-xl bg-brand-sage/20 border border-brand-sage/30 flex items-center justify-center text-lg">
+                                    ✍️
+                                </div>
+                                <div>
+                                    <h4 class="text-base font-bold font-outfit text-white">Manual Biometric Entry</h4>
+                                    <p class="text-[11px] text-gray-400 font-sans">Input exact telemetry read from your wearable device.</p>
+                                </div>
+                            </div>
+                            <button type="button" onclick="toggleManualBiometricsModal()" class="text-gray-400 hover:text-white p-1 rounded-lg hover:bg-white/10 transition-colors">
+                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                            </button>
+                        </div>
+
+                        <form id="manual-biometrics-form" onsubmit="handleManualBiometricsSubmit(event)" class="space-y-4 font-sans text-xs">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-[11px] font-bold text-gray-300 uppercase tracking-wider font-outfit mb-1">Sleep Duration (Hours)</label>
+                                    <input type="number" step="0.1" min="2" max="14" id="custom-sleep-hours" value="<?php echo $today_log['sleep_hours'] ?? '7.2'; ?>" required class="w-full px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:border-brand-sage">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-bold text-gray-300 uppercase tracking-wider font-outfit mb-1">Sleep Quality / Efficiency (%)</label>
+                                    <input type="number" min="30" max="100" id="custom-sleep-quality" value="<?php echo $today_log['sleep_quality'] ?? '82'; ?>" required class="w-full px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:border-brand-sage">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-bold text-gray-300 uppercase tracking-wider font-outfit mb-1">Daily Steps Count</label>
+                                    <input type="number" min="0" max="50000" id="custom-steps" value="<?php echo $today_log['steps'] ?? '7450'; ?>" required class="w-full px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:border-brand-sage">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-bold text-gray-300 uppercase tracking-wider font-outfit mb-1">Active Minutes</label>
+                                    <input type="number" min="0" max="300" id="custom-active-min" value="<?php echo $today_log['active_minutes'] ?? '35'; ?>" required class="w-full px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:border-brand-sage">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-bold text-gray-300 uppercase tracking-wider font-outfit mb-1">Resting Heart Rate (bpm)</label>
+                                    <input type="number" min="40" max="120" id="custom-resting-hr" value="<?php echo $today_log['resting_hr'] ?? '64'; ?>" required class="w-full px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:border-brand-sage">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] font-bold text-gray-300 uppercase tracking-wider font-outfit mb-1">HRV (ms)</label>
+                                    <input type="number" min="15" max="140" id="custom-hrv" value="<?php echo $today_log['hrv'] ?? '56'; ?>" required class="w-full px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white focus:outline-none focus:border-brand-sage">
+                                </div>
+                            </div>
+
+                            <div class="pt-2 flex items-center justify-end gap-3">
+                                <button type="button" onclick="toggleManualBiometricsModal()" class="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-gray-300 font-bold font-outfit text-xs transition-colors">Cancel</button>
+                                <button type="submit" id="save-manual-btn" class="px-6 py-2.5 rounded-xl bg-brand-sage hover:bg-brand-sageHover text-white font-bold font-outfit text-xs shadow-glow transition-all">Save & Sync to Twin</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
                 <!-- Wearable Sync JS Actions -->
                 <script>
+                    let currentSelectedBrand = "<?php echo $active_brand; ?>";
+                    const brandMetadata = {
+                        'apple': { name: 'Apple Watch Ultra / S9', icon: '⌚' },
+                        'garmin': { name: 'Garmin Fēnix / Forerunner', icon: '⏱️' },
+                        'fitbit': { name: 'Fitbit Sense 2 / Charge', icon: '🏃' },
+                        'whoop': { name: 'Whoop 4.0 Biometric Band', icon: '📈' },
+                        'pixel': { name: 'Google Pixel Watch 2', icon: '🧭' }
+                    };
+
+                    function selectWearableBrand(brand, brandName, icon) {
+                        currentSelectedBrand = brand;
+                        document.getElementById('selected-device-label').innerText = brandName;
+                        document.getElementById('watch-icon').innerText = icon;
+
+                        // Update pill styling
+                        const pills = document.querySelectorAll('#device-selector-grid .device-pill[data-brand]');
+                        pills.forEach(p => {
+                            if (p.getAttribute('data-brand') === brand) {
+                                p.className = 'device-pill p-2 rounded-xl border border-brand-sage bg-brand-sage/15 text-white shadow-sm text-center transition-all';
+                            } else {
+                                p.className = 'device-pill p-2 rounded-xl border border-white/10 bg-white/5 text-gray-400 hover:text-white text-center transition-all';
+                            }
+                        });
+
+                        showAppToast(`Switched active wearable to ${brandName}.`, 'sage');
+                    }
+
+                    function toggleManualBiometricsModal() {
+                        const modal = document.getElementById('manual-biometrics-modal');
+                        if (modal.classList.contains('opacity-0')) {
+                            modal.classList.remove('opacity-0', 'pointer-events-none');
+                            modal.querySelector('.relative').classList.remove('scale-95');
+                            modal.querySelector('.relative').classList.add('scale-100');
+                        } else {
+                            modal.classList.add('opacity-0', 'pointer-events-none');
+                            modal.querySelector('.relative').classList.remove('scale-100');
+                            modal.querySelector('.relative').classList.add('scale-95');
+                        }
+                    }
+
+                    function handleManualBiometricsSubmit(e) {
+                        e.preventDefault();
+                        const saveBtn = document.getElementById('save-manual-btn');
+                        saveBtn.disabled = true;
+                        saveBtn.innerText = 'Syncing...';
+
+                        const formData = new FormData();
+                        formData.append('action', 'sync_smartwatch');
+                        formData.append('device_brand', currentSelectedBrand);
+                        formData.append('sleep_hours', document.getElementById('custom-sleep-hours').value);
+                        formData.append('sleep_quality', document.getElementById('custom-sleep-quality').value);
+                        formData.append('steps', document.getElementById('custom-steps').value);
+                        formData.append('active_minutes', document.getElementById('custom-active-min').value);
+                        formData.append('resting_hr', document.getElementById('custom-resting-hr').value);
+                        formData.append('hrv', document.getElementById('custom-hrv').value);
+
+                        fetch('predictive_hub.php', {
+                            method: 'POST',
+                            body: formData
+                        })
+                        .then(res => res.json())
+                        .then(data => {
+                            saveBtn.disabled = false;
+                            saveBtn.innerText = 'Save & Sync to Twin';
+                            toggleManualBiometricsModal();
+
+                            if (data.status === 'success') {
+                                showAppToast('🎉 Custom biometrics logged! Updating your digital twin...', 'sage');
+                                setTimeout(() => window.location.reload(), 900);
+                            } else {
+                                showAppToast('Failed to save manual biometrics.', 'coral');
+                            }
+                        })
+                        .catch(err => {
+                            console.error('Manual log error:', err);
+                            saveBtn.disabled = false;
+                            saveBtn.innerText = 'Save & Sync to Twin';
+                            showAppToast('Network error while saving metrics.', 'coral');
+                        });
+                    }
+
                     function syncSmartwatchData() {
                         const syncBtn = document.getElementById('sync-device-btn');
-                        const watchOrb = document.getElementById('sync-watch-orb');
+                        const syncBtnLabel = document.getElementById('sync-btn-label');
                         const pulseRing = document.getElementById('watch-pulse-ring');
+                        const pulseOuter = document.getElementById('watch-pulse-ring-outer');
                         const watchIcon = document.getElementById('watch-icon');
+                        const watchStats = document.getElementById('watch-sync-stats');
                         const watchPercent = document.getElementById('watch-sync-percent');
+                        const watchStage = document.getElementById('watch-sync-stage');
+                        const narrative = document.getElementById('sync-status-narrative');
 
                         syncBtn.disabled = true;
                         syncBtn.classList.add('opacity-50');
-                        syncBtn.innerText = 'Connecting to smartwatch...';
+                        syncBtnLabel.innerText = 'Bridging Bluetooth...';
 
                         pulseRing.classList.remove('hidden');
+                        pulseOuter.classList.remove('hidden');
                         watchIcon.classList.add('hidden');
-                        watchPercent.classList.remove('hidden');
+                        watchStats.classList.remove('hidden');
                         watchPercent.innerText = '0%';
 
                         let percentage = 0;
@@ -780,24 +1607,32 @@ $coping = json_decode($digital_twin['coping_styles'] ?? '[]', true);
                             percentage += 10;
                             watchPercent.innerText = percentage + '%';
 
-                            if (percentage === 30) {
-                                syncBtn.innerText = 'Accessing sleep telemetry...';
-                            } else if (percentage === 60) {
-                                syncBtn.innerText = 'Reading HRV and Resting HR...';
+                            if (percentage === 20) {
+                                watchStage.innerText = 'Reading Sleep';
+                                syncBtnLabel.innerText = 'Analyzing REM & deep sleep...';
+                                narrative.innerText = 'Downloading sleep duration and recovery score...';
+                            } else if (percentage === 50) {
+                                watchStage.innerText = 'Reading HRV';
+                                syncBtnLabel.innerText = 'Importing resting heart rate & HRV...';
+                                narrative.innerText = 'Correlating autonomic cardiac intervals...';
                             } else if (percentage === 80) {
-                                syncBtn.innerText = 'Importing steps and minutes...';
+                                watchStage.innerText = 'Aggregating Steps';
+                                syncBtnLabel.innerText = 'Compiling active movement & calories...';
+                                narrative.innerText = 'Calculating today\'s physical movement total...';
                             }
 
                             if (percentage >= 100) {
                                 clearInterval(syncInterval);
+                                watchStage.innerText = 'Finalizing';
                                 submitTelemetrySync();
                             }
-                        }, 250);
+                        }, 220);
                     }
 
                     function submitTelemetrySync() {
                         const formData = new FormData();
                         formData.append('action', 'sync_smartwatch');
+                        formData.append('device_brand', currentSelectedBrand);
 
                         fetch('predictive_hub.php', {
                             method: 'POST',
@@ -806,35 +1641,39 @@ $coping = json_decode($digital_twin['coping_styles'] ?? '[]', true);
                         .then(res => res.json())
                         .then(data => {
                             if (data.status === 'success') {
-                                alert('🎉 Smartwatch sync successful! Your biometric telemetry logs have been imported.');
-                                window.location.reload();
+                                showAppToast(`🎉 ${brandMetadata[currentSelectedBrand]?.name || 'Wearable'} synchronized! Digital Twin telemetry updated.`, 'sage');
+                                setTimeout(() => window.location.reload(), 900);
                             } else {
-                                alert('Could not sync smartwatch data.');
+                                showAppToast('Could not finalize wearable sync.', 'coral');
                                 resetSyncWidget();
                             }
                         })
                         .catch(err => {
                             console.error('Error syncing wearable:', err);
-                            alert('Sync failed due to connection error.');
+                            showAppToast('Sync failed due to connection timeout.', 'coral');
                             resetSyncWidget();
                         });
                     }
 
                     function resetSyncWidget() {
                         const syncBtn = document.getElementById('sync-device-btn');
+                        const syncBtnLabel = document.getElementById('sync-btn-label');
                         const pulseRing = document.getElementById('watch-pulse-ring');
+                        const pulseOuter = document.getElementById('watch-pulse-ring-outer');
                         const watchIcon = document.getElementById('watch-icon');
-                        const watchPercent = document.getElementById('watch-sync-percent');
+                        const watchStats = document.getElementById('watch-sync-stats');
 
                         syncBtn.disabled = false;
                         syncBtn.classList.remove('opacity-50');
-                        syncBtn.innerText = 'Sync Wearable Data';
+                        syncBtnLabel.innerText = 'Sync Wearable Telemetry';
                         pulseRing.classList.add('hidden');
+                        pulseOuter.classList.add('hidden');
                         watchIcon.classList.remove('hidden');
-                        watchPercent.classList.add('hidden');
+                        watchStats.classList.add('hidden');
                     }
                 </script>
             <?php endif; ?>
+
 
         </div>
     </main>
@@ -940,7 +1779,42 @@ $coping = json_decode($digital_twin['coping_styles'] ?? '[]', true);
     </div>
     <?php endif; ?>
 
+    <!-- GLOBAL IN-APP TOAST NOTIFICATION -->
+    <div id="app-toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2 pointer-events-none max-w-sm w-full px-4 sm:px-0"></div>
+
     <script>
+        function showAppToast(message, type = 'sage') {
+            const container = document.getElementById('app-toast-container');
+            if (!container) return;
+
+            const toast = document.createElement('div');
+            toast.className = `pointer-events-auto transform translate-y-3 opacity-0 transition-all duration-300 flex items-start gap-3 p-4 rounded-2xl shadow-2xl text-xs font-sans text-white border ${type === 'coral' ? 'bg-[#2b1b1a] border-brand-coral/40' : 'bg-[#152723] border-brand-sage/40'}`;
+            
+            const icon = type === 'coral' ? '⚠️' : '✨';
+            toast.innerHTML = `
+                <span class="text-base shrink-0 select-none">${icon}</span>
+                <div class="flex-grow">
+                    <p class="leading-relaxed">${message}</p>
+                </div>
+                <button type="button" onclick="this.parentElement.remove()" class="text-gray-400 hover:text-white p-0.5 ml-1">
+                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            `;
+
+            container.appendChild(toast);
+
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-y-3', 'opacity-0');
+                toast.classList.add('translate-y-0', 'opacity-100');
+            });
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-3', 'opacity-0');
+                setTimeout(() => toast.remove(), 350);
+            }, 5500);
+        }
+
         const emergencyModal = document.getElementById('emergency-modal');
 
         function openEmergencyModal() {

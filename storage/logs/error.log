@@ -1891,3 +1891,8 @@
 [28-Aug-2026 22:24:35 UTC] PHP   1. {main}() C:\wamp64\www\TetWellbeingGroup\community.php:0
 [09-Sep-2026 22:22:04 UTC] PHPMailer not found - using PHP mail() function as fallback
 [09-Sep-2026 22:22:06 UTC] [2026-09-09 22:22:06] ERROR [2]: mail(): Failed to connect to mailserver at "localhost" port 25, verify your "SMTP" and "smtp_port" setting in php.ini or use ini_set() in C:\wamp64\www\TetWellbeingGroup\app\Helpers\EmailHelper.php on line 259
+[09-Sep-2026 23:21:00 UTC] [2026-09-09 23:21:00] ERROR [8]: session_start(): Ignoring session_start() because a session is already active (started from C:\wamp64\www\TetWellbeingGroup\db.php on line 8) in C:\wamp64\www\TetWellbeingGroup\wellbeing_passport.php on line 3
+[09-Sep-2026 23:21:00 UTC] PHP Notice:  session_start(): Ignoring session_start() because a session is already active (started from C:\wamp64\www\TetWellbeingGroup\db.php on line 8) in C:\wamp64\www\TetWellbeingGroup\wellbeing_passport.php on line 3
+[09-Sep-2026 23:21:00 UTC] PHP Stack trace:
+[09-Sep-2026 23:21:00 UTC] PHP   1. {main}() C:\wamp64\www\TetWellbeingGroup\wellbeing_passport.php:0
+[09-Sep-2026 23:21:00 UTC] PHP   2. session_start() C:\wamp64\www\TetWellbeingGroup\wellbeing_passport.php:3

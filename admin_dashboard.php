@@ -874,7 +874,11 @@ if (empty($contact_inquiries) && isset($_SESSION['mock_contact_inquiries'])) {
                 <h1 class="text-3xl font-extrabold font-outfit text-brand-slate tracking-tight">Administrative Command Center</h1>
                 <p class="text-sm text-gray-500 mt-1">Supervise system operation, manage specialists credentials, handle holds, and audit user permissions.</p>
             </div>
-            <div>
+            <div class="flex items-center gap-3">
+                <button onclick="startSectionTour()" class="px-4 py-2.5 rounded-2xl bg-brand-sageLight text-brand-sage hover:bg-brand-sage hover:text-white text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 active:scale-95">
+                    <i class="fa-solid fa-compass"></i>
+                    <span>Show Me Around</span>
+                </button>
                 <a href="dashboard.php" class="px-4 py-2.5 rounded-2xl border border-[#EBE8E0] bg-white text-xs font-bold text-brand-slate hover:bg-brand-sageLight hover:text-brand-sage transition-all shadow-sm">
                     Go to Portal Dashboard
                 </a>
@@ -1947,5 +1951,6 @@ if (empty($contact_inquiries) && isset($_SESSION['mock_contact_inquiries'])) {
             }
         });
     </script>
+    <?php require_once __DIR__ . '/includes/section_guide.php'; ?>
 </body>
 </html>
