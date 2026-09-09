@@ -1889,3 +1889,5 @@
 [28-Aug-2026 22:24:35 UTC] PHP Warning:  Undefined array key "user_role" in C:\wamp64\www\TetWellbeingGroup\community.php on line 1055
 [28-Aug-2026 22:24:35 UTC] PHP Stack trace:
 [28-Aug-2026 22:24:35 UTC] PHP   1. {main}() C:\wamp64\www\TetWellbeingGroup\community.php:0
+[09-Sep-2026 22:22:04 UTC] PHPMailer not found - using PHP mail() function as fallback
+[09-Sep-2026 22:22:06 UTC] [2026-09-09 22:22:06] ERROR [2]: mail(): Failed to connect to mailserver at "localhost" port 25, verify your "SMTP" and "smtp_port" setting in php.ini or use ini_set() in C:\wamp64\www\TetWellbeingGroup\app\Helpers\EmailHelper.php on line 259

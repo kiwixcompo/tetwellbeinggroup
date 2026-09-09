@@ -190,7 +190,43 @@ class EmailHelper
         }
     }
 
-    private function sendSimpleEmail(string $to, string $subject, string $body): bool
+    public function sendContactInquiryEmail(string $recipientEmail, string $senderName, string $senderEmail, string $message): bool
+    {
+        try {
+            $subject = "New Inquiry from " . $senderName . " – Tet Wellbeing Group";
+            $body = $this->getEmailTemplate('contact_inquiry', [
+                'name' => $senderName,
+                'email' => $senderEmail,
+                'message' => $message,
+                'recipient' => $recipientEmail
+            ]);
+
+            $this->saveEmailForDevelopment($recipientEmail, $subject, $body);
+
+            if ($this->mailer === null) {
+                return $this->sendSimpleEmail($recipientEmail, $subject, $body, $senderEmail);
+            }
+
+            $this->mailer->clearAddresses();
+            $this->mailer->clearReplyTos();
+            $this->mailer->addAddress($recipientEmail);
+            $this->mailer->addReplyTo($senderEmail, $senderName);
+            $this->mailer->Subject = $subject;
+            $this->mailer->Body = $body;
+            $this->mailer->AltBody = "New Inquiry from: $senderName ($senderEmail)\n\nMessage:\n$message";
+
+            return $this->mailer->send();
+        } catch (\Exception $e) {
+            error_log("sendContactInquiryEmail failed to $recipientEmail: " . $e->getMessage());
+            try {
+                return $this->sendSimpleEmail($recipientEmail, $subject ?? 'New Inquiry', $body ?? '', $senderEmail);
+            } catch (\Exception $e2) {
+                return false;
+            }
+        }
+    }
+
+    private function sendSimpleEmail(string $to, string $subject, string $body, ?string $replyTo = null): bool
     {
         // Save to file for backup/debugging
         $this->saveEmailForDevelopment($to, $subject, $body);
@@ -217,7 +253,7 @@ class EmailHelper
             $headers = "MIME-Version: 1.0" . "\r\n";
             $headers .= "Content-type:text/html;charset=UTF-8" . "\r\n";
             $headers .= "From: " . $this->config['from']['name'] . " <" . $this->config['from']['address'] . ">" . "\r\n";
-            $headers .= "Reply-To: " . $this->config['from']['address'] . "\r\n";
+            $headers .= "Reply-To: " . ($replyTo ?: $this->config['from']['address']) . "\r\n";
             $headers .= "X-Mailer: PHP/" . phpversion();
             
             return @\mail($to, $subject, $body, $headers);
@@ -284,9 +320,75 @@ class EmailHelper
                 return $this->getVerificationTemplate($data);
             case 'password_reset':
                 return $this->getPasswordResetTemplate($data);
+            case 'contact_inquiry':
+                return $this->getContactInquiryTemplate($data);
             default:
                 throw new \Exception("Unknown email template: {$template}");
         }
+    }
+
+    private function getContactInquiryTemplate(array $data): string
+    {
+        $name = htmlspecialchars($data['name'] ?? 'Visitor');
+        $email = htmlspecialchars($data['email'] ?? '');
+        $message = nl2br(htmlspecialchars($data['message'] ?? ''));
+        $date = date('F j, Y, g:i a');
+
+        return "
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset='utf-8'>
+            <title>New Website Inquiry</title>
+            <style>
+                body { font-family: 'Plus Jakarta Sans', Arial, sans-serif; line-height: 1.6; color: #264653; background-color: #F7F5F0; padding: 20px; }
+                .container { max-width: 600px; margin: 0 auto; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.05); border: 1px solid #EBE8E0; }
+                .header { background: #5E8C71; color: white; padding: 30px 25px; text-align: center; }
+                .content { padding: 30px 25px; }
+                .info-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+                .info-table td { padding: 10px 12px; border-bottom: 1px solid #EBE8E0; font-size: 14px; }
+                .info-table td.label { font-weight: bold; width: 130px; color: #5E8C71; }
+                .message-box { background: #FAF9F6; border-left: 4px solid #5E8C71; padding: 18px 20px; border-radius: 8px; font-size: 14px; color: #264653; line-height: 1.7; margin-top: 10px; }
+                .reply-btn { display: inline-block; padding: 12px 28px; background: #5E8C71; color: white; text-decoration: none; border-radius: 10px; font-weight: bold; font-size: 14px; margin-top: 20px; }
+                .footer { padding: 18px; text-align: center; color: #9CA3AF; font-size: 12px; border-top: 1px solid #EBE8E0; background: #FAF9F6; }
+            </style>
+        </head>
+        <body>
+            <div class='container'>
+                <div class='header'>
+                    <h1 style='margin:0; font-size: 22px; font-weight: 700;'>Tet Wellbeing Group</h1>
+                    <p style='margin:8px 0 0 0; opacity: 0.9; font-size: 14px;'>New Website Question / Inquiry</p>
+                </div>
+                <div class='content'>
+                    <h2 style='margin-top:0; color: #264653; font-size: 18px;'>You have received a new inquiry from the homepage:</h2>
+                    <table class='info-table'>
+                        <tr>
+                            <td class='label'>Sender Name:</td>
+                            <td><strong>{$name}</strong></td>
+                        </tr>
+                        <tr>
+                            <td class='label'>Email Address:</td>
+                            <td><a href='mailto:{$email}' style='color: #5E8C71; text-decoration: underline;'>{$email}</a></td>
+                        </tr>
+                        <tr>
+                            <td class='label'>Date & Time:</td>
+                            <td>{$date}</td>
+                        </tr>
+                    </table>
+
+                    <div style='font-weight: bold; color: #264653; margin-top: 20px; font-size: 14px;'>Question / Message:</div>
+                    <div class='message-box'>{$message}</div>
+
+                    <div style='text-align: center; margin-top: 25px;'>
+                        <a href='mailto:{$email}?subject=Re: Your inquiry to Tet Wellbeing Group' class='reply-btn'>Reply to {$name}</a>
+                    </div>
+                </div>
+                <div class='footer'>
+                    <p style='margin:0;'>This inquiry was submitted through the official contact form on the Tet Wellbeing Group homepage.</p>
+                </div>
+            </div>
+        </body>
+        </html>";
     }
 
     private function getVerificationTemplate(array $data): string

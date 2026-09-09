@@ -4,6 +4,12 @@
  * Serving as the introduction and portal to the actual application.
  */
 require_once 'db.php';
+if (file_exists(__DIR__ . '/vendor/autoload.php')) {
+    require_once __DIR__ . '/vendor/autoload.php';
+}
+require_once __DIR__ . '/app/Helpers/EmailHelper.php';
+
+use App\Helpers\EmailHelper;
 
 // Check if user is already logged in, redirect them directly to the app
 if (isset($_SESSION['user_id'])) {
@@ -12,15 +18,50 @@ if (isset($_SESSION['user_id'])) {
 }
 
 $contact_submitted = false;
+$contact_error = '';
 $contact_name = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['contact_form'])) {
-    $contact_name = filter_input(INPUT_POST, 'name', FILTER_DEFAULT);
-    $contact_email = filter_input(INPUT_POST, 'email', FILTER_VALIDATE_EMAIL);
-    $contact_message = filter_input(INPUT_POST, 'message', FILTER_DEFAULT);
+    $contact_name = trim(filter_input(INPUT_POST, 'name', FILTER_DEFAULT) ?? '');
+    $contact_email = trim(filter_input(INPUT_POST, 'email', FILTER_VALIDATE_EMAIL) ?? '');
+    $contact_message = trim(filter_input(INPUT_POST, 'message', FILTER_DEFAULT) ?? '');
     
     if ($contact_name && $contact_email && $contact_message) {
+        // Fetch recipient email configured on Admin Dashboard
+        $recipient_email = get_platform_setting('contact_inquiry_email', 'tetwellbeinggroup@gmail.com');
+
+        // Save Inquiry to Database
+        if ($db_connected && $pdo) {
+            try {
+                $stmt = $pdo->prepare("INSERT INTO contact_inquiries (name, email, message, recipient_email, status) VALUES (?, ?, ?, ?, 'new')");
+                $stmt->execute([$contact_name, $contact_email, $contact_message, $recipient_email]);
+            } catch (PDOException $e) {
+                error_log("Error saving contact inquiry: " . $e->getMessage());
+            }
+        }
+
+        // Save Inquiry to Session Mock
+        $_SESSION['mock_contact_inquiries'][] = [
+            'id' => time(),
+            'name' => $contact_name,
+            'email' => $contact_email,
+            'message' => $contact_message,
+            'recipient_email' => $recipient_email,
+            'status' => 'new',
+            'created_at' => date('Y-m-d H:i:s')
+        ];
+
+        // Send Email via EmailHelper
+        try {
+            $emailHelper = new EmailHelper();
+            $emailHelper->sendContactInquiryEmail($recipient_email, $contact_name, $contact_email, $contact_message);
+        } catch (\Exception $e) {
+            error_log("Email sending error: " . $e->getMessage());
+        }
+
         $contact_submitted = true;
+    } else {
+        $contact_error = "Please provide your name, a valid email address, and your message.";
     }
 }
 ?>
@@ -428,7 +469,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['contact_form'])) {
                             </div>
                             <div>
                                 <h4 class="font-bold text-lg font-outfit">Message Sent!</h4>
-                                <p class="text-sm text-gray-600 mt-1">Thank you, <?php echo htmlspecialchars($contact_name); ?>. A team representative will reply to your inquiry shortly.</p>
+                                <p class="text-sm text-gray-600 mt-1">Thank you, <?php echo htmlspecialchars($contact_name); ?>. Your question has been forwarded to our support team. We will get back to you shortly.</p>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+
+                    <?php if (!empty($contact_error)): ?>
+                        <div class="bg-brand-coralLight border border-brand-coral/30 text-brand-coral p-5 rounded-2xl mb-8 flex items-start gap-4">
+                            <div class="mt-0.5">
+                                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-lg font-outfit">Submission Error</h4>
+                                <p class="text-sm text-gray-600 mt-1"><?php echo htmlspecialchars($contact_error); ?></p>
                             </div>
                         </div>
                     <?php endif; ?>

@@ -272,6 +272,31 @@ try {
         UNIQUE KEY uniq_user_memory (user_id, memory_key)
     ) ENGINE=InnoDB");
 
+    // Create Platform Settings table
+    $pdo->exec("CREATE TABLE IF NOT EXISTS platform_settings (
+        setting_key VARCHAR(100) PRIMARY KEY,
+        setting_value TEXT NOT NULL,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB");
+
+    // Seed default contact inquiry email if not exists
+    $chk_setting = $pdo->prepare("SELECT COUNT(*) FROM platform_settings WHERE setting_key = 'contact_inquiry_email'");
+    $chk_setting->execute();
+    if ($chk_setting->fetchColumn() == 0) {
+        $pdo->exec("INSERT INTO platform_settings (setting_key, setting_value) VALUES ('contact_inquiry_email', 'tetwellbeinggroup@gmail.com')");
+    }
+
+    // Create Contact Inquiries table
+    $pdo->exec("CREATE TABLE IF NOT EXISTS contact_inquiries (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(100) NOT NULL,
+        email VARCHAR(100) NOT NULL,
+        message TEXT NOT NULL,
+        recipient_email VARCHAR(100) NOT NULL,
+        status ENUM('new', 'read', 'replied') DEFAULT 'new',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB");
+
     // Create VR Practice Logs table
     $pdo->exec("CREATE TABLE IF NOT EXISTS vr_practice_logs (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -1424,5 +1449,47 @@ if (isset($_SESSION['user_id']) && !in_array($current_page, ['login.php', 'signu
         $user_subscription_plan = $_SESSION['mock_users'][$user_email]['subscription_plan'] ?? 'free';
     }
     $_SESSION['user_subscription_plan'] = $user_subscription_plan;
+}
+
+/**
+ * Helper to retrieve a platform setting with fallback.
+ */
+function get_platform_setting($key, $default = null) {
+    global $pdo, $db_connected;
+
+    if ($db_connected && $pdo) {
+        try {
+            $stmt = $pdo->prepare("SELECT setting_value FROM platform_settings WHERE setting_key = ?");
+            $stmt->execute([$key]);
+            $val = $stmt->fetchColumn();
+            if ($val !== false && $val !== null) {
+                return $val;
+            }
+        } catch (PDOException $e) {}
+    }
+
+    if (isset($_SESSION['mock_platform_settings'][$key])) {
+        return $_SESSION['mock_platform_settings'][$key];
+    }
+
+    return $default;
+}
+
+/**
+ * Helper to save a platform setting.
+ */
+function set_platform_setting($key, $value) {
+    global $pdo, $db_connected;
+
+    if ($db_connected && $pdo) {
+        try {
+            $stmt = $pdo->prepare("INSERT INTO platform_settings (setting_key, setting_value) VALUES (?, ?) 
+                ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value), updated_at = CURRENT_TIMESTAMP");
+            $stmt->execute([$key, $value]);
+        } catch (PDOException $e) {}
+    }
+
+    $_SESSION['mock_platform_settings'][$key] = $value;
+    return true;
 }
 ?>

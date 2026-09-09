@@ -545,6 +545,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $action_success = "Test escrow hold booking simulated (Session Mock).";
         }
     }
+
+    elseif ($action === 'update_contact_email') {
+        $new_email = trim(filter_input(INPUT_POST, 'contact_inquiry_email', FILTER_VALIDATE_EMAIL) ?? '');
+        if ($new_email) {
+            set_platform_setting('contact_inquiry_email', $new_email);
+            $action_success = "Homepage contact inquiry destination email updated successfully to: " . htmlspecialchars($new_email);
+        } else {
+            $action_error = "Please provide a valid email address.";
+        }
+    }
+
+    elseif ($action === 'delete_contact_inquiry' && $target_id) {
+        if ($db_connected && $pdo) {
+            try {
+                $stmt = $pdo->prepare("DELETE FROM contact_inquiries WHERE id = ?");
+                $stmt->execute([$target_id]);
+                $action_success = "Contact inquiry removed from history.";
+            } catch (PDOException $e) {
+                $action_error = "Database error: " . $e->getMessage();
+            }
+        }
+        if (isset($_SESSION['mock_contact_inquiries'])) {
+            $_SESSION['mock_contact_inquiries'] = array_values(array_filter($_SESSION['mock_contact_inquiries'], fn($inq) => ($inq['id'] ?? 0) != $target_id));
+            $action_success = "Contact inquiry removed from history (Session Mock).";
+        }
+    }
 }
 
 // Load users database
@@ -698,16 +724,20 @@ if (empty($streaming_media) && isset($_SESSION['mock_streaming_content'])) {
     $streaming_media = $_SESSION['mock_streaming_content'];
 }
 
-// Fetch Research Studies for Vetting (Step 9)
-$all_research_studies = [];
+// Fetch Contact Inquiry Email setting
+$contact_inquiry_email = get_platform_setting('contact_inquiry_email', 'tetwellbeinggroup@gmail.com');
+
+// Fetch Contact Inquiries list
+$contact_inquiries = [];
 if ($db_connected && $pdo) {
     try {
-        $stmt = $pdo->query("SELECT * FROM research_studies ORDER BY id DESC");
-        $all_research_studies = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $stmt = $pdo->query("SELECT * FROM contact_inquiries ORDER BY created_at DESC LIMIT 50");
+        $contact_inquiries = $stmt->fetchAll(PDO::FETCH_ASSOC);
     } catch (PDOException $e) {}
 }
-if (empty($all_research_studies) && isset($_SESSION['mock_research_studies'])) {
-    $all_research_studies = $_SESSION['mock_research_studies'];
+if (empty($contact_inquiries) && isset($_SESSION['mock_contact_inquiries'])) {
+    $contact_inquiries = $_SESSION['mock_contact_inquiries'];
+    usort($contact_inquiries, fn($a, $b) => strcmp($b['created_at'] ?? '', $a['created_at'] ?? ''));
 }
 ?>
 <!DOCTYPE html>
@@ -1582,6 +1612,111 @@ if (empty($all_research_studies) && isset($_SESSION['mock_research_studies'])) {
                                     </button>
                                 </form>
                                 <?php endif; ?>
+                            </td>
+                        </tr>
+                        <?php endforeach; endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- HOMEPAGE CONTACT INQUIRIES & EMAIL CONFIGURATION -->
+        <div class="bg-white rounded-3xl p-6 shadow-soft border border-gray-100 mb-10">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                <div class="flex items-center gap-3">
+                    <div class="h-10 w-10 rounded-2xl bg-brand-sageLight text-brand-sage flex items-center justify-center font-bold text-lg">
+                        <i class="fa-solid fa-envelope-open-text"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h3 class="text-base font-bold font-outfit text-brand-slate">Homepage Inquiries & Contact Routing</h3>
+                            <span class="px-2 py-0.5 rounded-full bg-brand-sageLight text-brand-sage text-[10px] font-bold uppercase tracking-wider">Active</span>
+                        </div>
+                        <p class="text-xs text-gray-500">Configure which email receives questions submitted on the homepage ("Have Questions? Reach Out") and manage incoming inquiries.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Email Destination Setting Box -->
+            <div class="bg-brand-bg/60 p-5 rounded-2xl border border-gray-100 mb-8">
+                <form method="POST" class="flex flex-col sm:flex-row sm:items-end gap-4">
+                    <input type="hidden" name="action" value="update_contact_email">
+                    <div class="flex-grow">
+                        <label class="block text-xs font-bold font-outfit text-brand-slate uppercase tracking-wider mb-1.5">
+                            Destination Email Address for Homepage Questions
+                        </label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
+                                <i class="fa-solid fa-at text-xs"></i>
+                            </div>
+                            <input type="email" name="contact_inquiry_email" required value="<?php echo htmlspecialchars($contact_inquiry_email); ?>" placeholder="e.g. tetwellbeinggroup@gmail.com" class="w-full pl-9 pr-4 py-3 rounded-xl border border-gray-200 bg-white text-xs font-medium text-brand-slate focus:border-brand-sage focus:ring-2 focus:ring-brand-sage/10 outline-none transition-all">
+                        </div>
+                        <p class="text-[11px] text-gray-400 mt-1">Default: <span class="font-mono text-brand-slate font-bold">tetwellbeinggroup@gmail.com</span>. Any inquiries sent via the homepage will be dispatched immediately to this address.</p>
+                    </div>
+                    <button type="submit" class="px-6 py-3 rounded-xl bg-brand-sage hover:bg-brand-sageHover text-white font-bold text-xs shadow-sm transition-all flex items-center justify-center gap-2 shrink-0">
+                        <i class="fa-solid fa-floppy-disk"></i> Save Destination Email
+                    </button>
+                </form>
+            </div>
+
+            <!-- Inquiries History Table -->
+            <div class="flex items-center justify-between mb-4">
+                <h4 class="text-xs font-bold font-outfit text-brand-slate uppercase tracking-wider">
+                    Recent Questions Received (<?php echo count($contact_inquiries); ?>)
+                </h4>
+            </div>
+
+            <div class="overflow-x-auto rounded-2xl border border-gray-100">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-brand-bg text-[10px] font-bold text-brand-slate uppercase tracking-wider border-b border-gray-100">
+                            <th class="p-3.5 pl-4">Sender</th>
+                            <th class="p-3.5">Message / Question</th>
+                            <th class="p-3.5">Dispatched To</th>
+                            <th class="p-3.5">Date</th>
+                            <th class="p-3.5 pr-4 text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100 text-xs">
+                        <?php if (empty($contact_inquiries)): ?>
+                        <tr>
+                            <td colspan="5" class="p-8 text-center text-gray-400">
+                                <i class="fa-regular fa-envelope text-3xl mb-2 text-gray-300 block"></i>
+                                No inquiries received yet. When visitors ask questions on the homepage, they will appear here and be emailed to <strong class="text-brand-slate"><?php echo htmlspecialchars($contact_inquiry_email); ?></strong>.
+                            </td>
+                        </tr>
+                        <?php else: foreach ($contact_inquiries as $inq): ?>
+                        <tr class="hover:bg-brand-bg/30 transition-colors">
+                            <td class="p-3.5 pl-4 align-top">
+                                <span class="font-bold text-brand-slate block"><?php echo htmlspecialchars($inq['name']); ?></span>
+                                <a href="mailto:<?php echo htmlspecialchars($inq['email']); ?>" class="text-[11px] text-brand-sage hover:underline block mt-0.5">
+                                    <?php echo htmlspecialchars($inq['email']); ?>
+                                </a>
+                            </td>
+                            <td class="p-3.5 align-top max-w-md">
+                                <div class="text-gray-700 bg-gray-50 p-3 rounded-xl border border-gray-100 text-xs leading-relaxed">
+                                    <?php echo nl2br(htmlspecialchars($inq['message'])); ?>
+                                </div>
+                            </td>
+                            <td class="p-3.5 align-top">
+                                <span class="px-2 py-0.5 rounded-md bg-white border border-gray-200 text-[10px] font-mono text-gray-600 block w-max">
+                                    <?php echo htmlspecialchars($inq['recipient_email'] ?? $contact_inquiry_email); ?>
+                                </span>
+                            </td>
+                            <td class="p-3.5 align-top text-gray-500 font-medium whitespace-nowrap text-[11px]">
+                                <?php echo date('M j, Y g:i a', strtotime($inq['created_at'] ?? 'now')); ?>
+                            </td>
+                            <td class="p-3.5 pr-4 align-top text-right whitespace-nowrap space-x-2">
+                                <a href="mailto:<?php echo htmlspecialchars($inq['email']); ?>?subject=Re: Your Question to Tet Wellbeing Group" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-sageLight text-brand-sage hover:bg-brand-sage hover:text-white text-xs font-bold transition-colors shadow-sm">
+                                    <i class="fa-solid fa-reply text-[10px]"></i> Reply
+                                </a>
+                                <form method="POST" class="inline" onsubmit="return confirm('Delete this inquiry from history?');">
+                                    <input type="hidden" name="action" value="delete_contact_inquiry">
+                                    <input type="hidden" name="target_id" value="<?php echo $inq['id']; ?>">
+                                    <button type="submit" class="px-2.5 py-1.5 rounded-lg text-gray-400 hover:text-brand-coral hover:bg-brand-coralLight text-xs font-semibold transition-colors">
+                                        <i class="fa-solid fa-trash-can"></i>
+                                    </button>
+                                </form>
                             </td>
                         </tr>
                         <?php endforeach; endif; ?>
