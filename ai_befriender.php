@@ -1,15 +1,13 @@
 <?php
 /**
  * Tet Wellbeing Group - AI Befriender (ai_befriender.php)
- * A dedicated peer conversation partner powered by Puter AI.
- * Offers 2 selectable peer characters:
- *   1. Maya (Female - Warm, empathetic & uplifting)
- *   2. Alex (Male - Grounded, relatable & thoughtful)
- * Features realistic natural voice TTS, clean formatted markdown AI display,
- * and an auto-submit continuous voice loop.
+ * A dedicated peer conversation partner with continuous learning per user account.
+ * Offers 2 selectable peer characters (Maya & Alex), realistic natural voice TTS,
+ * clean formatted markdown AI display, and popup-free Puter AI safety integration.
  */
 require_once 'db.php';
 require_once 'gating_helper.php';
+require_once 'AiLearningService.php';
 
 // Auth Guard
 if (!isset($_SESSION['user_id'])) {
@@ -20,6 +18,26 @@ if (!isset($_SESSION['user_id'])) {
 $user_id = $_SESSION['user_id'];
 $user_name = $_SESSION['user_name'] ?? 'Friend';
 $user_initial = strtoupper(substr($user_name, 0, 1));
+$user_learning_context = AiLearningService::buildSystemPromptContext($user_id);
+
+// AJAX Handlers
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+    if ($_POST['action'] === 'get_ai_response') {
+        header('Content-Type: application/json');
+        $msg = trim($_POST['message'] ?? '');
+        $char = trim($_POST['character'] ?? 'maya');
+        $reply = AiLearningService::generateContextualResponse($user_id, $msg, $char, 'befriender');
+        echo json_encode(['status' => 'success', 'reply' => $reply]);
+        exit;
+    }
+    if ($_POST['action'] === 'learn_interaction') {
+        header('Content-Type: application/json');
+        $msg = trim($_POST['message'] ?? '');
+        AiLearningService::learnFromInteraction($user_id, $msg);
+        echo json_encode(['status' => 'success']);
+        exit;
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en" class="h-full scroll-smooth">
@@ -40,6 +58,8 @@ $user_initial = strtoupper(substr($user_name, 0, 1));
     <script src="https://js.puter.com/v2/"></script>
     <!-- Marked.js for Clean Markdown Formatting -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- TET AI & User Learning Bridge -->
+    <script src="js/tet_ai_client_helper.js"></script>
     
     <script>
         tailwind.config = {
@@ -262,6 +282,7 @@ $user_initial = strtoupper(substr($user_name, 0, 1));
 
     <script>
         const userName = <?php echo json_encode($user_name); ?>;
+        const userLearningContext = <?php echo json_encode($user_learning_context); ?>;
         const chatMessagesEl = document.getElementById('befriender-messages');
         const chatInputEl = document.getElementById('befriender-chat-input');
         const sendBtnEl = document.getElementById('befriender-send-btn');
@@ -269,7 +290,14 @@ $user_initial = strtoupper(substr($user_name, 0, 1));
         const voiceSelectEl = document.getElementById('befriender-voice-select');
         const autoSubmitToggleEl = document.getElementById('auto-submit-toggle');
 
-        // Character definitions
+        // Initialize Tet AI Client Helper for this specific account
+        window.TetAiHelper.init({
+            id: <?php echo (int)$user_id; ?>,
+            name: <?php echo json_encode($user_name); ?>,
+            contextPrompt: userLearningContext
+        });
+
+        // Character definitions with injected user learning context
         const characters = {
             maya: {
                 id: 'maya',
@@ -287,7 +315,9 @@ Behaviors:
 1. Speak warmly with sincere validation and relatable life reflections.
 2. Share thoughtful personal opinions and practical, cozy recommendations (e.g. chamomile/peppermint teas, gentle evening strolls, soothing instrumental playlists, comforting books, micro-breaks).
 3. Do not just fire questions at the user. Offer your perspective or gentle advice first, then keep the chat flowing naturally.
-4. Format your responses cleanly using markdown (bold, bullet points, short paragraphs).`
+4. Format your responses cleanly using markdown (bold, bullet points, short paragraphs).
+
+${userLearningContext}`
             },
             alex: {
                 id: 'alex',
@@ -305,14 +335,16 @@ Behaviors:
 1. Speak with grounded warmth, relatable humor when appropriate, and thoughtful perspectives.
 2. Share practical recommendations (e.g. structured wind-down routines, exercise, audiobooks, habit resets, breathing space).
 3. Share your own thoughts and analogies first before gently inviting their thoughts.
-4. Format your responses cleanly using markdown (bold, bullet points, short paragraphs).`
+4. Format your responses cleanly using markdown (bold, bullet points, short paragraphs).
+
+${userLearningContext}`
             }
         };
 
         let activeCharacter = 'maya';
         let conversationHistory = [];
-        let autoSubmitEnabled = localStorage.getItem('tet_voice_auto_submit') === 'true';
-        let autoReadEnabled = localStorage.getItem('tet_voice_auto_read') !== 'false';
+        let autoSubmitEnabled = window.TetAiHelper.getStoredData('voice_auto_submit', false);
+        let autoReadEnabled = window.TetAiHelper.getStoredData('voice_auto_read', true);
         autoSubmitToggleEl.checked = autoSubmitEnabled;
         const autoReadToggleEl = document.getElementById('auto-read-toggle');
         if (autoReadToggleEl) autoReadToggleEl.checked = autoReadEnabled;
@@ -396,7 +428,7 @@ Behaviors:
             });
 
             // Select saved or best matching voice for this character
-            const savedVoiceName = localStorage.getItem(`tet_befriender_voice_${activeCharacter}`);
+            const savedVoiceName = window.TetAiHelper.getStoredData(`voice_${activeCharacter}`);
             let chosen = filteredVoices.find(v => v.name === savedVoiceName) || filteredVoices[0];
 
             if (chosen) {
@@ -413,7 +445,7 @@ Behaviors:
         function onVoiceSelected(voiceName) {
             selectedVoice = availableVoices.find(v => v.name === voiceName) || null;
             if (selectedVoice) {
-                localStorage.setItem(`tet_befriender_voice_${activeCharacter}`, selectedVoice.name);
+                window.TetAiHelper.setStoredData(`voice_${activeCharacter}`, selectedVoice.name);
             }
         }
 
@@ -424,12 +456,12 @@ Behaviors:
 
         function toggleAutoSubmit(isChecked) {
             autoSubmitEnabled = isChecked;
-            localStorage.setItem('tet_voice_auto_submit', isChecked ? 'true' : 'false');
+            window.TetAiHelper.setStoredData('voice_auto_submit', isChecked);
         }
 
         function toggleAutoRead(isChecked) {
             autoReadEnabled = isChecked;
-            localStorage.setItem('tet_voice_auto_read', isChecked ? 'true' : 'false');
+            window.TetAiHelper.setStoredData('voice_auto_read', isChecked);
             if (!isChecked && 'speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
             }
@@ -707,19 +739,19 @@ Behaviors:
             sendBtnEl.disabled = true;
 
             try {
-                let replyText = '';
-                // Call Puter AI
-                if (typeof puter !== 'undefined' && puter.ai && typeof puter.ai.chat === 'function') {
-                    const response = await puter.ai.chat(conversationHistory);
-                    replyText = typeof response === 'string' ? response : (response.message?.content || response.text || JSON.stringify(response));
-                } else {
-                    // Fallback conversational responses
-                    const fallbacks = [
-                        `I really hear you on that, ${userName}. In my experience, when things pile up like this, our minds trick us into carrying the entire weight at once.\n\nHere are a couple of small things I personally recommend:\n- **Take a 10-minute zero-demand break**: Step away from all screens.\n- **Sip warm water or herbal tea**: It helps physically ground your nervous system.\n- **Focus on just the single next hour**: You don't have to resolve everything today.\n\nHow does that sound?`,
-                        `That is such an understandable feeling. Honestly, my recommendation is to give yourself permission to lower the bar today.\n\n**A quick 60-second breathing exercise:**\n- Inhale gently for 4 seconds\n- Hold for 2 seconds\n- Exhale slowly for 6 seconds\n\nHow is your body feeling right now?`
-                    ];
-                    replyText = fallbacks[Math.floor(Math.random() * fallbacks.length)];
-                }
+                // Call AI safely without triggering Puter auth popups
+                const replyText = await window.TetAiHelper.safeChat(conversationHistory, async () => {
+                    const fd = new FormData();
+                    fd.append('action', 'get_ai_response');
+                    fd.append('message', text);
+                    fd.append('character', activeCharacter);
+                    const res = await fetch('ai_befriender.php', { method: 'POST', body: fd });
+                    const data = await res.json();
+                    return data.reply;
+                });
+
+                // Record interaction to learn from user
+                window.TetAiHelper.recordInteraction('ai_befriender.php', text, activeCharacter);
 
                 document.getElementById(typingId)?.remove();
                 appendAiMessage(replyText);

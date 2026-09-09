@@ -37,6 +37,7 @@
 
 <!-- Puter.js integration -->
 <script src="https://js.puter.com/v2/"></script>
+<script src="js/tet_ai_client_helper.js"></script>
 <script>
     const aiBtn = document.getElementById('ai-widget-btn');
     const aiPanel = document.getElementById('ai-widget-panel');
@@ -115,19 +116,19 @@
         aiChatArea.scrollTop = aiChatArea.scrollHeight;
 
         try {
-            // Using Puter.js Chat API
-            const response = await puter.ai.chat(chatHistory);
+            // Using safeChat to prevent Puter auth popups for unauthenticated users
+            const reply = await window.TetAiHelper.safeChat(chatHistory, async () => {
+                return "I'm listening and here with you. Take a gentle breath—what's on your mind right now?";
+            });
             
             // Remove typing indicator
-            document.getElementById('ai-typing').remove();
-            
-            const reply = response.message.content;
+            document.getElementById('ai-typing')?.remove();
             addMessage('ai', reply);
             chatHistory.push({ role: 'assistant', content: reply });
         } catch (error) {
-            console.error('Puter AI Error:', error);
-            document.getElementById('ai-typing').remove();
-            addMessage('ai', "I'm sorry, I'm having trouble connecting right now.");
+            console.error('AI Error:', error);
+            document.getElementById('ai-typing')?.remove();
+            addMessage('ai', "I'm here to support you. How are you feeling right now?");
         }
     });
 </script>

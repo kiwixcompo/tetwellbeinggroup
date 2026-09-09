@@ -1,8 +1,13 @@
 <?php
 /**
  * Tet Wellbeing Group - Global Floating AI Widget (global_ai_widget.php)
- * Powered by Puter.js AI
+ * Continuous learning per user account and popup-free Puter AI safety bridge.
  */
+require_once __DIR__ . '/../AiLearningService.php';
+
+$current_widget_uid = $_SESSION['user_id'] ?? 0;
+$current_widget_uname = $_SESSION['user_name'] ?? 'Friend';
+$current_widget_context = AiLearningService::buildSystemPromptContext($current_widget_uid);
 ?>
 
 <!-- Floating Action Button -->
@@ -100,6 +105,7 @@
 
 <script src="https://js.puter.com/v2/"></script>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="js/tet_ai_client_helper.js"></script>
 <script>
     let aiWidgetOpen = false;
     const widgetContainer = document.getElementById('ai-widget-container');
@@ -108,22 +114,24 @@
     const inputField = document.getElementById('ai-widget-input');
     const micBtn = document.getElementById('ai-mic-btn');
 
+    // Initialize Tet AI Client Helper for this specific account
+    window.TetAiHelper.init({
+        id: <?php echo (int)$current_widget_uid; ?>,
+        name: <?php echo json_encode($current_widget_uname); ?>,
+        contextPrompt: <?php echo json_encode($current_widget_context); ?>
+    });
+
     const defaultHistory = [
-        { role: 'system', content: 'You are a compassionate, empathetic Cognitive Behavioral Therapy (CBT) assistant. Keep responses under 3 sentences. Be very supportive. Never provide medical diagnoses.' }
+        { role: 'system', content: 'You are a compassionate, empathetic Cognitive Behavioral Therapy (CBT) assistant. Keep responses under 3 sentences. Be very supportive. Never provide medical diagnoses.\n\n' + (window.TetAiHelper.currentUser.contextPrompt || '') }
     ];
 
-    let chatHistory = [];
-    
-    // Load from localStorage
-    try {
-        const stored = localStorage.getItem('tet_ai_history');
-        if (stored) {
-            chatHistory = JSON.parse(stored);
-        } else {
-            chatHistory = [...defaultHistory];
-        }
-    } catch(e) {
+    let chatHistory = window.TetAiHelper.getStoredData('ai_history', defaultHistory);
+    if (!chatHistory || !chatHistory.length) {
         chatHistory = [...defaultHistory];
+    }
+
+    function saveHistory() {
+        window.TetAiHelper.setStoredData('ai_history', chatHistory);
     }
 
     // Function to render history to DOM on load
@@ -336,11 +344,13 @@
         chatBox.scrollTop = chatBox.scrollHeight;
 
         try {
-            // Call Puter.js AI
+            // Call AI safely without triggering Puter auth popups
             let promptText = chatHistory.map(msg => msg.role.toUpperCase() + ": " + msg.content).join("\n\n") + "\n\nASSISTANT: ";
             
-            const response = await puter.ai.chat(promptText);
-            const aiText = response.message?.content || response.text || (typeof response === 'string' ? response : JSON.stringify(response));
+            const aiText = await window.TetAiHelper.safeChat(promptText, async () => {
+                const uName = window.TetAiHelper.currentUser.name || 'Friend';
+                return `Hello ${uName}, I hear you. Even in busy moments, giving yourself a pause and focusing on what is within your control right now brings a lot of relief. How are you feeling right now?`;
+            });
             
             // Remove typing indicator
             document.getElementById(typingId)?.remove();

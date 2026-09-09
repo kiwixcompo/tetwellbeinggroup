@@ -261,6 +261,17 @@ try {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     ) ENGINE=InnoDB");
 
+    // Create User AI Learning & Memory table
+    $pdo->exec("CREATE TABLE IF NOT EXISTS user_ai_memories (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        memory_key VARCHAR(100) NOT NULL,
+        memory_value TEXT NOT NULL,
+        category VARCHAR(50) DEFAULT 'general',
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        UNIQUE KEY uniq_user_memory (user_id, memory_key)
+    ) ENGINE=InnoDB");
+
     // Create VR Practice Logs table
     $pdo->exec("CREATE TABLE IF NOT EXISTS vr_practice_logs (
         id INT AUTO_INCREMENT PRIMARY KEY,

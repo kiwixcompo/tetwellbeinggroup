@@ -6,6 +6,7 @@
 
 require_once 'db.php';
 require_once 'EmotionalHealthService.php';
+require_once 'AiLearningService.php';
 
 // Auth Guard: Client, Specialist & Admin
 require_once "gating_helper.php";
@@ -15,6 +16,7 @@ $user_name = $_SESSION['user_name'] ?? 'User';
 $user_role = $_SESSION['user_role'] ?? 'client';
 $user_initial = 'G';
 $today_date = date('l, F j, Y');
+$user_learning_context = AiLearningService::buildSystemPromptContext($user_id);
 
 // Multilingual translations dictionary
 $translations = [
@@ -441,35 +443,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         ];
     }
 
-    // Gemini API has been deprecated in favor of Puter.js AI.
-    // The main floating AI widget uses Puter.js directly on the frontend.
-    // For this legacy page, we bypass the backend API and use the local NLP intent matcher.
-    $ai_msg = false;
+    // Record learning from interaction
+    AiLearningService::learnFromInteraction($user_id, $user_msg);
+    $selected_gender = $_POST['gender'] ?? 'female';
 
-    // Fallback to mock parser
-    if (!$ai_msg) {
-        $intent = 'default';
-        $lowercase_msg = strtolower($user_msg);
-        
-        if ($is_distressed) {
-            $intent = 'crisis';
-        } elseif (preg_match('/(hello|hi|hey|sannu|jambo|bonjour|مرحبا)/i', $lowercase_msg)) {
-            $intent = 'hi';
-        } elseif (preg_match('/(anxious|anxiety|panic|fear|scared|worry|worrying|damuwa|aibalẹ|nchegbu|angoisse|قلق|wasiwasi)/i', $lowercase_msg)) {
-            $intent = 'anxious';
-        } elseif (preg_match('/(sad|depressed|crying|hopeless|lonely|down|wute|banin maraya|banin ciki|ibanujẹ|obi mgbawa|triste|حزين|huzuni)/i', $lowercase_msg)) {
-            $intent = 'sad';
-        } elseif (preg_match('/(stress|exhausted|tired|burnout|strain|overwhelmed|gajiya|aare|ike ọgwụgwụ|fatigue|تعب|إرhaق|choka)/i', $lowercase_msg)) {
-            $intent = 'stress';
-        } elseif (preg_match('/(cbt|reframe|distortion|thought|tunanin|ero odi|echiche ọjọọ|recadrage|صياغة|upotoshaji)/i', $lowercase_msg)) {
-            $intent = 'cbt';
-        }
-
-        if ($intent === 'crisis') {
-            $ai_msg = $translations[$selected_lang]['crisis_warning'];
-        } else {
-            $ai_msg = $ai_responses[$selected_lang][$intent] ?? $ai_responses[$selected_lang]['default'];
-        }
+    if ($is_distressed) {
+        $ai_msg = $translations[$selected_lang]['crisis_warning'];
+    } else {
+        $ai_msg = AiLearningService::generateContextualResponse($user_id, $user_msg, $selected_gender, 'companion');
     }
 
     // D. Save AI Response
@@ -626,6 +607,7 @@ if (!$loaded_from_db && isset($_SESSION['mock_ai_chats'])) {
         }
     </style>
     <script src="https://js.puter.com/v2/"></script>
+    <script src="js/tet_ai_client_helper.js"></script>
 </head>
 <body class="min-h-full flex flex-col selection:bg-brand-sage/20 selection:text-brand-slate">
     <?php if (!isset($_GET['embed'])) { require_once 'nav_menu.php'; } ?>
@@ -937,8 +919,16 @@ if (!$loaded_from_db && isset($_SESSION['mock_ai_chats'])) {
         let availableVoices = [];
         let selectedCompanionVoice = null;
         let activeCompanionGender = 'female';
-        let autoSubmitEnabled = localStorage.getItem('tet_companion_auto_submit') === 'true';
-        let autoReadEnabled = localStorage.getItem('tet_companion_auto_read') !== 'false';
+
+        // Initialize Tet AI Client Helper for this specific account
+        window.TetAiHelper.init({
+            id: <?php echo (int)$user_id; ?>,
+            name: <?php echo json_encode($user_name); ?>,
+            contextPrompt: <?php echo json_encode($user_learning_context); ?>
+        });
+
+        let autoSubmitEnabled = window.TetAiHelper.getStoredData('companion_auto_submit', false);
+        let autoReadEnabled = window.TetAiHelper.getStoredData('companion_auto_read', true);
         const autoSubmitCheckbox = document.getElementById('companion-auto-submit');
         if (autoSubmitCheckbox) autoSubmitCheckbox.checked = autoSubmitEnabled;
         const autoReadCheckbox = document.getElementById('companion-auto-read');
@@ -1025,7 +1015,7 @@ if (!$loaded_from_db && isset($_SESSION['mock_ai_chats'])) {
                 selectEl.appendChild(opt);
             });
 
-            const savedVoice = localStorage.getItem(`tet_companion_voice_${activeCompanionGender}`);
+            const savedVoice = window.TetAiHelper.getStoredData(`voice_${activeCompanionGender}`);
             let chosen = filtered.find(v => v.name === savedVoice) || filtered[0];
             if (chosen) {
                 selectedCompanionVoice = chosen;
@@ -1050,18 +1040,18 @@ if (!$loaded_from_db && isset($_SESSION['mock_ai_chats'])) {
         function onCompanionVoiceSelected(name) {
             selectedCompanionVoice = availableVoices.find(v => v.name === name) || null;
             if (selectedCompanionVoice) {
-                localStorage.setItem(`tet_companion_voice_${activeCompanionGender}`, selectedCompanionVoice.name);
+                window.TetAiHelper.setStoredData(`voice_${activeCompanionGender}`, selectedCompanionVoice.name);
             }
         }
 
         function toggleCompanionAutoSubmit(isChecked) {
             autoSubmitEnabled = isChecked;
-            localStorage.setItem('tet_companion_auto_submit', isChecked ? 'true' : 'false');
+            window.TetAiHelper.setStoredData('companion_auto_submit', isChecked);
         }
 
         function toggleCompanionAutoRead(isChecked) {
             autoReadEnabled = isChecked;
-            localStorage.setItem('tet_companion_auto_read', isChecked ? 'true' : 'false');
+            window.TetAiHelper.setStoredData('companion_auto_read', isChecked);
             if (!isChecked && 'speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
             }
@@ -1227,18 +1217,23 @@ if (!$loaded_from_db && isset($_SESSION['mock_ai_chats'])) {
             const typing = document.getElementById('typing-indicator');
             typing.classList.remove('hidden');
 
-            // Puter.js AI Chat
-            let prompt = `Respond warmly in language: ${currentLang}. You are a wellbeing companion. The user says: ${messageText}`;
+            // Formulate personalized prompt with user learning context
+            const userContext = window.TetAiHelper.currentUser.contextPrompt || '';
+            const prompt = `${userContext}\n\nRespond warmly in language: ${currentLang}. You are a wellbeing companion (${activeCompanionGender}). The user says: ${messageText}`;
             
-            puter.ai.chat(prompt)
-            .then(response => {
-                let ai_response_text = response?.message?.content || response;
-                
+            window.TetAiHelper.safeChat(prompt, async () => {
                 const formData = new FormData();
                 formData.append('action', 'send_message');
                 formData.append('message', messageText);
                 formData.append('language', currentLang);
-                fetch('ai_companion.php', { method: 'POST', body: formData }).catch(e=>console.log(e));
+                formData.append('gender', activeCompanionGender);
+                const res = await fetch('ai_companion.php', { method: 'POST', body: formData });
+                const data = await res.json();
+                return data.ai_message;
+            })
+            .then(ai_response_text => {
+                // Record interaction to continuous backend learning
+                window.TetAiHelper.recordInteraction('ai_companion.php', messageText, activeCompanionGender);
 
                 let data = { status: 'success', ai_message: ai_response_text };
                 typing.classList.add('hidden');
@@ -1408,9 +1403,16 @@ if (!$loaded_from_db && isset($_SESSION['mock_ai_chats'])) {
             resultBox.classList.remove('hidden');
             resultBox.classList.add('fade-in');
 
-            puter.ai.chat(`As a CBT expert, act as a cognitive reframer. The user has this automatic negative thought: "${thoughtText}". They identified the cognitive distortion as: "${distortionType}". Provide a single, concise, rational, and positive reframed thought. Don't add extra commentary, just the reframe.`)
-            .then(response => {
-                let ans = response?.message?.content || response;
+            const reframePrompt = `As a CBT expert, act as a cognitive reframer for user ${userName}. The user has this automatic negative thought: "${thoughtText}". They identified the cognitive distortion as: "${distortionType}". Provide a single, concise, rational, and positive reframed thought. Don't add extra commentary, just the reframe.`;
+
+            window.TetAiHelper.safeChat(reframePrompt, async () => {
+                const canned = cbtReframingBank[distortionType];
+                if (canned && canned.length > 0) {
+                    return canned[Math.floor(Math.random() * canned.length)];
+                }
+                return `While this thought feels intense right now, it is an automatic cognitive distortion (${distortionType}). Taking a deep breath and focusing on what I can control allows me to move forward with self-compassion.`;
+            })
+            .then(ans => {
                 reframedText.textContent = ans;
             })
             .catch(err => {
@@ -1425,9 +1427,17 @@ if (!$loaded_from_db && isset($_SESSION['mock_ai_chats'])) {
         function generateGratitudePrompt() {
             document.getElementById('gratitude-text').innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Generating prompt...';
             
-            puter.ai.chat(`Generate a unique, insightful gratitude journal prompt. Keep it to one sentence. Respond in this language code: ${currentLang}.`)
-            .then(response => {
-                let ans = response?.message?.content || response;
+            const prompt = `Generate a unique, insightful gratitude journal prompt for user ${userName}. Keep it to one sentence. Respond in this language code: ${currentLang}.`;
+
+            window.TetAiHelper.safeChat(prompt, async () => {
+                const list = promptsDict[currentLang] || promptsDict['en'] || [
+                    "What is one small, quiet moment from today that brought you unexpected comfort?",
+                    "Think of a person whose kindness made an impact on you recently—what about them are you grateful for?",
+                    "What is a personal strength or boundary you showed this week that you appreciate in yourself?"
+                ];
+                return list[Math.floor(Math.random() * list.length)];
+            })
+            .then(ans => {
                 document.getElementById('gratitude-text').textContent = ans;
             })
             .catch(err => {
