@@ -1896,3 +1896,14 @@
 [09-Sep-2026 23:21:00 UTC] PHP Stack trace:
 [09-Sep-2026 23:21:00 UTC] PHP   1. {main}() C:\wamp64\www\TetWellbeingGroup\wellbeing_passport.php:0
 [09-Sep-2026 23:21:00 UTC] PHP   2. session_start() C:\wamp64\www\TetWellbeingGroup\wellbeing_passport.php:3
+[16-Sep-2026 21:47:30 UTC] [2026-09-16 21:47:30] ERROR [2]: Undefined array key "REQUEST_METHOD" in C:\wamp64\www\TetWellbeingGroup\assessments.php on line 15
+[16-Sep-2026 21:47:30 UTC] PHP Warning:  Undefined array key "REQUEST_METHOD" in C:\wamp64\www\TetWellbeingGroup\assessments.php on line 15
+[16-Sep-2026 21:47:30 UTC] PHP Stack trace:
+[16-Sep-2026 21:47:30 UTC] PHP   1. {main}() C:\wamp64\www\TetWellbeingGroup\backups\test_mindbloom_runner.php:0
+[16-Sep-2026 21:47:30 UTC] PHP   2. include() C:\wamp64\www\TetWellbeingGroup\backups\test_mindbloom_runner.php:23
+[16-Sep-2026 21:49:03 UTC] [2026-09-16 21:49:03] ERROR [2]: Cannot modify header information - headers already sent by (output started at C:\Users\Admin\.gemini\antigravity\brain\67063a33-ec72-476f-9a48-69457c8336f5\scratch\test_mindbloom_full.php:23) in C:\wamp64\www\TetWellbeingGroup\assessments.php on line 19
+[16-Sep-2026 21:49:03 UTC] PHP Warning:  Cannot modify header information - headers already sent by (output started at C:\Users\Admin\.gemini\antigravity\brain\67063a33-ec72-476f-9a48-69457c8336f5\scratch\test_mindbloom_full.php:23) in C:\wamp64\www\TetWellbeingGroup\assessments.php on line 19
+[16-Sep-2026 21:49:03 UTC] PHP Stack trace:
+[16-Sep-2026 21:49:03 UTC] PHP   1. {main}() C:\Users\Admin\.gemini\antigravity\brain\67063a33-ec72-476f-9a48-69457c8336f5\scratch\test_mindbloom_full.php:0
+[16-Sep-2026 21:49:03 UTC] PHP   2. include() C:\Users\Admin\.gemini\antigravity\brain\67063a33-ec72-476f-9a48-69457c8336f5\scratch\test_mindbloom_full.php:27
+[16-Sep-2026 21:49:03 UTC] PHP   3. header($header = 'Content-Type: application/json') C:\wamp64\www\TetWellbeingGroup\assessments.php:19

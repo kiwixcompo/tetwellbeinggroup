@@ -94,17 +94,24 @@ $user_name = $_SESSION['user_name'] ?? 'User';
             <div class="absolute top-0 right-0 w-64 h-64 bg-brand-sage/10 rounded-full blur-[80px] pointer-events-none"></div>
 
             <!-- Master Controls -->
-            <div class="flex items-center justify-between bg-slate-800/50 p-4 rounded-2xl border border-white/5 relative z-10">
-                <button id="master-play" class="bg-brand-sage hover:bg-brand-sageLight text-slate-900 w-14 h-14 rounded-full flex items-center justify-center font-bold transition-transform active:scale-95 shadow-lg">
-                    <svg class="w-6 h-6 ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                </button>
+            <div class="flex flex-col sm:flex-row items-center justify-between bg-slate-800/50 p-4 rounded-2xl border border-white/5 relative z-10 gap-4">
+                <div class="flex items-center gap-4 w-full sm:w-auto">
+                    <button id="master-play" class="bg-brand-sage hover:bg-brand-sageLight text-slate-900 w-14 h-14 rounded-full flex items-center justify-center font-bold transition-transform active:scale-95 shadow-lg shrink-0">
+                        <svg class="w-6 h-6 ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                    </button>
+                    <div>
+                        <span class="text-sm font-bold text-white block">Acoustic Generator</span>
+                        <span class="text-xs text-gray-400" id="now-playing-label">Paused • Choose a preset or adjust sliders</span>
+                    </div>
+                </div>
 
-                <div class="flex items-center gap-4">
+                <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
                     <label class="text-xs font-semibold text-gray-400 uppercase tracking-widest">Sleep Timer:</label>
                     <select id="sleep-timer" class="bg-slate-900 border border-white/10 text-brand-sage rounded-xl px-4 py-2 text-sm font-bold outline-none focus:border-brand-sage transition-colors">
                         <option value="0">Off</option>
                         <option value="15">15 Minutes</option>
                         <option value="30">30 Minutes</option>
+                        <option value="45">45 Minutes</option>
                         <option value="60">60 Minutes</option>
                     </select>
                 </div>
@@ -112,6 +119,33 @@ $user_name = $_SESSION['user_name'] ?? 'User';
             
             <div id="timer-display" class="text-center text-sm font-bold text-brand-coral hidden">
                 Fading out in <span id="timer-countdown">00:00</span>
+            </div>
+
+            <!-- Beginner 1-Click Soundscape Presets -->
+            <div class="relative z-10">
+                <span class="text-xs font-bold uppercase tracking-wider text-gray-400 block mb-3">Quick Soundscape Presets</span>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                    <button type="button" onclick="applyPreset('sleep')" class="preset-btn p-3 rounded-2xl bg-slate-800/60 hover:bg-slate-700/80 border border-white/5 text-left transition-all hover:border-brand-sage/40 group">
+                        <span class="text-lg block mb-1">🌧️ 🌊</span>
+                        <span class="text-xs font-bold text-white group-hover:text-brand-sage block">Deep Sleep</span>
+                        <span class="text-[10px] text-gray-400 block">Rain + Ocean waves</span>
+                    </button>
+                    <button type="button" onclick="applyPreset('focus')" class="preset-btn p-3 rounded-2xl bg-slate-800/60 hover:bg-slate-700/80 border border-white/5 text-left transition-all hover:border-brand-sage/40 group">
+                        <span class="text-lg block mb-1">🎧 🌧️</span>
+                        <span class="text-xs font-bold text-white group-hover:text-brand-sage block">Focus & Study</span>
+                        <span class="text-[10px] text-gray-400 block">432Hz Binaural + Rain</span>
+                    </button>
+                    <button type="button" onclick="applyPreset('cozy')" class="preset-btn p-3 rounded-2xl bg-slate-800/60 hover:bg-slate-700/80 border border-white/5 text-left transition-all hover:border-brand-sage/40 group">
+                        <span class="text-lg block mb-1">🔥 🌧️</span>
+                        <span class="text-xs font-bold text-white group-hover:text-brand-sage block">Cozy Cabin</span>
+                        <span class="text-[10px] text-gray-400 block">Campfire + Rain</span>
+                    </button>
+                    <button type="button" onclick="applyPreset('calm')" class="preset-btn p-3 rounded-2xl bg-slate-800/60 hover:bg-slate-700/80 border border-white/5 text-left transition-all hover:border-brand-sage/40 group">
+                        <span class="text-lg block mb-1">🌊 🎧</span>
+                        <span class="text-xs font-bold text-white group-hover:text-brand-sage block">Anxiety Relief</span>
+                        <span class="text-[10px] text-gray-400 block">Ocean + Theta beat</span>
+                    </button>
+                </div>
             </div>
 
             <!-- Mixer Sliders -->
@@ -394,8 +428,41 @@ $user_name = $_SESSION['user_name'] ?? 'User';
                         playBtn.innerHTML = '<svg class="w-6 h-6 ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
                     }
                 }
-            }, 1000);
-        });
+        // Apply Preset Configurations
+        function applyPreset(name) {
+            if (!audioCtx) initAudio();
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+                isPlaying = true;
+                playBtn.innerHTML = '<svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>';
+            }
+
+            const presets = {
+                'sleep': { rain: 0.65, fire: 0, ocean: 0.55, binaural: 0, label: 'Playing Deep Sleep Soundscape' },
+                'focus': { rain: 0.40, fire: 0, ocean: 0, binaural: 0.60, label: 'Playing 432Hz Focus Soundscape' },
+                'cozy': { rain: 0.50, fire: 0.70, ocean: 0, binaural: 0, label: 'Playing Cozy Cabin Soundscape' },
+                'calm': { rain: 0, fire: 0, ocean: 0.65, binaural: 0.45, label: 'Playing Anxiety Relief Soundscape' }
+            };
+
+            const p = presets[name];
+            if (!p) return;
+
+            // Set sliders & gains
+            for (let [key, val] of Object.entries({ rain: p.rain, fire: p.fire, ocean: p.ocean, binaural: p.binaural })) {
+                const slider = document.getElementById(sliderMap[key]);
+                const valLabel = document.getElementById('vol-val-' + key);
+                if (slider && valLabel) {
+                    slider.value = val;
+                    valLabel.textContent = Math.round(val * 100) + '%';
+                }
+                if (gains[key]) {
+                    gains[key].gain.setTargetAtTime(val * val, audioCtx.currentTime, 0.2);
+                }
+            }
+
+            document.getElementById('now-playing-label').textContent = p.label;
+            document.getElementById('audio-status').style.display = 'none';
+        }
     </script>
 </body>
 </html>

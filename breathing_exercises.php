@@ -4,9 +4,34 @@
  * A visually guided breathing tool offering Box Breathing, 4-7-8, and Energizing patterns.
  */
 require_once __DIR__ . '/db.php';
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 require_once "gating_helper.php";
+$user_id = $_SESSION['user_id'] ?? 0;
 $user_name = $_SESSION['user_name'] ?? 'User';
+
+// Handle AJAX cycle completion log
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $action = $_POST['action'] ?? '';
+    if ($action === 'log_breathing_session') {
+        header('Content-Type: application/json');
+        $cycles = (int)($_POST['cycles'] ?? 1);
+        $mode = $_POST['mode'] ?? 'box';
+        
+        // Award activity point to Wellbeing Passport
+        $_SESSION['user_activity_count'][$user_id] = ($_SESSION['user_activity_count'][$user_id] ?? 8) + 1;
+        
+        echo json_encode([
+            'status' => 'success',
+            'cycles' => $cycles,
+            'mode' => $mode,
+            'activity_count' => $_SESSION['user_activity_count'][$user_id]
+        ]);
+        exit();
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -169,6 +194,8 @@ $user_name = $_SESSION['user_name'] ?? 'User';
         });
 
         // Breathing Logic
+        let completedCycles = 0;
+
         function runStep() {
             const pattern = patterns[currentMode];
             const step = pattern[stepIndex];
@@ -181,7 +208,30 @@ $user_name = $_SESSION['user_name'] ?? 'User';
 
             // Schedule next step
             timeoutId = setTimeout(() => {
+                const prevIndex = stepIndex;
                 stepIndex = (stepIndex + 1) % pattern.length;
+                
+                // Completed one full breathing loop
+                if (prevIndex === pattern.length - 1) {
+                    completedCycles++;
+                    if (completedCycles === 3) {
+                        // Log cycle completion
+                        const fd = new FormData();
+                        fd.append('action', 'log_breathing_session');
+                        fd.append('cycles', completedCycles);
+                        fd.append('mode', currentMode);
+                        fetch('breathing_exercises.php', { method: 'POST', body: fd })
+                            .then(r => r.json())
+                            .then(res => {
+                                const toast = document.getElementById('cycle-toast');
+                                if (toast) {
+                                    toast.classList.remove('hidden');
+                                    setTimeout(() => toast.classList.add('hidden'), 4000);
+                                }
+                            }).catch(e => console.error(e));
+                    }
+                }
+
                 if (isPlaying) runStep();
             }, step.duration);
         }
@@ -189,6 +239,7 @@ $user_name = $_SESSION['user_name'] ?? 'User';
         function startBreathing() {
             isPlaying = true;
             stepIndex = 0;
+            completedCycles = 0;
             startBtn.textContent = 'Stop Session';
             startBtn.classList.replace('bg-brand-slate', 'bg-brand-coral');
             startBtn.classList.replace('hover:bg-gray-800', 'hover:bg-red-700');
@@ -215,5 +266,16 @@ $user_name = $_SESSION['user_name'] ?? 'User';
             }
         });
     </script>
+
+    <!-- Cycle Completion Toast Notification -->
+    <div id="cycle-toast" class="hidden fixed bottom-6 right-6 z-50 bg-brand-sage text-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-3 transition-all animate-fade-in border border-white/20">
+        <div class="h-8 w-8 rounded-xl bg-white/20 flex items-center justify-center font-bold text-sm">
+            ✓
+        </div>
+        <div>
+            <p class="text-xs font-bold font-outfit">Calm Mind Activated</p>
+            <p class="text-[11px] text-white/90">3 cycles complete. +1 activity added to your Passport!</p>
+        </div>
+    </div>
 </body>
 </html>
