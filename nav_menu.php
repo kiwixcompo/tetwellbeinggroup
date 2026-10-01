@@ -44,14 +44,14 @@ $user_role = $_SESSION['user_role'] ?? 'user';
                 <span class="absolute bottom-0 left-0 w-full h-[3px] rounded-t-md bg-brand-sage transition-transform duration-300 <?php echo $active_pillar === 'dashboard' ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'; ?>"></span>
             </a>
             
-            <a href="mindbloom.php" class="relative flex items-center h-full text-sm font-semibold transition-colors <?php echo $active_pillar === 'mindbloom' ? 'text-brand-sage' : 'text-gray-500 hover:text-brand-slate'; ?> group">
-                MindBloom
-                <span class="absolute bottom-0 left-0 w-full h-[3px] rounded-t-md bg-brand-sage transition-transform duration-300 <?php echo $active_pillar === 'mindbloom' ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'; ?>"></span>
-            </a>
-            
             <a href="community.php" class="relative flex items-center h-full text-sm font-semibold transition-colors <?php echo $active_pillar === 'community' ? 'text-brand-sage' : 'text-gray-500 hover:text-brand-slate'; ?> group">
                 Community & Care
                 <span class="absolute bottom-0 left-0 w-full h-[3px] rounded-t-md bg-brand-sage transition-transform duration-300 <?php echo $active_pillar === 'community' ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'; ?>"></span>
+            </a>
+
+            <a href="mindbloom.php" class="relative flex items-center h-full text-sm font-semibold transition-colors <?php echo $active_pillar === 'mindbloom' ? 'text-brand-sage' : 'text-gray-500 hover:text-brand-slate'; ?> group">
+                MindBloom
+                <span class="absolute bottom-0 left-0 w-full h-[3px] rounded-t-md bg-brand-sage transition-transform duration-300 <?php echo $active_pillar === 'mindbloom' ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'; ?>"></span>
             </a>
             
             <a href="tet_academy.php" class="relative flex items-center h-full text-sm font-semibold transition-colors <?php echo $active_pillar === 'academy' ? 'text-brand-sage' : 'text-gray-500 hover:text-brand-slate'; ?> group">
@@ -129,8 +129,8 @@ $user_role = $_SESSION['user_role'] ?? 'user';
             <i class="fa-solid fa-compass"></i> Show Me Around Tour
         </button>
         <a href="dashboard.php" class="block px-4 py-3 rounded-xl text-base font-semibold <?php echo $active_pillar === 'dashboard' ? 'bg-brand-sageLight text-brand-sage' : 'text-gray-600 hover:bg-gray-50'; ?>">My TET</a>
-        <a href="mindbloom.php" class="block px-4 py-3 rounded-xl text-base font-semibold <?php echo $active_pillar === 'mindbloom' ? 'bg-brand-sageLight text-brand-sage' : 'text-gray-600 hover:bg-gray-50'; ?>">MindBloom</a>
         <a href="community.php" class="block px-4 py-3 rounded-xl text-base font-semibold <?php echo $active_pillar === 'community' ? 'bg-brand-sageLight text-brand-sage' : 'text-gray-600 hover:bg-gray-50'; ?>">Community & Care</a>
+        <a href="mindbloom.php" class="block px-4 py-3 rounded-xl text-base font-semibold <?php echo $active_pillar === 'mindbloom' ? 'bg-brand-sageLight text-brand-sage' : 'text-gray-600 hover:bg-gray-50'; ?>">MindBloom</a>
         <a href="tet_academy.php" class="block px-4 py-3 rounded-xl text-base font-semibold <?php echo $active_pillar === 'academy' ? 'bg-brand-sageLight text-brand-sage' : 'text-gray-600 hover:bg-gray-50'; ?>">Learning Center</a>
     </div>
 </div>

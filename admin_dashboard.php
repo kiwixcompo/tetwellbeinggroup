@@ -189,6 +189,191 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         }
     }
 
+    // Caregiver Audio Direct Upload & URL Manager
+    elseif ($action === 'add_caregiver_audio') {
+        $audio_title = trim($_POST['title'] ?? '');
+        $audio_desc = trim($_POST['description'] ?? '');
+        $audio_duration = trim($_POST['duration'] ?? '05:00');
+        $audio_archetype = trim($_POST['archetype'] ?? 'all');
+        $audio_url = trim($_POST['audio_url'] ?? '');
+
+        // Handle direct audio file upload if present
+        if (isset($_FILES['audio_file']) && $_FILES['audio_file']['error'] === UPLOAD_ERR_OK) {
+            $upload_dir = __DIR__ . '/uploads/audio/';
+            if (!is_dir($upload_dir)) {
+                mkdir($upload_dir, 0777, true);
+            }
+            $file_tmp = $_FILES['audio_file']['tmp_name'];
+            $file_name = preg_replace('/[^a-zA-Z0-9_\.-]/', '_', basename($_FILES['audio_file']['name']));
+            $target_file = $upload_dir . time() . '_' . $file_name;
+            $allowed_exts = ['mp3', 'wav', 'ogg', 'm4a', 'aac'];
+            $file_ext = strtolower(pathinfo($file_name, PATHINFO_EXTENSION));
+
+            if (in_array($file_ext, $allowed_exts)) {
+                if (move_uploaded_file($file_tmp, $target_file)) {
+                    $audio_url = 'uploads/audio/' . basename($target_file);
+                } else {
+                    $action_error = "Failed to upload audio file. Check directory permissions.";
+                }
+            } else {
+                $action_error = "Invalid audio format. Allowed formats: " . implode(', ', $allowed_exts);
+            }
+        }
+
+        if (empty($action_error)) {
+            if (!empty($audio_title) && !empty($audio_url)) {
+                if ($db_connected && $pdo) {
+                    try {
+                        $stmt = $pdo->prepare("INSERT INTO caregiver_audio (title, description, duration, audio_url, archetype) VALUES (?, ?, ?, ?, ?)");
+                        $stmt->execute([$audio_title, $audio_desc, $audio_duration, $audio_url, $audio_archetype]);
+                        $action_success = "Caregiver audio track published successfully!";
+                    } catch (PDOException $e) {
+                        $action_error = "Database error: " . $e->getMessage();
+                    }
+                }
+                if (!isset($_SESSION['mock_caregiver_audio'])) {
+                    $_SESSION['mock_caregiver_audio'] = [];
+                }
+                $new_id = empty($_SESSION['mock_caregiver_audio']) ? 1 : max(array_column($_SESSION['mock_caregiver_audio'], 'id')) + 1;
+                $_SESSION['mock_caregiver_audio'][] = [
+                    'id' => $new_id,
+                    'title' => $audio_title,
+                    'description' => $audio_desc,
+                    'duration' => $audio_duration,
+                    'audio_url' => $audio_url,
+                    'archetype' => $audio_archetype
+                ];
+                $action_success = "Caregiver audio track published successfully (Session Mock synced)!";
+            } else {
+                $action_error = "Audio Title and either an audio file upload or audio URL are required.";
+            }
+        }
+    }
+
+    elseif ($action === 'delete_caregiver_audio' && $target_id) {
+        if ($db_connected && $pdo) {
+            try {
+                $stmt = $pdo->prepare("DELETE FROM caregiver_audio WHERE id = ?");
+                $stmt->execute([$target_id]);
+            } catch (PDOException $e) {}
+        }
+        if (isset($_SESSION['mock_caregiver_audio'])) {
+            foreach ($_SESSION['mock_caregiver_audio'] as $idx => $a) {
+                if ($a['id'] == $target_id) {
+                    unset($_SESSION['mock_caregiver_audio'][$idx]);
+                    $_SESSION['mock_caregiver_audio'] = array_values($_SESSION['mock_caregiver_audio']);
+                    break;
+                }
+            }
+        }
+        $action_success = "Caregiver audio track removed.";
+    }
+
+    // Learning Center: Academy Lesson Manager (YouTube Links)
+    elseif ($action === 'add_academy_lesson') {
+        $lesson_title = trim($_POST['title'] ?? '');
+        $lesson_cat = trim($_POST['category'] ?? 'Anxiety');
+        $lesson_desc = trim($_POST['description'] ?? '');
+        $lesson_duration = trim($_POST['duration'] ?? '5 mins');
+        $raw_youtube = trim($_POST['youtube_url'] ?? '');
+        $lesson_icon = trim($_POST['icon_name'] ?? 'book-open');
+
+        // Normalize YouTube link to standard embed URL
+        $embed_url = $raw_youtube;
+        if (preg_match('/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i', $raw_youtube, $matches)) {
+            $embed_url = 'https://www.youtube.com/embed/' . $matches[1];
+        }
+
+        if (!empty($lesson_title) && !empty($embed_url)) {
+            if ($db_connected && $pdo) {
+                try {
+                    $stmt = $pdo->prepare("INSERT INTO academy_lessons (category, title, description, duration, youtube_url, icon_name) VALUES (?, ?, ?, ?, ?, ?)");
+                    $stmt->execute([$lesson_cat, $lesson_title, $lesson_desc, $lesson_duration, $embed_url, $lesson_icon]);
+                    $action_success = "TET Academy video lesson published successfully!";
+                } catch (PDOException $e) {
+                    $action_error = "Database error: " . $e->getMessage();
+                }
+            }
+            if (!isset($_SESSION['mock_academy_lessons'])) {
+                $_SESSION['mock_academy_lessons'] = [];
+            }
+            $new_id = empty($_SESSION['mock_academy_lessons']) ? 1 : max(array_column($_SESSION['mock_academy_lessons'], 'id')) + 1;
+            $_SESSION['mock_academy_lessons'][] = [
+                'id' => $new_id,
+                'category' => $lesson_cat,
+                'title' => $lesson_title,
+                'description' => $lesson_desc,
+                'duration' => $lesson_duration,
+                'youtube_url' => $embed_url,
+                'icon_name' => $lesson_icon,
+                'sort_order' => $new_id
+            ];
+            $action_success = "TET Academy video lesson published successfully (Session Mock synced)!";
+        } else {
+            $action_error = "Lesson title and valid YouTube URL are required.";
+        }
+    }
+
+    elseif ($action === 'edit_academy_lesson' && $target_id) {
+        $lesson_title = trim($_POST['title'] ?? '');
+        $lesson_cat = trim($_POST['category'] ?? 'Anxiety');
+        $lesson_desc = trim($_POST['description'] ?? '');
+        $lesson_duration = trim($_POST['duration'] ?? '');
+        $raw_youtube = trim($_POST['youtube_url'] ?? '');
+
+        // Normalize YouTube link to standard embed URL
+        $embed_url = $raw_youtube;
+        if (preg_match('/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i', $raw_youtube, $matches)) {
+            $embed_url = 'https://www.youtube.com/embed/' . $matches[1];
+        }
+
+        if (!empty($lesson_title) && !empty($embed_url)) {
+            if ($db_connected && $pdo) {
+                try {
+                    $stmt = $pdo->prepare("UPDATE academy_lessons SET category = ?, title = ?, description = ?, duration = ?, youtube_url = ? WHERE id = ?");
+                    $stmt->execute([$lesson_cat, $lesson_title, $lesson_desc, $lesson_duration, $embed_url, $target_id]);
+                    $action_success = "TET Academy lesson updated successfully!";
+                } catch (PDOException $e) {
+                    $action_error = "Database error: " . $e->getMessage();
+                }
+            }
+            if (isset($_SESSION['mock_academy_lessons'])) {
+                foreach ($_SESSION['mock_academy_lessons'] as &$l) {
+                    if ($l['id'] == $target_id) {
+                        $l['category'] = $lesson_cat;
+                        $l['title'] = $lesson_title;
+                        $l['description'] = $lesson_desc;
+                        $l['duration'] = $lesson_duration;
+                        $l['youtube_url'] = $embed_url;
+                        break;
+                    }
+                }
+            }
+            $action_success = "TET Academy lesson updated successfully!";
+        } else {
+            $action_error = "Lesson title and valid YouTube URL are required.";
+        }
+    }
+
+    elseif ($action === 'delete_academy_lesson' && $target_id) {
+        if ($db_connected && $pdo) {
+            try {
+                $stmt = $pdo->prepare("DELETE FROM academy_lessons WHERE id = ?");
+                $stmt->execute([$target_id]);
+            } catch (PDOException $e) {}
+        }
+        if (isset($_SESSION['mock_academy_lessons'])) {
+            foreach ($_SESSION['mock_academy_lessons'] as $idx => $l) {
+                if ($l['id'] == $target_id) {
+                    unset($_SESSION['mock_academy_lessons'][$idx]);
+                    $_SESSION['mock_academy_lessons'] = array_values($_SESSION['mock_academy_lessons']);
+                    break;
+                }
+            }
+        }
+        $action_success = "Academy lesson removed.";
+    }
+
     // Step 8: Media Upload & External Linking Handler
     elseif ($action === 'add_streaming_media') {
         $media_title = trim($_POST['title'] ?? '');
@@ -248,6 +433,66 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     }
 
     // Step 9: Research Study Vetting Workflow Handler
+    elseif ($action === 'create_research_study') {
+        $rs_title = trim($_POST['title'] ?? '');
+        $rs_desc = trim($_POST['description'] ?? '');
+        $rs_target = intval($_POST['target_participants'] ?? 50);
+        $rs_video = trim($_POST['video_url'] ?? '');
+
+        // Normalize YouTube embed URL
+        if (!empty($rs_video)) {
+            if (preg_match('/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/', $rs_video, $m)) {
+                $rs_video = 'https://www.youtube.com/embed/' . $m[1];
+            }
+        }
+
+        if (!empty($rs_title) && !empty($rs_desc)) {
+            if ($db_connected && $pdo) {
+                try {
+                    $stmt = $pdo->prepare("INSERT INTO research_studies (title, description, status, target_participants, video_url) VALUES (?, ?, 'active', ?, ?)");
+                    $stmt->execute([$rs_title, $rs_desc, $rs_target, $rs_video ?: null]);
+                    $action_success = "Clinical research trial launched & published with video briefing!";
+                } catch (PDOException $e) {
+                    $action_error = "Database error: " . $e->getMessage();
+                }
+            }
+            if (!isset($_SESSION['mock_research_studies'])) {
+                $_SESSION['mock_research_studies'] = [];
+            }
+            $new_id = empty($_SESSION['mock_research_studies']) ? 1 : max(array_column($_SESSION['mock_research_studies'], 'id')) + 1;
+            $_SESSION['mock_research_studies'][] = [
+                'id' => $new_id,
+                'title' => $rs_title,
+                'description' => $rs_desc,
+                'status' => 'active',
+                'target_participants' => $rs_target,
+                'video_url' => $rs_video ?: null
+            ];
+            $action_success = "Clinical research trial launched & published with video briefing!";
+        } else {
+            $action_error = "Title and description are required.";
+        }
+    }
+
+    elseif ($action === 'delete_research_study' && $target_id) {
+        if ($db_connected && $pdo) {
+            try {
+                $stmt = $pdo->prepare("DELETE FROM research_studies WHERE id = ?");
+                $stmt->execute([$target_id]);
+            } catch (PDOException $e) {}
+        }
+        if (isset($_SESSION['mock_research_studies'])) {
+            foreach ($_SESSION['mock_research_studies'] as $idx => $st) {
+                if ($st['id'] == $target_id) {
+                    unset($_SESSION['mock_research_studies'][$idx]);
+                    $_SESSION['mock_research_studies'] = array_values($_SESSION['mock_research_studies']);
+                    break;
+                }
+            }
+        }
+        $action_success = "Research study removed.";
+    }
+
     elseif ($action === 'approve_research_study' && $target_id) {
         if ($db_connected && $pdo) {
             try {
@@ -712,6 +957,30 @@ if ($db_connected && $pdo) {
     $caregiver_videos = $_SESSION['mock_caregiver_videos'] ?? [];
 }
 
+// Fetch Caregiver Audio Tracks
+$caregiver_audio_list = [];
+if ($db_connected && $pdo) {
+    try {
+        $stmt = $pdo->query("SELECT * FROM caregiver_audio ORDER BY id DESC");
+        $caregiver_audio_list = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {}
+}
+if (empty($caregiver_audio_list) && isset($_SESSION['mock_caregiver_audio'])) {
+    $caregiver_audio_list = $_SESSION['mock_caregiver_audio'];
+}
+
+// Fetch Academy Lessons
+$academy_lessons_list = [];
+if ($db_connected && $pdo) {
+    try {
+        $stmt = $pdo->query("SELECT * FROM academy_lessons ORDER BY sort_order ASC, id ASC");
+        $academy_lessons_list = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {}
+}
+if (empty($academy_lessons_list) && isset($_SESSION['mock_academy_lessons'])) {
+    $academy_lessons_list = $_SESSION['mock_academy_lessons'];
+}
+
 // Fetch Streaming Media Library (Step 8)
 $streaming_media = [];
 if ($db_connected && $pdo) {
@@ -722,6 +991,18 @@ if ($db_connected && $pdo) {
 }
 if (empty($streaming_media) && isset($_SESSION['mock_streaming_content'])) {
     $streaming_media = $_SESSION['mock_streaming_content'];
+}
+
+// Fetch Research Studies for Vetting Queue
+$all_research_studies = [];
+if ($db_connected && $pdo) {
+    try {
+        $stmt = $pdo->query("SELECT * FROM research_studies ORDER BY id DESC");
+        $all_research_studies = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {}
+}
+if (empty($all_research_studies) && isset($_SESSION['mock_research_studies'])) {
+    $all_research_studies = $_SESSION['mock_research_studies'];
 }
 
 // Fetch Contact Inquiry Email setting
@@ -1447,6 +1728,226 @@ if (empty($contact_inquiries) && isset($_SESSION['mock_contact_inquiries'])) {
                                     <button type="submit" class="px-2.5 py-1.5 rounded-xl hover:bg-brand-coralLight text-gray-400 hover:text-brand-coral font-bold text-[10px] transition-colors font-outfit">
                                         Delete
                                     </button>
+                                
+                                </form>
+                            </td>
+                        </tr>
+                        <?php endforeach; endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- CAREGIVER DIRECT AUDIO CONTENT MANAGEMENT -->
+        <div class="bg-white rounded-3xl shadow-card border border-gray-100 overflow-hidden mb-10">
+            <div class="p-6 border-b border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="h-10 w-10 rounded-2xl bg-brand-sky/20 text-brand-slate flex items-center justify-center font-bold">
+                        <i class="fa-solid fa-volume-high"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-bold font-outfit text-brand-slate">Caregiver Audio Content Management</h2>
+                        <p class="text-xs text-gray-500">Upload audio files (.mp3, .wav, .ogg) or provide direct audio streams for the Caregiver Hub Mindfulness Player.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Upload & Publish Form -->
+            <form method="POST" enctype="multipart/form-data" class="bg-brand-bg/50 p-6 border-b border-gray-100 grid grid-cols-1 md:grid-cols-12 gap-4">
+                <input type="hidden" name="action" value="add_caregiver_audio">
+                
+                <div class="md:col-span-4">
+                    <label class="block text-[11px] font-bold text-brand-slate uppercase mb-1">Track Title</label>
+                    <input type="text" name="title" required placeholder="e.g. 5-Minute Caregiver Decompression" class="w-full text-xs rounded-xl border border-gray-200 p-2.5 bg-white focus:border-brand-sage focus:outline-none">
+                </div>
+
+                <div class="md:col-span-3">
+                    <label class="block text-[11px] font-bold text-brand-slate uppercase mb-1">Direct Audio File (.mp3, .wav)</label>
+                    <input type="file" name="audio_file" accept=".mp3,.wav,.ogg,.m4a,.aac" class="w-full text-xs file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:bg-brand-sageLight file:text-brand-sage border border-gray-200 rounded-xl p-1 bg-white focus:outline-none">
+                </div>
+
+                <div class="md:col-span-3">
+                    <label class="block text-[11px] font-bold text-brand-slate uppercase mb-1">Or Audio Stream URL</label>
+                    <input type="text" name="audio_url" placeholder="https://.../audio.mp3" class="w-full text-xs rounded-xl border border-gray-200 p-2.5 bg-white focus:border-brand-sage focus:outline-none font-mono">
+                </div>
+
+                <div class="md:col-span-2">
+                    <label class="block text-[11px] font-bold text-brand-slate uppercase mb-1">Duration</label>
+                    <input type="text" name="duration" value="05:00" placeholder="05:00" class="w-full text-xs rounded-xl border border-gray-200 p-2.5 bg-white focus:border-brand-sage focus:outline-none">
+                </div>
+
+                <div class="md:col-span-4">
+                    <label class="block text-[11px] font-bold text-brand-slate uppercase mb-1">Target Caregiver Archetype</label>
+                    <select name="archetype" class="w-full text-xs rounded-xl border border-gray-200 p-2.5 bg-white focus:border-brand-sage focus:outline-none">
+                        <option value="all">🌟 All Caregivers</option>
+                        <option value="dementia_carer">🧠 Dementia & Alzheimer's Carers</option>
+                        <option value="stressed_student">🎓 Stressed Students</option>
+                    </select>
+                </div>
+
+                <div class="md:col-span-6">
+                    <label class="block text-[11px] font-bold text-brand-slate uppercase mb-1">Brief Description / Respite Prompt</label>
+                    <input type="text" name="description" placeholder="Restorative breathing prompt to lower sympathetic heart rate..." class="w-full text-xs rounded-xl border border-gray-200 p-2.5 bg-white focus:border-brand-sage focus:outline-none">
+                </div>
+
+                <div class="md:col-span-2 flex items-end">
+                    <button type="submit" class="w-full py-2.5 bg-brand-sage hover:bg-brand-sageHover text-white font-bold rounded-xl text-xs shadow-sm transition-all font-outfit">
+                        Upload & Publish
+                    </button>
+                </div>
+            </form>
+
+            <!-- Audio Roster Table -->
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-brand-bg text-[10px] font-bold text-brand-slate uppercase tracking-wider border-b border-gray-100">
+                            <th class="p-4 pl-6">ID</th>
+                            <th class="p-4">Title</th>
+                            <th class="p-4">Archetype</th>
+                            <th class="p-4">Duration</th>
+                            <th class="p-4">Audio Preview</th>
+                            <th class="p-4 pr-6 text-right font-outfit">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100 text-xs">
+                        <?php if (empty($caregiver_audio_list)): ?>
+                        <tr>
+                            <td colspan="6" class="p-8 text-center text-gray-500 font-medium">No audio files uploaded yet.</td>
+                        </tr>
+                        <?php else: foreach ($caregiver_audio_list as $ca): ?>
+                        <tr class="hover:bg-brand-bg/40 transition-colors">
+                            <td class="p-4 pl-6 font-bold text-brand-slate">#<?php echo htmlspecialchars($ca['id']); ?></td>
+                            <td class="p-4 font-bold text-brand-slate">
+                                <?php echo htmlspecialchars($ca['title']); ?>
+                                <p class="text-[10px] text-gray-400 font-normal"><?php echo htmlspecialchars($ca['description'] ?? ''); ?></p>
+                            </td>
+                            <td class="p-4">
+                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-brand-sageLight text-brand-sage">
+                                    <?php echo htmlspecialchars($ca['archetype'] ?? 'all'); ?>
+                                </span>
+                            </td>
+                            <td class="p-4 font-mono text-[11px] text-gray-500"><?php echo htmlspecialchars($ca['duration'] ?? '05:00'); ?></td>
+                            <td class="p-4">
+                                <audio controls preload="none" class="h-8 w-48">
+                                    <source src="<?php echo htmlspecialchars($ca['audio_url']); ?>">
+                                </audio>
+                            </td>
+                            <td class="p-4 pr-6 text-right font-outfit">
+                                <form method="POST" class="inline" onsubmit="return confirm('Delete this audio track?');">
+                                    <input type="hidden" name="action" value="delete_caregiver_audio">
+                                    <input type="hidden" name="target_id" value="<?php echo $ca['id']; ?>">
+                                    <button type="submit" class="px-2.5 py-1.5 rounded-xl hover:bg-brand-coralLight text-gray-400 hover:text-brand-coral font-bold text-[10px] transition-colors font-outfit">
+                                        Delete
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        <?php endforeach; endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- TET ACADEMY LESSON MANAGEMENT (YOUTUBE EMBED ENGINE) -->
+        <div class="bg-white rounded-3xl shadow-card border border-gray-100 overflow-hidden mb-10">
+            <div class="p-6 border-b border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="h-10 w-10 rounded-2xl bg-brand-coralLight text-brand-coral flex items-center justify-center font-bold">
+                        <i class="fa-solid fa-graduation-cap"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-bold font-outfit text-brand-slate">Learning Center - TET Academy Lesson Manager</h2>
+                        <p class="text-xs text-gray-500">Publish YouTube video lessons to the Learning Center (TET Academy). Paste any standard YouTube link or embed URL.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lesson Add Form -->
+            <form method="POST" class="bg-brand-bg/50 p-6 border-b border-gray-100 grid grid-cols-1 md:grid-cols-12 gap-4">
+                <input type="hidden" name="action" value="add_academy_lesson">
+
+                <div class="md:col-span-4">
+                    <label class="block text-[11px] font-bold text-brand-slate uppercase mb-1">Lesson Title</label>
+                    <input type="text" name="title" required placeholder="e.g. Understanding Panic & Anxiety" class="w-full text-xs rounded-xl border border-gray-200 p-2.5 bg-white focus:border-brand-sage focus:outline-none">
+                </div>
+
+                <div class="md:col-span-3">
+                    <label class="block text-[11px] font-bold text-brand-slate uppercase mb-1">Module Category</label>
+                    <select name="category" class="w-full text-xs rounded-xl border border-gray-200 p-2.5 bg-white focus:border-brand-sage focus:outline-none">
+                        <option value="Anxiety">Anxiety & Grounding</option>
+                        <option value="Sleep">Sleep Science & Rest</option>
+                        <option value="Boundaries">Boundaries & Self-Care</option>
+                        <option value="Regulation">Emotional Regulation</option>
+                        <option value="Trauma">Trauma & Resilience</option>
+                        <option value="Grief">Grief & Adaptation</option>
+                    </select>
+                </div>
+
+                <div class="md:col-span-3">
+                    <label class="block text-[11px] font-bold text-brand-slate uppercase mb-1">YouTube Link / Embed URL</label>
+                    <input type="text" name="youtube_url" required placeholder="https://www.youtube.com/watch?v=... or youtu.be/..." class="w-full text-xs rounded-xl border border-gray-200 p-2.5 bg-white focus:border-brand-sage focus:outline-none font-mono">
+                </div>
+
+                <div class="md:col-span-2">
+                    <label class="block text-[11px] font-bold text-brand-slate uppercase mb-1">Duration</label>
+                    <input type="text" name="duration" value="5 mins" placeholder="5 mins" class="w-full text-xs rounded-xl border border-gray-200 p-2.5 bg-white focus:border-brand-sage focus:outline-none">
+                </div>
+
+                <div class="md:col-span-9">
+                    <label class="block text-[11px] font-bold text-brand-slate uppercase mb-1">Lesson Description / Core Takeaway</label>
+                    <input type="text" name="description" placeholder="What the learner will discover in this lesson..." class="w-full text-xs rounded-xl border border-gray-200 p-2.5 bg-white focus:border-brand-sage focus:outline-none">
+                </div>
+
+                <div class="md:col-span-3 flex items-end">
+                    <button type="submit" class="w-full py-2.5 bg-brand-coral hover:bg-brand-coralHover text-white font-bold rounded-xl text-xs shadow-sm transition-all font-outfit">
+                        Publish Video Lesson
+                    </button>
+                </div>
+            </form>
+
+            <!-- Lesson Roster Table -->
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-brand-bg text-[10px] font-bold text-brand-slate uppercase tracking-wider border-b border-gray-100">
+                            <th class="p-4 pl-6">ID</th>
+                            <th class="p-4">Category</th>
+                            <th class="p-4">Lesson Title</th>
+                            <th class="p-4">YouTube Embed URL</th>
+                            <th class="p-4">Duration</th>
+                            <th class="p-4 pr-6 text-right font-outfit">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100 text-xs">
+                        <?php if (empty($academy_lessons_list)): ?>
+                        <tr>
+                            <td colspan="6" class="p-8 text-center text-gray-500 font-medium">No video lessons configured yet.</td>
+                        </tr>
+                        <?php else: foreach ($academy_lessons_list as $al): ?>
+                        <tr class="hover:bg-brand-bg/40 transition-colors">
+                            <td class="p-4 pl-6 font-bold text-brand-slate">#<?php echo htmlspecialchars($al['id']); ?></td>
+                            <td class="p-4">
+                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-brand-coralLight text-brand-coral">
+                                    <?php echo htmlspecialchars($al['category']); ?>
+                                </span>
+                            </td>
+                            <td class="p-4 font-bold text-brand-slate">
+                                <?php echo htmlspecialchars($al['title']); ?>
+                                <p class="text-[10px] text-gray-400 font-normal truncate max-w-sm"><?php echo htmlspecialchars($al['description']); ?></p>
+                            </td>
+                            <td class="p-4 font-mono text-[10px] text-gray-500 truncate max-w-xs"><?php echo htmlspecialchars($al['youtube_url']); ?></td>
+                            <td class="p-4 font-mono text-[11px] text-gray-500"><?php echo htmlspecialchars($al['duration']); ?></td>
+                            <td class="p-4 pr-6 text-right font-outfit space-x-1 whitespace-nowrap">
+                                <button type="button" onclick="openEditLessonModal(<?php echo htmlspecialchars(json_encode($al)); ?>)" class="px-2.5 py-1.5 rounded-xl bg-brand-bg hover:bg-brand-sageLight text-brand-slate hover:text-brand-sage font-bold text-[10px] transition-colors font-outfit border border-gray-200">
+                                    <i class="fa-solid fa-pen-to-square mr-1"></i> Edit
+                                </button>
+                                <form method="POST" class="inline" onsubmit="return confirm('Delete this lesson?');">
+                                    <input type="hidden" name="action" value="delete_academy_lesson">
+                                    <input type="hidden" name="target_id" value="<?php echo $al['id']; ?>">
+                                    <button type="submit" class="px-2.5 py-1.5 rounded-xl hover:bg-brand-coralLight text-gray-400 hover:text-brand-coral font-bold text-[10px] transition-colors font-outfit">
+                                        Delete
+                                    </button>
                                 </form>
                             </td>
                         </tr>
@@ -1563,17 +2064,49 @@ if (empty($contact_inquiries) && isset($_SESSION['mock_contact_inquiries'])) {
                         <i class="fa-solid fa-microscope"></i>
                     </div>
                     <div>
-                        <h3 class="text-base font-bold font-outfit text-brand-slate">Clinical Research Study Vetting Queue</h3>
-                        <p class="text-xs text-gray-500">Review clinical papers and pilot studies submitted by specialists before publishing to the Research Hub.</p>
+                        <h3 class="text-base font-bold font-outfit text-brand-slate">Clinical Research Study Management & Vetting Queue</h3>
+                        <p class="text-xs text-gray-500">Launch clinical trials with YouTube video briefings and review studies before publishing to the Research Hub.</p>
                     </div>
                 </div>
             </div>
+
+            <!-- Launch Study Form -->
+            <form method="POST" class="bg-brand-bg/50 p-5 rounded-2xl border border-gray-100 mb-6 grid grid-cols-1 md:grid-cols-12 gap-4">
+                <input type="hidden" name="action" value="create_research_study">
+
+                <div class="md:col-span-5">
+                    <label class="block text-[11px] font-bold text-brand-slate uppercase mb-1">Study Title</label>
+                    <input type="text" name="title" required placeholder="e.g. Caregiver Burnout Somatic Efficacy" class="w-full text-xs rounded-xl border border-gray-200 p-2.5 bg-white focus:border-brand-sage focus:outline-none">
+                </div>
+
+                <div class="md:col-span-3">
+                    <label class="block text-[11px] font-bold text-brand-slate uppercase mb-1">Target Participants</label>
+                    <input type="number" name="target_participants" min="5" value="50" required class="w-full text-xs rounded-xl border border-gray-200 p-2.5 bg-white focus:border-brand-sage focus:outline-none">
+                </div>
+
+                <div class="md:col-span-4 flex items-end">
+                    <button type="submit" class="w-full py-2.5 bg-brand-sage hover:bg-brand-sageHover text-white font-bold rounded-xl text-xs shadow-sm transition-all flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-plus text-xs"></i> Launch & Publish Study
+                    </button>
+                </div>
+
+                <div class="md:col-span-6">
+                    <label class="block text-[11px] font-bold text-brand-slate uppercase mb-1">YouTube Video Briefing URL (Optional)</label>
+                    <input type="text" name="video_url" placeholder="https://www.youtube.com/watch?v=... or https://youtu.be/..." class="w-full text-xs rounded-xl border border-gray-200 p-2.5 bg-white focus:border-brand-sage focus:outline-none font-mono">
+                </div>
+
+                <div class="md:col-span-6">
+                    <label class="block text-[11px] font-bold text-brand-slate uppercase mb-1">Clinical Scope & Description</label>
+                    <input type="text" name="description" required placeholder="Detail the trial parameters, target demographics, and hypotheses..." class="w-full text-xs rounded-xl border border-gray-200 p-2.5 bg-white focus:border-brand-sage focus:outline-none">
+                </div>
+            </form>
 
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse">
                     <thead>
                         <tr class="bg-brand-bg text-[10px] font-bold text-brand-slate uppercase tracking-wider border-b border-gray-100">
                             <th class="p-3 pl-4">Study Title</th>
+                            <th class="p-3">Video Briefing</th>
                             <th class="p-3">Target Participants</th>
                             <th class="p-3">Status</th>
                             <th class="p-3 pr-4 text-right">Vetting Actions</th>
@@ -1581,15 +2114,25 @@ if (empty($contact_inquiries) && isset($_SESSION['mock_contact_inquiries'])) {
                     </thead>
                     <tbody class="divide-y divide-gray-100 text-xs">
                         <?php if (empty($all_research_studies)): ?>
-                        <tr><td colspan="4" class="p-6 text-center text-gray-400">No research studies found.</td></tr>
+                        <tr><td colspan="5" class="p-6 text-center text-gray-400">No research studies found.</td></tr>
                         <?php else: foreach ($all_research_studies as $rs): 
                             $status = $rs['status'] ?? 'active';
                             $badgeClass = ($status === 'active' || $status === 'approved') ? 'bg-brand-sageLight text-brand-sage' : (($status === 'rejected') ? 'bg-brand-coralLight text-brand-coral' : 'bg-amber-100 text-amber-800');
+                            $has_video = !empty($rs['video_url']);
                         ?>
                         <tr class="hover:bg-brand-bg/30">
                             <td class="p-3 pl-4 font-bold text-brand-slate">
                                 <?php echo htmlspecialchars($rs['title']); ?>
                                 <span class="block font-normal text-[11px] text-gray-500 mt-0.5"><?php echo htmlspecialchars($rs['description']); ?></span>
+                            </td>
+                            <td class="p-3">
+                                <?php if ($has_video): ?>
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-red-50 text-red-700 font-semibold text-[10px]">
+                                        <i class="fa-brands fa-youtube text-red-600"></i> Video Briefing
+                                    </span>
+                                <?php else: ?>
+                                    <span class="text-gray-400 text-[10px]">No video</span>
+                                <?php endif; ?>
                             </td>
                             <td class="p-3 text-gray-600 font-semibold"><?php echo intval($rs['target_participants'] ?? 100); ?> Participants</td>
                             <td class="p-3">
@@ -1597,13 +2140,13 @@ if (empty($contact_inquiries) && isset($_SESSION['mock_contact_inquiries'])) {
                                     <?php echo htmlspecialchars($status); ?>
                                 </span>
                             </td>
-                            <td class="p-3 pr-4 text-right space-x-1">
+                            <td class="p-3 pr-4 text-right space-x-1 whitespace-nowrap">
                                 <?php if ($status !== 'active' && $status !== 'approved'): ?>
                                 <form method="POST" class="inline">
                                     <input type="hidden" name="action" value="approve_research_study">
                                     <input type="hidden" name="target_id" value="<?php echo $rs['id']; ?>">
                                     <button type="submit" class="px-2.5 py-1 rounded-lg bg-brand-sage hover:bg-brand-sageHover text-white text-xs font-bold transition-all shadow-sm">
-                                        Approve & Publish
+                                        Approve
                                     </button>
                                 </form>
                                 <?php endif; ?>
@@ -1616,6 +2159,13 @@ if (empty($contact_inquiries) && isset($_SESSION['mock_contact_inquiries'])) {
                                     </button>
                                 </form>
                                 <?php endif; ?>
+                                <form method="POST" class="inline" onsubmit="return confirm('Delete this research trial permanently?');">
+                                    <input type="hidden" name="action" value="delete_research_study">
+                                    <input type="hidden" name="target_id" value="<?php echo $rs['id']; ?>">
+                                    <button type="submit" class="px-2 py-1 text-brand-coral hover:bg-brand-coralLight rounded-lg text-xs font-bold transition-colors">
+                                        <i class="fa-solid fa-trash-can"></i>
+                                    </button>
+                                </form>
                             </td>
                         </tr>
                         <?php endforeach; endif; ?>
@@ -1842,8 +2392,95 @@ if (empty($contact_inquiries) && isset($_SESSION['mock_contact_inquiries'])) {
         </div>
     </div>
 
+    <!-- EDIT ACADEMY LESSON MODAL -->
+    <div id="edit-lesson-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-slate/60 backdrop-blur-sm opacity-0 pointer-events-none transition-all duration-300">
+        <div class="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-card border border-gray-100 relative transform scale-95 transition-transform duration-300">
+            <div class="flex items-center justify-between mb-6 pb-4 border-b border-gray-100">
+                <div class="flex items-center gap-2.5">
+                    <div class="h-9 w-9 rounded-xl bg-brand-coralLight text-brand-coral flex items-center justify-center font-bold">
+                        <i class="fa-solid fa-pen-to-square"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-base font-outfit text-brand-slate">Edit Academy Lesson</h3>
+                        <p class="text-xs text-gray-400">Update YouTube video link, title, duration, or description</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeEditLessonModal()" class="h-8 w-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-400 flex items-center justify-center transition-colors">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+            </div>
+
+            <form method="POST" class="space-y-4">
+                <input type="hidden" name="action" value="edit_academy_lesson">
+                <input type="hidden" name="target_id" id="edit-lesson-id">
+
+                <div>
+                    <label class="block text-[11px] font-bold text-brand-slate uppercase mb-1">Lesson Title</label>
+                    <input type="text" name="title" id="edit-lesson-title" required class="w-full text-xs rounded-xl border border-gray-200 p-2.5 bg-white focus:border-brand-sage focus:outline-none">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[11px] font-bold text-brand-slate uppercase mb-1">Category</label>
+                        <select name="category" id="edit-lesson-category" class="w-full text-xs rounded-xl border border-gray-200 p-2.5 bg-white focus:border-brand-sage focus:outline-none">
+                            <option value="Anxiety">Anxiety & Grounding</option>
+                            <option value="Sleep">Sleep Science & Rest</option>
+                            <option value="Boundaries">Boundaries & Self-Care</option>
+                            <option value="Regulation">Emotional Regulation</option>
+                            <option value="Trauma">Trauma & Resilience</option>
+                            <option value="Grief">Grief & Adaptation</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-brand-slate uppercase mb-1">Duration</label>
+                        <input type="text" name="duration" id="edit-lesson-duration" placeholder="e.g. 15:15 or 15 mins" class="w-full text-xs rounded-xl border border-gray-200 p-2.5 bg-white focus:border-brand-sage focus:outline-none">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-[11px] font-bold text-brand-slate uppercase mb-1">YouTube Link / Embed URL</label>
+                    <input type="text" name="youtube_url" id="edit-lesson-youtube" required placeholder="https://www.youtube.com/watch?v=..." class="w-full text-xs rounded-xl border border-gray-200 p-2.5 bg-white focus:border-brand-sage focus:outline-none font-mono">
+                    <p class="text-[10px] text-gray-400 mt-1">Paste standard youtube.com/watch?v=... or youtu.be/... link.</p>
+                </div>
+
+                <div>
+                    <label class="block text-[11px] font-bold text-brand-slate uppercase mb-1">Description / Core Takeaway</label>
+                    <textarea name="description" id="edit-lesson-desc" rows="3" class="w-full text-xs rounded-xl border border-gray-200 p-2.5 bg-white focus:border-brand-sage focus:outline-none resize-none"></textarea>
+                </div>
+
+                <div class="flex items-center gap-3 pt-2">
+                    <button type="button" onclick="closeEditLessonModal()" class="w-1/2 py-2.5 rounded-2xl bg-gray-100 hover:bg-gray-200 text-gray-500 font-bold transition-colors text-center font-outfit text-xs">
+                        Cancel
+                    </button>
+                    <button type="submit" class="w-1/2 py-2.5 rounded-2xl bg-brand-coral hover:bg-brand-coralHover text-white font-bold shadow-md transition-colors text-center font-outfit text-xs">
+                        Update Lesson
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- JS SCRIPTS -->
     <script>
+        const editLessonModal = document.getElementById('edit-lesson-modal');
+        function openEditLessonModal(lesson) {
+            document.getElementById('edit-lesson-id').value = lesson.id;
+            document.getElementById('edit-lesson-title').value = lesson.title || '';
+            document.getElementById('edit-lesson-category').value = lesson.category || 'Anxiety';
+            document.getElementById('edit-lesson-duration').value = lesson.duration || '';
+            document.getElementById('edit-lesson-youtube').value = lesson.youtube_url || '';
+            document.getElementById('edit-lesson-desc').value = lesson.description || '';
+
+            editLessonModal.classList.remove('opacity-0', 'pointer-events-none');
+            editLessonModal.querySelector('.relative').classList.remove('scale-95');
+            editLessonModal.querySelector('.relative').classList.add('scale-100');
+        }
+
+        function closeEditLessonModal() {
+            editLessonModal.classList.add('opacity-0', 'pointer-events-none');
+            editLessonModal.querySelector('.relative').classList.remove('scale-100');
+            editLessonModal.querySelector('.relative').classList.add('scale-95');
+        }
         const editModal = document.getElementById('edit-user-modal');
         const modalTargetId = document.getElementById('modal-target-id');
         const modalName = document.getElementById('modal-name');

@@ -233,6 +233,58 @@ try {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     ) ENGINE=InnoDB");
 
+    // Create Caregiver Audio Table (for directly uploaded or linked audio tracks)
+    $pdo->exec("CREATE TABLE IF NOT EXISTS caregiver_audio (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        description TEXT,
+        duration VARCHAR(50) DEFAULT '05:00',
+        audio_url TEXT NOT NULL,
+        archetype VARCHAR(50) DEFAULT 'all',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB");
+
+    // Seed default caregiver audio if empty
+    $cg_audio_count = $pdo->query("SELECT COUNT(*) FROM caregiver_audio")->fetchColumn();
+    if ($cg_audio_count == 0) {
+        $pdo->exec("INSERT INTO caregiver_audio (id, title, description, duration, audio_url, archetype) VALUES
+            (1, 'Breathing Space for Caregivers', 'A 5-minute restorative pacing breathwork session to calm nervous system strain.', '05:00', 'https://actions.google.com/sounds/v1/water/gentle_rain_loop.ogg', 'all'),
+            (2, 'Evening Decompression & Compassion Reset', 'Release physical neck and shoulder tension after an intensive care shift.', '07:30', 'https://actions.google.com/sounds/v1/water/lake_waves_gentle.ogg', 'dementia_carer'),
+            (3, 'Cognitive Grounding for Exam Overwhelm', 'A rapid box breathing sequence designed for student focus and stress relief.', '04:00', 'https://actions.google.com/sounds/v1/weather/wind_chimes_soft.ogg', 'stressed_student')");
+    }
+
+    // Create Academy Lessons Table (YouTube embedded links from admin)
+    $pdo->exec("CREATE TABLE IF NOT EXISTS academy_lessons (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        category VARCHAR(50) NOT NULL,
+        title VARCHAR(255) NOT NULL,
+        description TEXT NOT NULL,
+        duration VARCHAR(30) DEFAULT '5 mins',
+        youtube_url TEXT NOT NULL,
+        icon_name VARCHAR(50) DEFAULT 'book-open',
+        sort_order INT DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB");
+
+    // Create User Academy Completed Lessons tracking table
+    $pdo->exec("CREATE TABLE IF NOT EXISTS academy_user_progress (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT NOT NULL,
+        lesson_id INT NOT NULL,
+        completed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY uniq_user_lesson (user_id, lesson_id)
+    ) ENGINE=InnoDB");
+
+    // Seed default academy lessons if empty
+    $lesson_count = $pdo->query("SELECT COUNT(*) FROM academy_lessons")->fetchColumn();
+    if ($lesson_count == 0) {
+        $pdo->exec("INSERT INTO academy_lessons (id, category, title, description, duration, youtube_url, icon_name, sort_order) VALUES
+            (1, 'Anxiety', 'Understanding Anxiety & Panic Cycles', 'Learn to identify the biological root causes of acute anxiety and practical sensory tools to ground yourself in the moment.', '15:15', 'https://www.youtube.com/embed/WWloIAQpMcQ', 'cloud-rain', 1),
+            (2, 'Sleep', 'The Neuroscience of Deep Rest', 'Discover how circadian rhythms impact emotional regulation and build an evidence-based nighttime decompression routine.', '19:10', 'https://www.youtube.com/embed/5MuIMqhT8DM', 'moon', 2),
+            (3, 'Boundaries', 'Boundaries 101: Saying No Without Guilt', 'Master the communication frameworks for setting clear emotional boundaries and protecting your energy reserve.', '12:28', 'https://www.youtube.com/embed/1vRzTzT1U0Y', 'shield', 3),
+            (4, 'Regulation', 'Somatic Emotional Regulation Techniques', 'Evidence-based physical and breathwork techniques to pause, process, and de-escalate acute internal tension.', '14:02', 'https://www.youtube.com/embed/0VfW9Q5Z7j4', 'heart-pulse', 4)");
+    }
+
     // Create User Telemetry Logs table
     $pdo->exec("CREATE TABLE IF NOT EXISTS user_telemetry_logs (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -367,10 +419,20 @@ try {
         title VARCHAR(150) NOT NULL,
         description TEXT NOT NULL,
         duration_seconds INT NOT NULL,
+        media_url VARCHAR(255) DEFAULT NULL,
+        duration VARCHAR(50) DEFAULT '10 Min',
+        tags VARCHAR(100) DEFAULT 'Audio',
         plays_count INT DEFAULT 0,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (category_id) REFERENCES streaming_categories(id) ON DELETE CASCADE
     ) ENGINE=InnoDB");
+
+    // Add media_url column if table was already created without it
+    try {
+        $pdo->exec("ALTER TABLE streaming_content ADD COLUMN IF NOT EXISTS media_url VARCHAR(255) DEFAULT NULL");
+        $pdo->exec("ALTER TABLE streaming_content ADD COLUMN IF NOT EXISTS duration VARCHAR(50) DEFAULT '10 Min'");
+        $pdo->exec("ALTER TABLE streaming_content ADD COLUMN IF NOT EXISTS tags VARCHAR(100) DEFAULT 'Audio'");
+    } catch (PDOException $e) {}
 
     // Seed streaming categories
     $stream_cat_count = $pdo->query("SELECT COUNT(*) FROM streaming_categories")->fetchColumn();
@@ -406,8 +468,13 @@ try {
         description TEXT NOT NULL,
         status ENUM('active', 'completed', 'draft') DEFAULT 'active',
         target_participants INT NOT NULL,
+        video_url VARCHAR(255) DEFAULT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     ) ENGINE=InnoDB");
+
+    try {
+        $pdo->exec("ALTER TABLE research_studies ADD COLUMN IF NOT EXISTS video_url VARCHAR(255) DEFAULT NULL");
+    } catch (PDOException $e) {}
 
     $pdo->exec("CREATE TABLE IF NOT EXISTS research_participants (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -1283,14 +1350,14 @@ if (!isset($_SESSION['mock_streaming_categories'])) {
 }
 if (!isset($_SESSION['mock_streaming_content'])) {
     $_SESSION['mock_streaming_content'] = [
-        ['id' => 1, 'category_id' => 1, 'title' => '5-Minute Morning Grounding', 'description' => 'A quick, restorative guided meditation to align your thoughts for the day.', 'duration_seconds' => 300, 'plays_count' => 142],
-        ['id' => 2, 'category_id' => 2, 'title' => 'Deep Ocean Dreams sleepscape', 'description' => 'Soft ocean swell recordings mixed with binaural sleep tones.', 'duration_seconds' => 1800, 'plays_count' => 480],
-        ['id' => 3, 'category_id' => 3, 'title' => 'Navigating Compassion Fatigue', 'description' => 'A therapeutic talk by Dr. Evelyn Carter on clinical boundary setting.', 'duration_seconds' => 600, 'plays_count' => 95],
-        ['id' => 4, 'category_id' => 4, 'title' => 'Calming Toddler Tantrum de-escalation', 'description' => 'De-escalation pathways to handle emotional storms with patience.', 'duration_seconds' => 420, 'plays_count' => 68],
-        ['id' => 5, 'category_id' => 5, 'title' => 'Overcoming Sudden Panic Spikes', 'description' => 'A rapid box breathing audio pacemaker to lower active heart rates.', 'duration_seconds' => 240, 'plays_count' => 215],
-        ['id' => 6, 'category_id' => 6, 'title' => 'Somatic Release for Held Stress', 'description' => 'Simple physical check-in prompts designed to identify bodily triggers.', 'duration_seconds' => 480, 'plays_count' => 54],
-        ['id' => 7, 'category_id' => 7, 'title' => 'Grief: Honoring the Memory', 'description' => 'A quiet guidance session on adapting to caregiver loss.', 'duration_seconds' => 900, 'plays_count' => 37],
-        ['id' => 8, 'category_id' => 2, 'title' => 'Rainfall over Forest Sanctuary', 'description' => 'Natural rain sounds layered with standing wind noise to mask thoughts.', 'duration_seconds' => 1200, 'plays_count' => 310]
+        ['id' => 1, 'category_id' => 1, 'title' => '5-Minute Morning Grounding', 'description' => 'A quick, restorative guided meditation to align your thoughts for the day.', 'duration_seconds' => 300, 'plays_count' => 142, 'media_url' => 'https://www.youtube.com/embed/inpok4MKVLM'],
+        ['id' => 2, 'category_id' => 2, 'title' => 'Deep Ocean Dreams sleepscape', 'description' => 'Soft ocean swell recordings mixed with binaural sleep tones.', 'duration_seconds' => 1800, 'plays_count' => 480, 'media_url' => 'https://www.youtube.com/embed/1ZYbU82GVz4'],
+        ['id' => 3, 'category_id' => 3, 'title' => 'Navigating Compassion Fatigue', 'description' => 'A therapeutic talk by Dr. Evelyn Carter on clinical boundary setting.', 'duration_seconds' => 600, 'plays_count' => 95, 'media_url' => 'https://www.youtube.com/embed/tS41O7Z-fA0'],
+        ['id' => 4, 'category_id' => 4, 'title' => 'Calming Toddler Tantrum de-escalation', 'description' => 'De-escalation pathways to handle emotional storms with patience.', 'duration_seconds' => 420, 'plays_count' => 68, 'media_url' => 'https://www.youtube.com/embed/7XFLT9qKq8M'],
+        ['id' => 5, 'category_id' => 5, 'title' => 'Overcoming Sudden Panic Spikes', 'description' => 'A rapid box breathing audio pacemaker to lower active heart rates.', 'duration_seconds' => 240, 'plays_count' => 215, 'media_url' => 'https://www.youtube.com/embed/tEmt1Znux58'],
+        ['id' => 6, 'category_id' => 6, 'title' => 'Somatic Release for Held Stress', 'description' => 'Simple physical check-in prompts designed to identify bodily triggers.', 'duration_seconds' => 480, 'plays_count' => 54, 'media_url' => 'https://www.youtube.com/embed/4pLUleLdwY4'],
+        ['id' => 7, 'category_id' => 7, 'title' => 'Grief: Honoring the Memory', 'description' => 'A quiet guidance session on adapting to caregiver loss.', 'duration_seconds' => 900, 'plays_count' => 37, 'media_url' => 'https://www.youtube.com/embed/c1N4kPE42k4'],
+        ['id' => 8, 'category_id' => 2, 'title' => 'Rainfall over Forest Sanctuary', 'description' => 'Natural rain sounds layered with standing wind noise to mask thoughts.', 'duration_seconds' => 1200, 'plays_count' => 310, 'media_url' => 'https://www.youtube.com/embed/mPZkdNFkNps']
     ];
 }
 if (!isset($_SESSION['mock_caregiver_videos'])) {
@@ -1302,9 +1369,9 @@ if (!isset($_SESSION['mock_caregiver_videos'])) {
 }
 if (!isset($_SESSION['mock_research_studies'])) {
     $_SESSION['mock_research_studies'] = [
-        ['id' => 1, 'title' => 'VR Resilience Efficacy Trial', 'description' => 'Clinical study analyzing the physiological and emotional effects of VR mindfulness simulations on active frontline care coordinators.', 'status' => 'active', 'target_participants' => 50],
-        ['id' => 2, 'title' => 'Wearable Biometrics Stress Correlation', 'description' => 'Anonymized analysis matching daily active minutes and sleep depth against weekly self-reported caregiver burnout scores.', 'status' => 'active', 'target_participants' => 100],
-        ['id' => 3, 'title' => 'Shift Transition Fatigue Study', 'description' => 'Evaluating cognitive load and stress levels before and after structured clinical handover procedures in critical care units.', 'status' => 'active', 'target_participants' => 35]
+        ['id' => 1, 'title' => 'VR Resilience Efficacy Trial', 'description' => 'Clinical study analyzing the physiological and emotional effects of VR mindfulness simulations on active frontline care coordinators.', 'status' => 'active', 'target_participants' => 50, 'video_url' => 'https://www.youtube.com/embed/inpok4MKVLM'],
+        ['id' => 2, 'title' => 'Wearable Biometrics Stress Correlation', 'description' => 'Anonymized analysis matching daily active minutes and sleep depth against weekly self-reported caregiver burnout scores.', 'status' => 'active', 'target_participants' => 100, 'video_url' => 'https://www.youtube.com/embed/1ZYbU82GVz4'],
+        ['id' => 3, 'title' => 'Shift Transition Fatigue Study', 'description' => 'Evaluating cognitive load and stress levels before and after structured clinical handover procedures in critical care units.', 'status' => 'active', 'target_participants' => 35, 'video_url' => 'https://www.youtube.com/embed/tS41O7Z-fA0']
     ];
 }
 if (!isset($_SESSION['mock_research_participants'])) {
@@ -1379,6 +1446,26 @@ if (!isset($_SESSION['mock_befrienders'])) {
 if (!isset($_SESSION['mock_befriender_sessions'])) {
     $_SESSION['mock_befriender_sessions'] = [
         ['id' => 1, 'user_id' => 1, 'befriender_id' => 1, 'befriender_name' => 'Sarah Jenkins', 'scheduled_at' => date('Y-m-d H:i:s', strtotime('+2 days')), 'status' => 'scheduled', 'mode' => 'chat']
+    ];
+}
+if (!isset($_SESSION['mock_caregiver_audio'])) {
+    $_SESSION['mock_caregiver_audio'] = [
+        ['id' => 1, 'title' => 'Breathing Space for Caregivers', 'description' => 'A 5-minute restorative pacing breathwork session to calm nervous system strain.', 'duration' => '05:00', 'audio_url' => 'https://actions.google.com/sounds/v1/water/gentle_rain_loop.ogg', 'archetype' => 'all'],
+        ['id' => 2, 'title' => 'Evening Decompression & Compassion Reset', 'description' => 'Release physical neck and shoulder tension after an intensive care shift.', 'duration' => '07:30', 'audio_url' => 'https://actions.google.com/sounds/v1/water/lake_waves_gentle.ogg', 'archetype' => 'dementia_carer'],
+        ['id' => 3, 'title' => 'Cognitive Grounding for Exam Overwhelm', 'description' => 'A rapid box breathing sequence designed for student focus and stress relief.', 'duration' => '04:00', 'audio_url' => 'https://actions.google.com/sounds/v1/weather/wind_chimes_soft.ogg', 'archetype' => 'stressed_student']
+    ];
+}
+if (!isset($_SESSION['mock_academy_lessons'])) {
+    $_SESSION['mock_academy_lessons'] = [
+        ['id' => 1, 'category' => 'Anxiety', 'title' => 'Understanding Anxiety & Panic Cycles', 'description' => 'Learn to identify the biological root causes of acute anxiety and practical sensory tools to ground yourself in the moment.', 'duration' => '15:15', 'youtube_url' => 'https://www.youtube.com/embed/WWloIAQpMcQ', 'icon_name' => 'cloud-rain', 'sort_order' => 1],
+        ['id' => 2, 'category' => 'Sleep', 'title' => 'The Neuroscience of Deep Rest', 'description' => 'Discover how circadian rhythms impact emotional regulation and build an evidence-based nighttime decompression routine.', 'duration' => '19:10', 'youtube_url' => 'https://www.youtube.com/embed/5MuIMqhT8DM', 'icon_name' => 'moon', 'sort_order' => 2],
+        ['id' => 3, 'category' => 'Boundaries', 'title' => 'Boundaries 101: Saying No Without Guilt', 'description' => 'Master the communication frameworks for setting clear emotional boundaries and protecting your energy reserve.', 'duration' => '12:28', 'youtube_url' => 'https://www.youtube.com/embed/1vRzTzT1U0Y', 'icon_name' => 'shield', 'sort_order' => 3],
+        ['id' => 4, 'category' => 'Regulation', 'title' => 'Somatic Emotional Regulation Techniques', 'description' => 'Evidence-based physical and breathwork techniques to pause, process, and de-escalate acute internal tension.', 'duration' => '14:02', 'youtube_url' => 'https://www.youtube.com/embed/0VfW9Q5Z7j4', 'icon_name' => 'heart-pulse', 'sort_order' => 4]
+    ];
+}
+if (!isset($_SESSION['mock_academy_user_progress'])) {
+    $_SESSION['mock_academy_user_progress'] = [
+        ['user_id' => 1, 'lesson_id' => 1]
     ];
 }
 // ─────────────────────────────────────────────────────────────────────────────

@@ -87,6 +87,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ];
                 $action_success = "Your self-assessment score has been saved (Session mock storage).";
             }
+
+            // Sync to Wellbeing Passport
+            if (!isset($_SESSION['user_activity_count'][$user_id])) {
+                $_SESSION['user_activity_count'][$user_id] = 1;
+            } else {
+                $_SESSION['user_activity_count'][$user_id]++;
+            }
         } else {
             $action_error = "Invalid assessment score. Please try completing the questionnaire again.";
         }
@@ -116,6 +123,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'created_at' => date('Y-m-d H:i:s')
                 ];
                 $action_success = "Your respite break has been scheduled (Session mock storage).";
+            }
+
+            // Sync to Wellbeing Passport
+            if (!isset($_SESSION['user_activity_count'][$user_id])) {
+                $_SESSION['user_activity_count'][$user_id] = 1;
+            } else {
+                $_SESSION['user_activity_count'][$user_id]++;
             }
         } else {
             $action_error = "Please fill out all respite break fields correctly.";
@@ -171,7 +185,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ];
             }
         }
-        header("Location: caregiver_hub.php?tab=resilience&plan_saved=1");
+
+        // Sync to Wellbeing Passport
+        if (!isset($_SESSION['user_activity_count'][$user_id])) {
+            $_SESSION['user_activity_count'][$user_id] = 1;
+        } else {
+            $_SESSION['user_activity_count'][$user_id]++;
+        }
+
+        $post_embed = isset($_GET['embed']) && $_GET['embed'] == '1' ? '&embed=1' : (isset($_POST['embed']) && $_POST['embed'] == '1' ? '&embed=1' : '');
+        header("Location: caregiver_hub.php?tab=resilience&plan_saved=1" . $post_embed);
         exit;
     }
 
@@ -497,10 +520,25 @@ if ($db_connected && $pdo) {
     $caregiver_videos = $_SESSION['mock_caregiver_videos'] ?? [];
 }
 
+// Fetch Caregiver Audio Tracks (uploaded from admin)
+$caregiver_audio_tracks = [];
+if ($db_connected && $pdo) {
+    try {
+        $stmt = $pdo->query("SELECT * FROM caregiver_audio ORDER BY id ASC");
+        $caregiver_audio_tracks = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {}
+}
+if (empty($caregiver_audio_tracks) && isset($_SESSION['mock_caregiver_audio'])) {
+    $caregiver_audio_tracks = $_SESSION['mock_caregiver_audio'];
+}
+
 $sub_tab = filter_input(INPUT_GET, 'tab', FILTER_DEFAULT);
 if (!in_array($sub_tab, ['respite', 'resilience', 'recovery', 'academy', 'matching'])) {
     $sub_tab = 'respite';
 }
+
+$is_embedded = (isset($_GET['embed']) && $_GET['embed'] == '1');
+$embed_suffix = $is_embedded ? '&embed=1' : '';
 
 $today_date = date('l, F j, Y');
 ?>
@@ -576,18 +614,31 @@ $today_date = date('l, F j, Y');
             border-radius: 9999px;
             border: 2px solid #F7F5F0;
         }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #5E8C71;
+        /* When embedded in an iframe or with embed=1, suppress any header/nav navigation */
+        html.in-iframe header,
+        body.is-embedded header,
+        body.is-embedded #mobile-menu,
+        html.in-iframe #mobile-menu,
+        body.is-embedded .fixed-bottom-bar,
+        html.in-iframe .fixed-bottom-bar {
+            display: none !important;
         }
     </style>
+    <script>
+        // Auto-detect if loaded inside an iframe and enforce embed mode immediately
+        if (window.self !== window.top) {
+            document.documentElement.classList.add('in-iframe');
+            document.addEventListener('DOMContentLoaded', () => {
+                document.body.classList.add('is-embedded');
+                document.querySelectorAll('header, #mobile-menu, .fixed-bottom-bar').forEach(el => el.style.display = 'none');
+            });
+        }
+    </script>
 </head>
-<body class="min-h-full flex flex-col selection:bg-brand-sage/20 selection:text-brand-slate">
-    <?php if (!isset($_GET['embed'])) { require_once 'nav_menu.php'; } ?>
-
-    <!-- TOP NAVIGATION BAR -->
-    <?php if (!isset($_GET['embed'])): ?>
-
-<?php endif; ?>
+<body class="min-h-full flex flex-col selection:bg-brand-sage/20 selection:text-brand-slate <?php echo $is_embedded ? 'is-embedded' : ''; ?>">
+    <?php if (!$is_embedded): ?>
+        <?php require_once 'nav_menu.php'; ?>
+    <?php endif; ?>
 
     <!-- MAIN BODY CONTENT -->
     <main class="flex-grow mx-auto w-full max-w-4xl px-4 py-8 pb-24 md:pb-8 fade-in">
@@ -614,11 +665,11 @@ $today_date = date('l, F j, Y');
         <!-- APP NAVIGATION TABS -->
         <!-- CAREGIVER SUB-TABS NAVIGATION -->
         <div class="flex items-center gap-2 mb-8 text-xs overflow-x-auto whitespace-nowrap pb-2">
-            <a href="caregiver_hub.php?tab=respite" class="px-4 py-2 rounded-xl transition-all font-bold <?php echo ($sub_tab === 'respite') ? 'bg-brand-sage text-white shadow-soft' : 'bg-white text-brand-slate hover:bg-brand-sageLight/50 border border-[#EBE8E0]'; ?>">Respite & Burnout Tracker</a>
-            <a href="caregiver_hub.php?tab=resilience" class="px-4 py-2 rounded-xl transition-all font-bold <?php echo ($sub_tab === 'resilience') ? 'bg-brand-sage text-white shadow-soft' : 'bg-white text-brand-slate hover:bg-brand-sageLight/50 border border-[#EBE8E0]'; ?>">Resilience Plan & Daily Goals</a>
-            <a href="caregiver_hub.php?tab=recovery" class="px-4 py-2 rounded-xl transition-all font-bold <?php echo ($sub_tab === 'recovery') ? 'bg-brand-sage text-white shadow-soft' : 'bg-white text-brand-slate hover:bg-brand-sageLight/50 border border-[#EBE8E0]'; ?>">Recovery & Stretches</a>
-            <a href="caregiver_hub.php?tab=academy" class="px-4 py-2 rounded-xl transition-all font-bold <?php echo ($sub_tab === 'academy') ? 'bg-brand-sage text-white shadow-soft' : 'bg-white text-brand-slate hover:bg-brand-sageLight/50 border border-[#EBE8E0]'; ?>">Caregiver Academy</a>
-            <a href="caregiver_hub.php?tab=matching" class="px-4 py-2 rounded-xl transition-all font-bold <?php echo ($sub_tab === 'matching') ? 'bg-brand-sage text-white shadow-soft' : 'bg-white text-brand-slate hover:bg-brand-sageLight/50 border border-[#EBE8E0]'; ?>">Peer Matching</a>
+            <a href="caregiver_hub.php?tab=respite<?php echo $embed_suffix; ?>" class="px-4 py-2 rounded-xl transition-all font-bold <?php echo ($sub_tab === 'respite') ? 'bg-brand-sage text-white shadow-soft' : 'bg-white text-brand-slate hover:bg-brand-sageLight/50 border border-[#EBE8E0]'; ?>">Respite & Burnout Tracker</a>
+            <a href="caregiver_hub.php?tab=resilience<?php echo $embed_suffix; ?>" class="px-4 py-2 rounded-xl transition-all font-bold <?php echo ($sub_tab === 'resilience') ? 'bg-brand-sage text-white shadow-soft' : 'bg-white text-brand-slate hover:bg-brand-sageLight/50 border border-[#EBE8E0]'; ?>">Resilience Plan & Daily Goals</a>
+            <a href="caregiver_hub.php?tab=recovery<?php echo $embed_suffix; ?>" class="px-4 py-2 rounded-xl transition-all font-bold <?php echo ($sub_tab === 'recovery') ? 'bg-brand-sage text-white shadow-soft' : 'bg-white text-brand-slate hover:bg-brand-sageLight/50 border border-[#EBE8E0]'; ?>">Recovery & Stretches</a>
+            <a href="caregiver_hub.php?tab=academy<?php echo $embed_suffix; ?>" class="px-4 py-2 rounded-xl transition-all font-bold <?php echo ($sub_tab === 'academy') ? 'bg-brand-sage text-white shadow-soft' : 'bg-white text-brand-slate hover:bg-brand-sageLight/50 border border-[#EBE8E0]'; ?>">Caregiver Academy</a>
+            <a href="caregiver_hub.php?tab=matching<?php echo $embed_suffix; ?>" class="px-4 py-2 rounded-xl transition-all font-bold <?php echo ($sub_tab === 'matching') ? 'bg-brand-sage text-white shadow-soft' : 'bg-white text-brand-slate hover:bg-brand-sageLight/50 border border-[#EBE8E0]'; ?>">Peer Matching</a>
         </div>
 
         <?php if ($sub_tab === 'respite'): ?>
@@ -848,23 +899,43 @@ $today_date = date('l, F j, Y');
         <!-- SECTION 3: MIND MINDFULNESS PLAYER & GUIDES -->
         <section class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
             
-            <!-- Audio Breathing Player -->
+            <!-- Audio Breathing Player (Dynamic from Admin) -->
             <div class="bg-white rounded-3xl p-6 shadow-soft border border-[#EBE8E0] flex flex-col justify-between relative overflow-hidden">
                 <!-- Wave vector overlay decoration -->
                 <div class="absolute -bottom-8 left-0 right-0 h-20 bg-brand-sky/10 blur-xl"></div>
                 
                 <div>
-                    <h3 class="text-base font-bold font-outfit text-brand-slate flex items-center gap-1.5">
-                        <span class="text-brand-sky">♫</span>
-                        <span>Mindfulness Player</span>
-                    </h3>
-                    <p class="text-xs text-gray-400 mt-0.5">Quick audio respite exercises for instant cognitive centering.</p>
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-base font-bold font-outfit text-brand-slate flex items-center gap-1.5">
+                            <span class="text-brand-sky">♫</span>
+                            <span>Caregiver Audio Respite Player</span>
+                        </h3>
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-brand-sage bg-brand-sageLight px-2 py-0.5 rounded-full">
+                            Admin Uploaded
+                        </span>
+                    </div>
+                    <p class="text-xs text-gray-400 mt-0.5">Direct audio exercises for instant cognitive centering and stress relief.</p>
+                </div>
+
+                <!-- Hidden HTML5 Audio Element -->
+                <audio id="native-audio-player" preload="metadata"></audio>
+
+                <!-- Track Selector Dropdown -->
+                <div class="mt-4">
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Select Respite Session</label>
+                    <select id="audio-track-selector" onchange="changeAudioTrack(this.value)" class="w-full text-xs font-semibold text-brand-slate rounded-xl border border-gray-200 p-2.5 bg-brand-bg focus:border-brand-sage focus:outline-none">
+                        <?php foreach ($caregiver_audio_tracks as $idx => $track): ?>
+                            <option value="<?php echo $idx; ?>" data-src="<?php echo htmlspecialchars($track['audio_url']); ?>" data-title="<?php echo htmlspecialchars($track['title']); ?>" data-desc="<?php echo htmlspecialchars($track['description'] ?? ''); ?>" data-duration="<?php echo htmlspecialchars($track['duration'] ?? '05:00'); ?>">
+                                <?php echo htmlspecialchars($track['title']); ?> (<?php echo htmlspecialchars($track['duration'] ?? '05:00'); ?>)
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
                 </div>
 
                 <!-- Player Box -->
-                <div class="my-6 p-4 rounded-2xl bg-brand-bg border border-gray-100 flex items-center gap-4 relative z-10">
+                <div class="my-5 p-4 rounded-2xl bg-brand-bg border border-gray-100 flex items-center gap-4 relative z-10 shadow-sm">
                     <!-- Play/Pause Button -->
-                    <button type="button" id="audio-play-btn" class="h-12 w-12 rounded-full bg-brand-sky text-brand-slate hover:bg-brand-sky/80 flex items-center justify-center shadow transition-all active:scale-90">
+                    <button type="button" id="audio-play-btn" class="h-12 w-12 rounded-full bg-brand-sky text-brand-slate hover:bg-brand-sky/80 flex items-center justify-center shadow transition-all active:scale-90 shrink-0">
                         <!-- Play Icon (default) -->
                         <svg id="play-icon" class="h-5 w-5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
                         <!-- Pause Icon (hidden default) -->
@@ -872,20 +943,24 @@ $today_date = date('l, F j, Y');
                     </button>
 
                     <!-- Title & Waveform Seek -->
-                    <div class="flex-grow space-y-1.5">
+                    <div class="flex-grow space-y-1.5 min-w-0">
                         <div class="flex items-center justify-between text-xs font-bold text-brand-slate">
-                            <span>Breathing Space for Caregivers</span>
-                            <span id="audio-timer" class="text-gray-400">05:00</span>
+                            <span id="current-track-title" class="truncate pr-2">
+                                <?php echo htmlspecialchars($caregiver_audio_tracks[0]['title'] ?? 'Breathing Space for Caregivers'); ?>
+                            </span>
+                            <span id="audio-timer" class="text-gray-400 shrink-0 font-mono text-[11px]">
+                                <?php echo htmlspecialchars($caregiver_audio_tracks[0]['duration'] ?? '05:00'); ?>
+                            </span>
                         </div>
                         <!-- Progress bar -->
-                        <div id="audio-progress-container" class="w-full bg-gray-200 h-1.5 rounded-full overflow-hidden cursor-pointer relative">
-                            <div id="audio-progress-bar" class="h-full bg-brand-sky w-0 transition-all duration-300"></div>
+                        <div id="audio-progress-container" class="w-full bg-gray-200 h-2 rounded-full overflow-hidden cursor-pointer relative">
+                            <div id="audio-progress-bar" class="h-full bg-brand-sky w-0 transition-all duration-150"></div>
                         </div>
                     </div>
                 </div>
 
-                <p class="text-xs text-gray-500 italic text-center">
-                    "Deep inhale for 4 seconds, hold for 4, exhale for 4, hold for 4..."
+                <p id="current-track-desc" class="text-xs text-gray-500 italic text-center">
+                    &ldquo;<?php echo htmlspecialchars($caregiver_audio_tracks[0]['description'] ?? 'Deep inhale for 4 seconds, hold for 4, exhale for 4, hold for 4...'); ?>&rdquo;
                 </p>
             </div>
 
@@ -994,11 +1069,17 @@ $today_date = date('l, F j, Y');
                             <h2 class="text-xl md:text-2xl font-bold font-outfit text-brand-slate">My Personal Resilience Plan</h2>
                             <p class="text-sm text-gray-500 mt-0.5">A structured plan to anchor your mental wellbeing under stress.</p>
                         </div>
-                        <?php if ($resilience_plan && !isset($_GET['edit_plan'])): ?>
-                            <a href="caregiver_hub.php?tab=resilience&edit_plan=1" class="self-start px-4 py-2 rounded-xl border border-gray-300 text-xs font-semibold text-brand-slate hover:bg-gray-50 active:scale-95 transition-all text-center">
-                                Edit My Plan
-                            </a>
-                        <?php endif; ?>
+                        <div class="flex items-center gap-2">
+                            <button type="button" onclick="window.print()" class="px-4 py-2 rounded-xl bg-brand-bg hover:bg-gray-100 text-brand-slate border border-gray-200 text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs">
+                                <i class="fa-solid fa-print text-xs"></i>
+                                <span>Print Safety Card</span>
+                            </button>
+                            <?php if ($resilience_plan && !isset($_GET['edit_plan'])): ?>
+                                <a href="caregiver_hub.php?tab=resilience&edit_plan=1" class="self-start px-4 py-2 rounded-xl border border-gray-300 text-xs font-semibold text-brand-slate hover:bg-gray-50 active:scale-95 transition-all text-center">
+                                    Edit My Plan
+                                </a>
+                            <?php endif; ?>
+                        </div>
                     </div>
 
                     <?php if ($resilience_plan && !isset($_GET['edit_plan'])): ?>
@@ -1045,7 +1126,13 @@ $today_date = date('l, F j, Y');
                             <input type="hidden" name="action" value="save_resilience_plan">
                             
                             <div>
-                                <label for="stressors" class="block text-xs font-bold text-brand-slate mb-1">1. What are your primary stressors & stress triggers?</label>
+                                <div class="flex items-center justify-between mb-1">
+                                    <label for="stressors" class="block text-xs font-bold text-brand-slate">1. What are your primary stressors & stress triggers?</label>
+                                    <button type="button" onclick="window.TetVoiceToText.toggle('stressors', this)" class="flex items-center gap-1 text-[10px] font-bold text-brand-sage hover:text-brand-sageHover bg-brand-sageLight/50 px-2 py-0.5 rounded-lg border border-brand-sage/10 transition-all select-none">
+                                        <svg class="h-3 w-3 text-brand-sage" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>
+                                        <span>Dictate Voice</span>
+                                    </button>
+                                </div>
                                 <p class="text-[10px] text-gray-400 mb-1.5">Identify situations that trigger anxiety, physical fatigue, or frustration (e.g. lack of sleep, difficult transitions).</p>
                                 <textarea 
                                     name="stressors" 
@@ -1058,7 +1145,13 @@ $today_date = date('l, F j, Y');
                             </div>
 
                             <div>
-                                <label for="daily_buffers" class="block text-xs font-bold text-brand-slate mb-1">2. Daily Wellbeing Buffers</label>
+                                <div class="flex items-center justify-between mb-1">
+                                    <label for="daily_buffers" class="block text-xs font-bold text-brand-slate">2. Daily Wellbeing Buffers</label>
+                                    <button type="button" onclick="window.TetVoiceToText.toggle('daily_buffers', this)" class="flex items-center gap-1 text-[10px] font-bold text-brand-sage hover:text-brand-sageHover bg-brand-sageLight/50 px-2 py-0.5 rounded-lg border border-brand-sage/10 transition-all select-none">
+                                        <svg class="h-3 w-3 text-brand-sage" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>
+                                        <span>Dictate Voice</span>
+                                    </button>
+                                </div>
                                 <p class="text-[10px] text-gray-400 mb-1.5">Define small, non-negotiable daily habits that keep you grounded (e.g. 10 minutes sitting in silence, short walk, coffee before others wake up).</p>
                                 <textarea 
                                     name="daily_buffers" 
@@ -1071,7 +1164,13 @@ $today_date = date('l, F j, Y');
                             </div>
 
                             <div>
-                                <label for="coping_strategies" class="block text-xs font-bold text-brand-slate mb-1">3. Personal Coping Strategies</label>
+                                <div class="flex items-center justify-between mb-1">
+                                    <label for="coping_strategies" class="block text-xs font-bold text-brand-slate">3. Personal Coping Strategies</label>
+                                    <button type="button" onclick="window.TetVoiceToText.toggle('coping_strategies', this)" class="flex items-center gap-1 text-[10px] font-bold text-brand-sage hover:text-brand-sageHover bg-brand-sageLight/50 px-2 py-0.5 rounded-lg border border-brand-sage/10 transition-all select-none">
+                                        <svg class="h-3 w-3 text-brand-sage" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>
+                                        <span>Dictate Voice</span>
+                                    </button>
+                                </div>
                                 <p class="text-[10px] text-gray-400 mb-1.5">What can you do in the middle of a stressful event? (e.g. 3 cycles of Box Breathing, walking away for 2 minutes, repeating a grounding mantra).</p>
                                 <textarea 
                                     name="coping_strategies" 
@@ -1084,7 +1183,13 @@ $today_date = date('l, F j, Y');
                             </div>
 
                             <div>
-                                <label for="signs_of_burnout" class="block text-xs font-bold text-brand-slate mb-1">4. Your Overload Warning Signs</label>
+                                <div class="flex items-center justify-between mb-1">
+                                    <label for="signs_of_burnout" class="block text-xs font-bold text-brand-slate">4. Your Overload Warning Signs</label>
+                                    <button type="button" onclick="window.TetVoiceToText.toggle('signs_of_burnout', this)" class="flex items-center gap-1 text-[10px] font-bold text-brand-sage hover:text-brand-sageHover bg-brand-sageLight/50 px-2 py-0.5 rounded-lg border border-brand-sage/10 transition-all select-none">
+                                        <svg class="h-3 w-3 text-brand-sage" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>
+                                        <span>Dictate Voice</span>
+                                    </button>
+                                </div>
                                 <p class="text-[10px] text-gray-400 mb-1.5">What are physical/emotional signs that you need a break immediately? (e.g. headaches, snapping at family, feelings of resentment).</p>
                                 <textarea 
                                     name="signs_of_burnout" 
@@ -1097,7 +1202,13 @@ $today_date = date('l, F j, Y');
                             </div>
 
                             <div>
-                                <label for="backup_support" class="block text-xs font-bold text-brand-slate mb-1">5. Backup Support Network</label>
+                                <div class="flex items-center justify-between mb-1">
+                                    <label for="backup_support" class="block text-xs font-bold text-brand-slate">5. Backup Support Network</label>
+                                    <button type="button" onclick="window.TetVoiceToText.toggle('backup_support', this)" class="flex items-center gap-1 text-[10px] font-bold text-brand-sage hover:text-brand-sageHover bg-brand-sageLight/50 px-2 py-0.5 rounded-lg border border-brand-sage/10 transition-all select-none">
+                                        <svg class="h-3 w-3 text-brand-sage" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" /></svg>
+                                        <span>Dictate Voice</span>
+                                    </button>
+                                </div>
                                 <p class="text-[10px] text-gray-400 mb-1.5">Who can you contact for help or to cover for you? (Include name, contact info, and role).</p>
                                 <textarea 
                                     name="backup_support" 
@@ -2384,75 +2495,148 @@ $today_date = date('l, F j, Y');
             ring.style.strokeDashoffset = '339';
         }
 
-        // 2. MINDFUL BREATHING PLAYER INTERACTIVE ACTIONS
+        // 2. MINDFUL BREATHING PLAYER INTERACTIVE ACTIONS (HTML5 Audio + Uploaded Tracks)
         const playBtn = document.getElementById('audio-play-btn');
         const playIcon = document.getElementById('play-icon');
         const pauseIcon = document.getElementById('pause-icon');
         const timerText = document.getElementById('audio-timer');
         const progressBar = document.getElementById('audio-progress-bar');
         const progressContainer = document.getElementById('audio-progress-container');
+        const nativeAudio = document.getElementById('native-audio-player');
+        const trackSelector = document.getElementById('audio-track-selector');
 
         let isPlaying = false;
-        let totalSeconds = 300; // 5 minutes
+        let totalSeconds = 300; // default 5 mins
         let elapsedSeconds = 0;
         let playerInterval = null;
 
-        playBtn.addEventListener('click', () => {
-            if (isPlaying) {
-                // Pause
-                clearInterval(playerInterval);
-                playIcon.classList.remove('hidden');
-                pauseIcon.classList.add('hidden');
-                isPlaying = false;
+        function changeAudioTrack(index) {
+            if (!trackSelector) return;
+            const selectedOpt = trackSelector.options[index];
+            if (!selectedOpt) return;
+
+            const src = selectedOpt.getAttribute('data-src') || '';
+            const title = selectedOpt.getAttribute('data-title') || '';
+            const desc = selectedOpt.getAttribute('data-desc') || '';
+            const durationStr = selectedOpt.getAttribute('data-duration') || '05:00';
+
+            const titleEl = document.getElementById('current-track-title');
+            const descEl = document.getElementById('current-track-desc');
+            if (titleEl) titleEl.innerText = title;
+            if (descEl) descEl.innerHTML = '&ldquo;' + desc + '&rdquo;';
+
+            // Parse duration string MM:SS to seconds
+            const parts = durationStr.split(':');
+            if (parts.length === 2) {
+                totalSeconds = (parseInt(parts[0], 10) * 60) + parseInt(parts[1], 10);
             } else {
-                // Play
-                playIcon.classList.add('hidden');
-                pauseIcon.classList.remove('hidden');
-                isPlaying = true;
-
-                playerInterval = setInterval(() => {
-                    elapsedSeconds++;
-                    if (elapsedSeconds <= totalSeconds) {
-                        // Update Progress bar
-                        const pct = (elapsedSeconds / totalSeconds) * 100;
-                        progressBar.style.width = pct + '%';
-
-                        // Update Timer text
-                        const remaining = totalSeconds - elapsedSeconds;
-                        const mins = Math.floor(remaining / 60);
-                        const secs = remaining % 60;
-                        timerText.innerText = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-                    } else {
-                        // Finished
-                        clearInterval(playerInterval);
-                        resetPlayer();
-                    }
-                }, 1000);
+                totalSeconds = 300;
             }
-        });
 
-        function resetPlayer() {
-            isPlaying = false;
+            // Reset player
+            pausePlayback();
             elapsedSeconds = 0;
             progressBar.style.width = '0%';
-            timerText.innerText = "05:00";
-            playIcon.classList.remove('hidden');
-            pauseIcon.classList.add('hidden');
+            timerText.innerText = durationStr;
+
+            if (nativeAudio && src) {
+                nativeAudio.src = src;
+                nativeAudio.load();
+            }
+        }
+
+        // Initialize first track source if available
+        if (trackSelector && trackSelector.options.length > 0) {
+            const firstSrc = trackSelector.options[0].getAttribute('data-src');
+            if (nativeAudio && firstSrc) {
+                nativeAudio.src = firstSrc;
+            }
+        }
+
+        function playPlayback() {
+            isPlaying = true;
+            playIcon.classList.add('hidden');
+            pauseIcon.classList.remove('hidden');
+
+            if (nativeAudio && nativeAudio.src) {
+                nativeAudio.play().catch(e => {
+                    console.log('Audio playback initiated (synthesized fallback if blocked):', e);
+                });
+            }
+
+            clearInterval(playerInterval);
+            playerInterval = setInterval(() => {
+                if (nativeAudio && !nativeAudio.paused && !isNaN(nativeAudio.duration) && nativeAudio.duration > 0) {
+                    elapsedSeconds = Math.floor(nativeAudio.currentTime);
+                    totalSeconds = Math.floor(nativeAudio.duration);
+                } else {
+                    elapsedSeconds++;
+                }
+
+                if (elapsedSeconds <= totalSeconds) {
+                    const pct = (elapsedSeconds / totalSeconds) * 100;
+                    progressBar.style.width = pct + '%';
+                    const remaining = totalSeconds - elapsedSeconds;
+                    const mins = Math.floor(remaining / 60);
+                    const secs = remaining % 60;
+                    timerText.innerText = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+                } else {
+                    pausePlayback();
+                    resetPlayer();
+                }
+            }, 1000);
+        }
+
+        function pausePlayback() {
+            isPlaying = false;
+            clearInterval(playerInterval);
+            if (playIcon) playIcon.classList.remove('hidden');
+            if (pauseIcon) pauseIcon.classList.add('hidden');
+            if (nativeAudio) {
+                try { nativeAudio.pause(); } catch(e){}
+            }
+        }
+
+        if (playBtn) {
+            playBtn.addEventListener('click', () => {
+                if (isPlaying) {
+                    pausePlayback();
+                } else {
+                    playPlayback();
+                }
+            });
+        }
+
+        function resetPlayer() {
+            pausePlayback();
+            elapsedSeconds = 0;
+            progressBar.style.width = '0%';
+            if (trackSelector && trackSelector.selectedOptions.length > 0) {
+                timerText.innerText = trackSelector.selectedOptions[0].getAttribute('data-duration') || "05:00";
+            } else {
+                timerText.innerText = "05:00";
+            }
         }
 
         // Allow clicking seekbar to set progress
-        progressContainer.addEventListener('click', (e) => {
-            const rect = progressContainer.getBoundingClientRect();
-            const clickX = e.clientX - rect.left;
-            const pct = clickX / rect.width;
-            elapsedSeconds = Math.floor(pct * totalSeconds);
-            progressBar.style.width = (pct * 100) + '%';
-            
-            const remaining = totalSeconds - elapsedSeconds;
-            const mins = Math.floor(remaining / 60);
-            const secs = remaining % 60;
-            timerText.innerText = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-        });
+        if (progressContainer) {
+            progressContainer.addEventListener('click', (e) => {
+                const rect = progressContainer.getBoundingClientRect();
+                const clickX = e.clientX - rect.left;
+                const pct = clickX / rect.width;
+                elapsedSeconds = Math.floor(pct * totalSeconds);
+                progressBar.style.width = (pct * 100) + '%';
+                
+                if (nativeAudio && !isNaN(nativeAudio.duration) && nativeAudio.duration > 0) {
+                    nativeAudio.currentTime = pct * nativeAudio.duration;
+                }
+
+                const remaining = totalSeconds - elapsedSeconds;
+                const mins = Math.floor(remaining / 60);
+                const secs = remaining % 60;
+                timerText.innerText = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+            });
+        }
 
         // 3. EMERGENCY SUPPORT MODAL ACTIONS
         const emergencyModal = document.getElementById('emergency-modal');
@@ -2547,6 +2731,104 @@ $today_date = date('l, F j, Y');
         document.addEventListener('DOMContentLoaded', () => {
             initVoiceTranscription('cover_plan', 'transcribe-cover-plan');
         });
+
+        // Global Voice-to-Text Universal Controller for Caregiver Hub
+        window.TetVoiceToText = {
+            activeRecognition: null,
+            activeButton: null,
+            
+            toggle: function(targetInputId, btn) {
+                const target = document.getElementById(targetInputId);
+                if (!target) return;
+
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                if (!SpeechRecognition) {
+                    alert('Speech Recognition is not supported in this browser. Please use Chrome, Edge, or Safari.');
+                    return;
+                }
+
+                if (this.activeRecognition) {
+                    this.activeRecognition.stop();
+                    this.activeRecognition = null;
+                    if (this.activeButton) {
+                        this.resetButton(this.activeButton);
+                        this.activeButton = null;
+                    }
+                    return;
+                }
+
+                try {
+                    const recognition = new SpeechRecognition();
+                    recognition.continuous = true;
+                    recognition.interimResults = true;
+                    recognition.lang = 'en-US';
+
+                    let originalContent = target.value || '';
+                    if (originalContent.length > 0 && !originalContent.endsWith(' ')) {
+                        originalContent += ' ';
+                    }
+
+                    recognition.onstart = () => {
+                        this.setListeningButton(btn);
+                    };
+
+                    recognition.onresult = (event) => {
+                        let interimTranscript = '';
+                        let finalTranscript = '';
+
+                        for (let i = event.resultIndex; i < event.results.length; ++i) {
+                            if (event.results[i].isFinal) {
+                                finalTranscript += event.results[i][0].transcript;
+                            } else {
+                                interimTranscript += event.results[i][0].transcript;
+                            }
+                        }
+
+                        if (finalTranscript) {
+                            originalContent += finalTranscript + ' ';
+                            target.value = originalContent;
+                        } else if (interimTranscript) {
+                            target.value = originalContent + interimTranscript;
+                        }
+                    };
+
+                    recognition.onerror = () => {
+                        this.resetButton(btn);
+                        this.activeRecognition = null;
+                        this.activeButton = null;
+                    };
+
+                    recognition.onend = () => {
+                        this.resetButton(btn);
+                        this.activeRecognition = null;
+                        this.activeButton = null;
+                    };
+
+                    this.activeRecognition = recognition;
+                    this.activeButton = btn;
+                    recognition.start();
+                } catch (err) {
+                    this.resetButton(btn);
+                }
+            },
+
+            setListeningButton: function(btn) {
+                if (!btn) return;
+                btn.dataset.originalHtml = btn.innerHTML;
+                btn.classList.add('bg-brand-coral', 'text-white', 'animate-pulse');
+                btn.classList.remove('text-brand-sage', 'text-gray-400');
+                btn.innerHTML = `<span class="inline-block w-2 h-2 rounded-full bg-white animate-ping mr-1"></span> Listening...`;
+            },
+
+            resetButton: function(btn) {
+                if (!btn) return;
+                if (btn.dataset.originalHtml) {
+                    btn.innerHTML = btn.dataset.originalHtml;
+                }
+                btn.classList.remove('bg-brand-coral', 'text-white', 'animate-pulse');
+                btn.classList.add('text-brand-sage');
+            }
+        };
     </script>
 </body>
 </html>

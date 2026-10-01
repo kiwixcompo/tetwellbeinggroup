@@ -1907,3 +1907,94 @@
 [16-Sep-2026 21:49:03 UTC] PHP   1. {main}() C:\Users\Admin\.gemini\antigravity\brain\67063a33-ec72-476f-9a48-69457c8336f5\scratch\test_mindbloom_full.php:0
 [16-Sep-2026 21:49:03 UTC] PHP   2. include() C:\Users\Admin\.gemini\antigravity\brain\67063a33-ec72-476f-9a48-69457c8336f5\scratch\test_mindbloom_full.php:27
 [16-Sep-2026 21:49:03 UTC] PHP   3. header($header = 'Content-Type: application/json') C:\wamp64\www\TetWellbeingGroup\assessments.php:19
+[25-Sep-2026 08:33:00 UTC] [2026-09-25 08:33:00] ERROR [2]: Undefined array key "experiences" in C:\wamp64\www\TetWellbeingGroup\befriender_network.php on line 354
+[25-Sep-2026 08:33:00 UTC] PHP Warning:  Undefined array key "experiences" in C:\wamp64\www\TetWellbeingGroup\befriender_network.php on line 354
+[25-Sep-2026 08:33:00 UTC] PHP Stack trace:
+[25-Sep-2026 08:33:00 UTC] PHP   1. {main}() C:\wamp64\www\TetWellbeingGroup\befriender_network.php:0
+[25-Sep-2026 08:33:00 UTC] [2026-09-25 08:33:00] EXCEPTION: implode(): Argument #1 ($array) must be of type array, string given in C:\wamp64\www\TetWellbeingGroup\befriender_network.php on line 354
+#0 C:\wamp64\www\TetWellbeingGroup\befriender_network.php(354): implode(' ', NULL)
+#1 {main}
+[25-Sep-2026 08:57:42 UTC] [2026-09-25 08:57:42] ERROR [2]: Undefined array key "experiences" in C:\wamp64\www\TetWellbeingGroup\befriender_network.php on line 354
+[25-Sep-2026 08:57:42 UTC] PHP Warning:  Undefined array key "experiences" in C:\wamp64\www\TetWellbeingGroup\befriender_network.php on line 354
+[25-Sep-2026 08:57:42 UTC] PHP Stack trace:
+[25-Sep-2026 08:57:42 UTC] PHP   1. {main}() C:\wamp64\www\TetWellbeingGroup\befriender_network.php:0
+[25-Sep-2026 08:57:42 UTC] [2026-09-25 08:57:42] EXCEPTION: implode(): Argument #1 ($array) must be of type array, string given in C:\wamp64\www\TetWellbeingGroup\befriender_network.php on line 354
+#0 C:\wamp64\www\TetWellbeingGroup\befriender_network.php(354): implode(' ', NULL)
+#1 {main}
+[25-Sep-2026 08:57:57 UTC] [2026-09-25 08:57:57] ERROR [2]: Undefined array key "experiences" in C:\wamp64\www\TetWellbeingGroup\befriender_network.php on line 354
+[25-Sep-2026 08:57:57 UTC] PHP Warning:  Undefined array key "experiences" in C:\wamp64\www\TetWellbeingGroup\befriender_network.php on line 354
+[25-Sep-2026 08:57:57 UTC] PHP Stack trace:
+[25-Sep-2026 08:57:57 UTC] PHP   1. {main}() C:\wamp64\www\TetWellbeingGroup\befriender_network.php:0
+[25-Sep-2026 08:57:57 UTC] [2026-09-25 08:57:57] EXCEPTION: implode(): Argument #1 ($array) must be of type array, string given in C:\wamp64\www\TetWellbeingGroup\befriender_network.php on line 354
+#0 C:\wamp64\www\TetWellbeingGroup\befriender_network.php(354): implode(' ', NULL)
+#1 {main}
+[25-Sep-2026 09:20:21 UTC] [2026-09-25 09:20:21] ERROR [2]: Undefined array key "experiences" in C:\wamp64\www\TetWellbeingGroup\befriender_network.php on line 406
+[25-Sep-2026 09:20:21 UTC] PHP Warning:  Undefined array key "experiences" in C:\wamp64\www\TetWellbeingGroup\befriender_network.php on line 406
+[25-Sep-2026 09:20:21 UTC] PHP Stack trace:
+[25-Sep-2026 09:20:21 UTC] PHP   1. {main}() C:\wamp64\www\TetWellbeingGroup\befriender_network.php:0
+[25-Sep-2026 09:20:21 UTC] [2026-09-25 09:20:21] EXCEPTION: implode(): Argument #1 ($array) must be of type array, string given in C:\wamp64\www\TetWellbeingGroup\befriender_network.php on line 406
+#0 C:\wamp64\www\TetWellbeingGroup\befriender_network.php(406): implode(' ', NULL)
+#1 {main}
+[26-Sep-2026 14:00:25 UTC] [2026-09-26 14:00:25] ERROR [2]: Undefined array key "experiences" in C:\wamp64\www\TetWellbeingGroup\befriender_network.php on line 406
+[26-Sep-2026 14:00:25 UTC] PHP Warning:  Undefined array key "experiences" in C:\wamp64\www\TetWellbeingGroup\befriender_network.php on line 406
+[26-Sep-2026 14:00:25 UTC] PHP Stack trace:
+[26-Sep-2026 14:00:25 UTC] PHP   1. {main}() C:\wamp64\www\TetWellbeingGroup\befriender_network.php:0
+[26-Sep-2026 14:00:25 UTC] [2026-09-26 14:00:25] EXCEPTION: implode(): Argument #1 ($array) must be of type array, string given in C:\wamp64\www\TetWellbeingGroup\befriender_network.php on line 406
+#0 C:\wamp64\www\TetWellbeingGroup\befriender_network.php(406): implode(' ', NULL)
+#1 {main}
+[26-Sep-2026 14:16:38 UTC] [2026-09-26 14:16:38] ERROR [2]: Undefined array key "experiences" in C:\wamp64\www\TetWellbeingGroup\befriender_network.php on line 406
+[26-Sep-2026 14:16:38 UTC] PHP Warning:  Undefined array key "experiences" in C:\wamp64\www\TetWellbeingGroup\befriender_network.php on line 406
+[26-Sep-2026 14:16:38 UTC] PHP Stack trace:
+[26-Sep-2026 14:16:38 UTC] PHP   1. {main}() C:\wamp64\www\TetWellbeingGroup\befriender_network.php:0
+[26-Sep-2026 14:16:38 UTC] [2026-09-26 14:16:38] EXCEPTION: implode(): Argument #1 ($array) must be of type array, string given in C:\wamp64\www\TetWellbeingGroup\befriender_network.php on line 406
+#0 C:\wamp64\www\TetWellbeingGroup\befriender_network.php(406): implode(' ', NULL)
+#1 {main}
+[26-Sep-2026 14:20:20 UTC] [2026-09-26 14:20:20] ERROR [2]: Undefined array key "experiences" in C:\wamp64\www\TetWellbeingGroup\befriender_network.php on line 406
+[26-Sep-2026 14:20:20 UTC] PHP Warning:  Undefined array key "experiences" in C:\wamp64\www\TetWellbeingGroup\befriender_network.php on line 406
+[26-Sep-2026 14:20:20 UTC] PHP Stack trace:
+[26-Sep-2026 14:20:20 UTC] PHP   1. {main}() C:\wamp64\www\TetWellbeingGroup\befriender_network.php:0
+[26-Sep-2026 14:20:20 UTC] [2026-09-26 14:20:20] EXCEPTION: implode(): Argument #1 ($array) must be of type array, string given in C:\wamp64\www\TetWellbeingGroup\befriender_network.php on line 406
+#0 C:\wamp64\www\TetWellbeingGroup\befriender_network.php(406): implode(' ', NULL)
+#1 {main}
+[26-Sep-2026 14:22:01 UTC] [2026-09-26 14:22:01] ERROR [2]: Undefined array key "experiences" in C:\wamp64\www\TetWellbeingGroup\befriender_network.php on line 406
+[26-Sep-2026 14:22:01 UTC] PHP Warning:  Undefined array key "experiences" in C:\wamp64\www\TetWellbeingGroup\befriender_network.php on line 406
+[26-Sep-2026 14:22:01 UTC] PHP Stack trace:
+[26-Sep-2026 14:22:01 UTC] PHP   1. {main}() C:\wamp64\www\TetWellbeingGroup\befriender_network.php:0
+[26-Sep-2026 14:22:01 UTC] [2026-09-26 14:22:01] EXCEPTION: implode(): Argument #1 ($array) must be of type array, string given in C:\wamp64\www\TetWellbeingGroup\befriender_network.php on line 406
+#0 C:\wamp64\www\TetWellbeingGroup\befriender_network.php(406): implode(' ', NULL)
+#1 {main}
+[26-Sep-2026 14:23:06 UTC] [2026-09-26 14:23:06] ERROR [2]: Undefined array key "experiences" in C:\wamp64\www\TetWellbeingGroup\befriender_network.php on line 406
+[26-Sep-2026 14:23:06 UTC] PHP Warning:  Undefined array key "experiences" in C:\wamp64\www\TetWellbeingGroup\befriender_network.php on line 406
+[26-Sep-2026 14:23:06 UTC] PHP Stack trace:
+[26-Sep-2026 14:23:06 UTC] PHP   1. {main}() C:\wamp64\www\TetWellbeingGroup\befriender_network.php:0
+[26-Sep-2026 14:23:06 UTC] [2026-09-26 14:23:06] EXCEPTION: implode(): Argument #1 ($array) must be of type array, string given in C:\wamp64\www\TetWellbeingGroup\befriender_network.php on line 406
+#0 C:\wamp64\www\TetWellbeingGroup\befriender_network.php(406): implode(' ', NULL)
+#1 {main}
+[01-Oct-2026 07:12:31 UTC] [2026-10-01 07:12:31] ERROR [2]: Undefined array key "experiences" in C:\wamp64\www\TetWellbeingGroup\befriender_network.php on line 406
+[01-Oct-2026 07:12:31 UTC] PHP Warning:  Undefined array key "experiences" in C:\wamp64\www\TetWellbeingGroup\befriender_network.php on line 406
+[01-Oct-2026 07:12:31 UTC] PHP Stack trace:
+[01-Oct-2026 07:12:31 UTC] PHP   1. {main}() C:\wamp64\www\TetWellbeingGroup\befriender_network.php:0
+[01-Oct-2026 07:12:31 UTC] [2026-10-01 07:12:31] EXCEPTION: implode(): Argument #1 ($array) must be of type array, string given in C:\wamp64\www\TetWellbeingGroup\befriender_network.php on line 406
+#0 C:\wamp64\www\TetWellbeingGroup\befriender_network.php(406): implode(' ', NULL)
+#1 {main}
+[01-Oct-2026 07:13:20 UTC] [2026-10-01 07:13:20] ERROR [2]: Undefined array key "experiences" in C:\wamp64\www\TetWellbeingGroup\befriender_network.php on line 406
+[01-Oct-2026 07:13:20 UTC] PHP Warning:  Undefined array key "experiences" in C:\wamp64\www\TetWellbeingGroup\befriender_network.php on line 406
+[01-Oct-2026 07:13:20 UTC] PHP Stack trace:
+[01-Oct-2026 07:13:20 UTC] PHP   1. {main}() C:\wamp64\www\TetWellbeingGroup\befriender_network.php:0
+[01-Oct-2026 07:13:20 UTC] [2026-10-01 07:13:20] EXCEPTION: implode(): Argument #1 ($array) must be of type array, string given in C:\wamp64\www\TetWellbeingGroup\befriender_network.php on line 406
+#0 C:\wamp64\www\TetWellbeingGroup\befriender_network.php(406): implode(' ', NULL)
+#1 {main}
+[01-Oct-2026 07:13:29 UTC] [2026-10-01 07:13:29] ERROR [2]: Undefined array key "experiences" in C:\wamp64\www\TetWellbeingGroup\befriender_network.php on line 406
+[01-Oct-2026 07:13:29 UTC] PHP Warning:  Undefined array key "experiences" in C:\wamp64\www\TetWellbeingGroup\befriender_network.php on line 406
+[01-Oct-2026 07:13:29 UTC] PHP Stack trace:
+[01-Oct-2026 07:13:29 UTC] PHP   1. {main}() C:\wamp64\www\TetWellbeingGroup\befriender_network.php:0
+[01-Oct-2026 07:13:29 UTC] [2026-10-01 07:13:29] EXCEPTION: implode(): Argument #1 ($array) must be of type array, string given in C:\wamp64\www\TetWellbeingGroup\befriender_network.php on line 406
+#0 C:\wamp64\www\TetWellbeingGroup\befriender_network.php(406): implode(' ', NULL)
+#1 {main}
+[01-Oct-2026 07:46:19 UTC] [2026-10-01 07:46:19] ERROR [2]: Undefined array key "experiences" in C:\wamp64\www\TetWellbeingGroup\befriender_network.php on line 406
+[01-Oct-2026 07:46:19 UTC] PHP Warning:  Undefined array key "experiences" in C:\wamp64\www\TetWellbeingGroup\befriender_network.php on line 406
+[01-Oct-2026 07:46:19 UTC] PHP Stack trace:
+[01-Oct-2026 07:46:19 UTC] PHP   1. {main}() C:\wamp64\www\TetWellbeingGroup\befriender_network.php:0
+[01-Oct-2026 07:46:19 UTC] [2026-10-01 07:46:19] EXCEPTION: implode(): Argument #1 ($array) must be of type array, string given in C:\wamp64\www\TetWellbeingGroup\befriender_network.php on line 406
+#0 C:\wamp64\www\TetWellbeingGroup\befriender_network.php(406): implode(' ', NULL)
+#1 {main}

@@ -144,6 +144,8 @@ if ($active_filter > 0) {
 }
 
 $active_tab = $_GET['tab'] ?? 'browse';
+$is_embedded = (isset($_GET['embed']) && $_GET['embed'] == '1');
+$embed_suffix = $is_embedded ? '&embed=1' : '';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -189,11 +191,29 @@ $active_tab = $_GET['tab'] ?? 'browse';
             backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.08);
         }
+        /* When embedded or in iframe, suppress top header/nav */
+        html.in-iframe header,
+        body.is-embedded header,
+        body.is-embedded #mobile-menu,
+        html.in-iframe #mobile-menu,
+        body.is-embedded nav.block.md\\:hidden,
+        html.in-iframe nav.block.md\\:hidden {
+            display: none !important;
+        }
     </style>
+    <script>
+        if (window.self !== window.top) {
+            document.documentElement.classList.add('in-iframe');
+            document.addEventListener('DOMContentLoaded', () => {
+                document.body.classList.add('is-embedded');
+                document.querySelectorAll('header, #mobile-menu').forEach(el => el.style.display = 'none');
+            });
+        }
+    </script>
     <link rel="icon" href="logo.svg" type="image/svg+xml">
 </head>
-<body class="text-brand-slate min-h-screen pb-32">
-    <?php if (!isset($_GET['embed'])) { require_once 'nav_menu.php'; } ?>
+<body class="text-brand-slate min-h-screen pb-32 <?php echo $is_embedded ? 'is-embedded' : ''; ?>">
+    <?php if (!$is_embedded) { require_once 'nav_menu.php'; } ?>
 
     <!-- NAV BAR -->
     <?php if (!isset($_GET['embed'])): ?>
@@ -244,7 +264,10 @@ $active_tab = $_GET['tab'] ?? 'browse';
                 </div>
 
                 <div class="relative shrink-0 z-10">
-                    <button onclick="playMedia(<?php echo $featured_track['id']; ?>, '<?php echo addslashes($featured_track['title']); ?>', '<?php echo htmlspecialchars($cat_map[$featured_track['category_id']]); ?>', <?php echo $featured_track['duration_seconds']; ?>)" class="h-16 w-16 md:h-20 md:w-20 rounded-full bg-brand-sage text-white flex items-center justify-center shadow-lg transition-all hover:scale-105 active:scale-95 group">
+                    <?php 
+                        $feat_media_url = $featured_track['media_url'] ?? '';
+                    ?>
+                    <button onclick="playMedia(<?php echo $featured_track['id']; ?>, '<?php echo addslashes($featured_track['title']); ?>', '<?php echo htmlspecialchars($cat_map[$featured_track['category_id']]); ?>', <?php echo $featured_track['duration_seconds']; ?>, '<?php echo addslashes($feat_media_url); ?>')" class="h-16 w-16 md:h-20 md:w-20 rounded-full bg-brand-sage text-white flex items-center justify-center shadow-lg transition-all hover:scale-105 active:scale-95 group">
                         <svg class="h-8 w-8 text-slate-900 fill-slate-900 ml-1 transition-transform group-hover:scale-110" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                     </button>
                 </div>
@@ -253,9 +276,9 @@ $active_tab = $_GET['tab'] ?? 'browse';
 
         <!-- SUB-TABS NAVIGATION -->
         <div class="flex items-center gap-2 mb-8 text-xs overflow-x-auto whitespace-nowrap pb-2">
-            <a href="streaming_hub.php?tab=browse" class="px-4 py-2 rounded-xl transition-all font-bold <?php echo ($active_tab === 'browse') ? 'bg-brand-sage text-white' : 'bg-brand-card text-brand-slate hover:bg-slate-800 border border-white/5'; ?>">Browse Categories</a>
-            <a href="streaming_hub.php?tab=all" class="px-4 py-2 rounded-xl transition-all font-bold <?php echo ($active_tab === 'all') ? 'bg-brand-sage text-white' : 'bg-brand-card text-brand-slate hover:bg-slate-800 border border-white/5'; ?>">Full Library (<?php echo count($all_content); ?>)</a>
-            <a href="streaming_hub.php?tab=ai" class="px-4 py-2 rounded-xl transition-all font-bold <?php echo ($active_tab === 'ai') ? 'bg-brand-sage text-white' : 'bg-brand-card text-brand-slate hover:bg-slate-800 border border-white/5'; ?>">AI Recommendations</a>
+            <a href="streaming_hub.php?tab=browse<?php echo $embed_suffix; ?>" class="px-4 py-2 rounded-xl transition-all font-bold <?php echo ($active_tab === 'browse') ? 'bg-brand-sage text-white' : 'bg-brand-card text-brand-slate hover:bg-slate-800 border border-white/5'; ?>">Browse Categories</a>
+            <a href="streaming_hub.php?tab=all<?php echo $embed_suffix; ?>" class="px-4 py-2 rounded-xl transition-all font-bold <?php echo ($active_tab === 'all') ? 'bg-brand-sage text-white' : 'bg-brand-card text-brand-slate hover:bg-slate-800 border border-white/5'; ?>">Full Library (<?php echo count($all_content); ?>)</a>
+            <a href="streaming_hub.php?tab=ai<?php echo $embed_suffix; ?>" class="px-4 py-2 rounded-xl transition-all font-bold <?php echo ($active_tab === 'ai') ? 'bg-brand-sage text-white' : 'bg-brand-card text-brand-slate hover:bg-slate-800 border border-white/5'; ?>">AI Recommendations</a>
         </div>
 
         <!-- ==================== TAB: BROWSE CATEGORIES ==================== -->
@@ -264,7 +287,7 @@ $active_tab = $_GET['tab'] ?? 'browse';
                 <!-- Categories Grid -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
                     <?php foreach ($categories as $cat): ?>
-                        <a href="streaming_hub.php?tab=all&category=<?php echo $cat['id']; ?>" class="p-6 rounded-3xl bg-brand-card hover:bg-slate-800 border border-white/5 hover:border-brand-sage/20 transition-all flex flex-col justify-between h-40 group">
+                        <a href="streaming_hub.php?tab=all&category=<?php echo $cat['id']; ?><?php echo $embed_suffix; ?>" class="p-6 rounded-3xl bg-brand-card hover:bg-slate-800 border border-white/5 hover:border-brand-sage/20 transition-all flex flex-col justify-between h-40 group">
                             <span class="text-3xl"><?php echo $cat['icon_emoji']; ?></span>
                             <div>
                                 <h4 class="font-bold text-sm text-white group-hover:text-brand-sage transition-colors font-outfit"><?php echo htmlspecialchars($cat['name']); ?></h4>
@@ -280,9 +303,9 @@ $active_tab = $_GET['tab'] ?? 'browse';
             <div class="space-y-8">
                 <!-- Inline Filters -->
                 <div class="flex items-center gap-2 overflow-x-auto pb-1 whitespace-nowrap text-xs">
-                    <a href="streaming_hub.php?tab=all" class="px-3 py-1.5 rounded-lg border <?php echo ($active_filter === 0) ? 'bg-brand-sage/20 border-brand-sage text-brand-sage' : 'border-white/5 text-gray-400 hover:text-white'; ?>">All Tracks</a>
+                    <a href="streaming_hub.php?tab=all<?php echo $embed_suffix; ?>" class="px-3 py-1.5 rounded-lg border <?php echo ($active_filter === 0) ? 'bg-brand-sage/20 border-brand-sage text-brand-sage' : 'border-white/5 text-gray-400 hover:text-white'; ?>">All Tracks</a>
                     <?php foreach ($categories as $c): ?>
-                        <a href="streaming_hub.php?tab=all&category=<?php echo $c['id']; ?>" class="px-3 py-1.5 rounded-lg border <?php echo ($active_filter === $c['id']) ? 'bg-brand-sage/20 border-brand-sage text-brand-sage' : 'border-white/5 text-gray-400 hover:text-white'; ?>">
+                        <a href="streaming_hub.php?tab=all&category=<?php echo $c['id']; ?><?php echo $embed_suffix; ?>" class="px-3 py-1.5 rounded-lg border <?php echo ($active_filter === $c['id']) ? 'bg-brand-sage/20 border-brand-sage text-brand-sage' : 'border-white/5 text-gray-400 hover:text-white'; ?>">
                             <?php echo $c['icon_emoji'] . ' ' . $c['name']; ?>
                         </a>
                     <?php endforeach; ?>
@@ -308,7 +331,8 @@ $active_tab = $_GET['tab'] ?? 'browse';
                                 
                                 <div class="flex justify-between items-center pt-4 border-t border-white/5 mt-4">
                                     <span class="text-xs font-semibold text-gray-500">🕒 <?php echo round($track['duration_seconds'] / 60); ?> Mins</span>
-                                    <button onclick="playMedia(<?php echo $track['id']; ?>, '<?php echo addslashes($track['title']); ?>', '<?php echo htmlspecialchars($cat_map[$track['category_id']]); ?>', <?php echo $track['duration_seconds']; ?>)" class="h-9 w-9 rounded-full bg-brand-sage text-slate-900 flex items-center justify-center transition-transform hover:scale-105 active:scale-95">
+                                    <?php $trk_url = $track['media_url'] ?? ''; ?>
+                                    <button onclick="playMedia(<?php echo $track['id']; ?>, '<?php echo addslashes($track['title']); ?>', '<?php echo htmlspecialchars($cat_map[$track['category_id']]); ?>', <?php echo $track['duration_seconds']; ?>, '<?php echo addslashes($trk_url); ?>')" class="h-9 w-9 rounded-full bg-brand-sage text-slate-900 flex items-center justify-center transition-transform hover:scale-105 active:scale-95">
                                         <svg class="h-4.5 w-4.5 fill-slate-900 ml-0.5" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                                     </button>
                                 </div>
@@ -347,7 +371,8 @@ $active_tab = $_GET['tab'] ?? 'browse';
                                     </div>
                                     <div class="shrink-0 flex items-center gap-3.5">
                                         <span class="text-xs font-semibold text-gray-500"><?php echo round($track['duration_seconds'] / 60); ?>m</span>
-                                        <button onclick="playMedia(<?php echo $track['id']; ?>, '<?php echo addslashes($track['title']); ?>', '<?php echo htmlspecialchars($cat_map[$track['category_id']]); ?>', <?php echo $track['duration_seconds']; ?>)" class="h-9 w-9 rounded-full bg-brand-sage text-slate-900 flex items-center justify-center transition-transform hover:scale-105 active:scale-95">
+                                        <?php $ai_trk_url = $track['media_url'] ?? ''; ?>
+                                        <button onclick="playMedia(<?php echo $track['id']; ?>, '<?php echo addslashes($track['title']); ?>', '<?php echo htmlspecialchars($cat_map[$track['category_id']]); ?>', <?php echo $track['duration_seconds']; ?>, '<?php echo addslashes($ai_trk_url); ?>')" class="h-9 w-9 rounded-full bg-brand-sage text-slate-900 flex items-center justify-center transition-transform hover:scale-105 active:scale-95">
                                             <svg class="h-4.5 w-4.5 fill-slate-900 ml-0.5" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
                                         </button>
                                     </div>
@@ -384,6 +409,42 @@ $active_tab = $_GET['tab'] ?? 'browse';
         <?php endif; ?>
 
     </main>
+
+    <!-- CINEMA VIDEO STREAMING MODAL -->
+    <div id="streaming-video-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md hidden transition-opacity duration-300">
+        <div id="streaming-video-box" class="bg-slate-900 border border-white/10 rounded-3xl max-w-3xl w-full shadow-2xl overflow-hidden transform scale-95 transition-transform duration-300 flex flex-col">
+            <!-- Modal Header -->
+            <div class="p-4 sm:p-5 border-b border-white/10 flex items-center justify-between bg-slate-950/70">
+                <div class="flex items-center gap-2.5">
+                    <span id="streaming-modal-category" class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-brand-sage/20 text-brand-sage uppercase tracking-wider border border-brand-sage/30">
+                        Guided Meditation
+                    </span>
+                    <h3 id="streaming-modal-title" class="text-base font-bold font-outfit text-white truncate max-w-md">
+                        Video Stream
+                    </h3>
+                </div>
+                <button type="button" onclick="closeStreamingVideoModal()" class="h-8 w-8 rounded-full hover:bg-white/10 text-gray-400 hover:text-white flex items-center justify-center transition-colors">
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>
+
+            <!-- YouTube / Video Embed Player -->
+            <div class="w-full bg-black relative" style="padding-bottom: 56.25%;">
+                <iframe id="streaming-youtube-frame" src="about:blank" class="absolute inset-0 w-full h-full border-0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="p-4 sm:p-5 flex items-center justify-between bg-slate-950/60 border-t border-white/5">
+                <span class="text-xs text-gray-400 flex items-center gap-2">
+                    <span class="h-2 w-2 rounded-full bg-red-500 animate-pulse"></span>
+                    Now Streaming via TET Learning Center
+                </span>
+                <button type="button" onclick="closeStreamingVideoModal()" class="px-4 py-2 rounded-xl bg-brand-sage hover:bg-brand-sage/80 text-slate-900 text-xs font-bold transition-all shadow-sm">
+                    Done Watching
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- INLINE WEB AUDIO STREAMING PLAYER BAR -->
     <div id="media-player-bar" class="fixed bottom-0 left-0 right-0 z-50 transform translate-y-full transition-transform duration-300 ease-out border-t border-white/10 bg-slate-950 px-6 py-4.5 shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -461,15 +522,57 @@ $active_tab = $_GET['tab'] ?? 'browse';
         let ctx = null;
         let animationId = null;
 
-        function playMedia(id, title, category, duration) {
+        function playMedia(id, title, category, duration, mediaUrl) {
             currentTrackId = id;
             trackDuration = duration;
             currentSeconds = 0;
             
+            // Check if mediaUrl is a YouTube / Video stream
+            if (mediaUrl && (mediaUrl.includes('youtube.com') || mediaUrl.includes('youtu.be') || mediaUrl.includes('/embed/'))) {
+                // Ensure audio synthesizer is stopped
+                stopPlayback();
+                document.getElementById('media-player-bar').classList.add('translate-y-full');
+
+                // Normalize YouTube embed URL
+                let embedUrl = mediaUrl;
+                if (embedUrl.includes('watch?v=')) {
+                    const vId = embedUrl.split('watch?v=')[1].split('&')[0];
+                    embedUrl = 'https://www.youtube.com/embed/' + vId;
+                } else if (embedUrl.includes('youtu.be/')) {
+                    const vId = embedUrl.split('youtu.be/')[1].split('?')[0];
+                    embedUrl = 'https://www.youtube.com/embed/' + vId;
+                }
+
+                if (embedUrl.indexOf('?') === -1) {
+                    embedUrl += '?autoplay=1&rel=0';
+                } else {
+                    embedUrl += '&autoplay=1&rel=0';
+                }
+
+                document.getElementById('streaming-modal-title').innerText = title;
+                document.getElementById('streaming-modal-category').innerText = category;
+                document.getElementById('streaming-youtube-frame').src = embedUrl;
+
+                const modal = document.getElementById('streaming-video-modal');
+                const box = document.getElementById('streaming-video-box');
+                modal.classList.remove('hidden');
+                setTimeout(() => {
+                    box.classList.remove('scale-95');
+                    box.classList.add('scale-100');
+                }, 20);
+
+                // Increment play counter in background
+                const formData = new FormData();
+                formData.append('action', 'play_track');
+                formData.append('track_id', id);
+                fetch('streaming_hub.php', { method: 'POST', body: formData });
+                return;
+            }
+
+            // Audio track: Show Bar
             document.getElementById('player-title').innerText = title;
             document.getElementById('player-category').innerText = category;
             
-            // Show Bar
             const playerBar = document.getElementById('media-player-bar');
             playerBar.classList.remove('translate-y-full');
 
@@ -484,6 +587,17 @@ $active_tab = $_GET['tab'] ?? 'browse';
 
             // Start Audio
             startPlayback();
+        }
+
+        function closeStreamingVideoModal() {
+            const modal = document.getElementById('streaming-video-modal');
+            const box = document.getElementById('streaming-video-box');
+            box.classList.remove('scale-100');
+            box.classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                document.getElementById('streaming-youtube-frame').src = 'about:blank';
+            }, 200);
         }
 
         function startPlayback() {

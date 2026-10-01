@@ -102,14 +102,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $title = trim($_POST['title'] ?? '');
         $description = trim($_POST['description'] ?? '');
         $target = intval($_POST['target_participants'] ?? 0);
+        $video_url = trim($_POST['video_url'] ?? '');
+
+        // Normalize YouTube embed URL
+        if (!empty($video_url)) {
+            if (preg_match('/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/', $video_url, $m)) {
+                $video_url = 'https://www.youtube.com/embed/' . $m[1];
+            }
+        }
 
         if (empty($title) || empty($description) || $target <= 0) {
             $action_error = 'All fields are required. Target participants must be greater than 0.';
         } else {
             if ($db_connected && $pdo) {
                 try {
-                    $stmt = $pdo->prepare("INSERT INTO research_studies (title, description, status, target_participants) VALUES (?, ?, 'active', ?)");
-                    $stmt->execute([$title, $description, $target]);
+                    $stmt = $pdo->prepare("INSERT INTO research_studies (title, description, status, target_participants, video_url) VALUES (?, ?, 'active', ?, ?)");
+                    $stmt->execute([$title, $description, $target, $video_url ?: null]);
                     $action_success = "Research study '" . htmlspecialchars($title) . "' launched successfully!";
                 } catch (PDOException $e) {
                     $action_error = "Database error: " . $e->getMessage();
@@ -122,7 +130,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                     'title' => $title,
                     'description' => $description,
                     'status' => 'active',
-                    'target_participants' => $target
+                    'target_participants' => $target,
+                    'video_url' => $video_url ?: null
                 ];
                 $action_success = "Research study '" . htmlspecialchars($title) . "' launched successfully! (Session Mock)";
             }
@@ -310,6 +319,8 @@ if ($overall_mood_index < 70) {
 
 // Tab Selection
 $active_tab = $_GET['tab'] ?? 'population';
+$is_embedded = (isset($_GET['embed']) && $_GET['embed'] == '1');
+$embed_suffix = $is_embedded ? '&embed=1' : '';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -349,6 +360,7 @@ $active_tab = $_GET['tab'] ?? 'population';
     </script>
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -372,11 +384,27 @@ $active_tab = $_GET['tab'] ?? 'population';
         ::-webkit-scrollbar-thumb:hover {
             background: #D1D5DB;
         }
+        /* When embedded or in iframe, suppress top header/nav */
+        html.in-iframe header,
+        body.is-embedded header,
+        body.is-embedded #mobile-menu,
+        html.in-iframe #mobile-menu {
+            display: none !important;
+        }
     </style>
+    <script>
+        if (window.self !== window.top) {
+            document.documentElement.classList.add('in-iframe');
+            document.addEventListener('DOMContentLoaded', () => {
+                document.body.classList.add('is-embedded');
+                document.querySelectorAll('header, #mobile-menu').forEach(el => el.style.display = 'none');
+            });
+        }
+    </script>
     <link rel="icon" href="logo.svg" type="image/svg+xml">
 </head>
-<body class="text-brand-slate antialiased pb-24">
-    <?php if (!isset($_GET['embed'])) { require_once 'nav_menu.php'; } ?>
+<body class="text-brand-slate antialiased pb-24 <?php echo $is_embedded ? 'is-embedded' : ''; ?>">
+    <?php if (!$is_embedded) { require_once 'nav_menu.php'; } ?>
 
     <!-- HEADER BAR -->
     <?php if (!isset($_GET['embed'])): ?>
@@ -485,10 +513,10 @@ $active_tab = $_GET['tab'] ?? 'population';
 
             <!-- ANALYTICS SUB-NAV -->
             <div class="flex items-center gap-2 mb-8 text-xs overflow-x-auto whitespace-nowrap pb-2">
-                <a href="research_hub.php?tab=population" class="px-4 py-2 rounded-xl font-bold transition-all <?php echo ($active_tab === 'population') ? 'bg-brand-sage text-white shadow-soft' : 'bg-white text-brand-slate hover:bg-brand-sageLight border border-[#EBE8E0]'; ?>">Population Analytics</a>
-                <a href="research_hub.php?tab=intervention" class="px-4 py-2 rounded-xl font-bold transition-all <?php echo ($active_tab === 'intervention') ? 'bg-brand-sage text-white shadow-soft' : 'bg-white text-brand-slate hover:bg-brand-sageLight border border-[#EBE8E0]'; ?>">Intervention Efficacy</a>
-                <a href="research_hub.php?tab=studies" class="px-4 py-2 rounded-xl font-bold transition-all <?php echo ($active_tab === 'studies') ? 'bg-brand-sage text-white shadow-soft' : 'bg-white text-brand-slate hover:bg-brand-sageLight border border-[#EBE8E0]'; ?>">Manage Research Studies</a>
-                <a href="research_hub.php?tab=policy" class="px-4 py-2 rounded-xl font-bold transition-all <?php echo ($active_tab === 'policy') ? 'bg-brand-sage text-white shadow-soft' : 'bg-white text-brand-slate hover:bg-brand-sageLight border border-[#EBE8E0]'; ?>">Policy & Guidelines</a>
+                <a href="research_hub.php?tab=population<?php echo $embed_suffix; ?>" class="px-4 py-2 rounded-xl font-bold transition-all <?php echo ($active_tab === 'population') ? 'bg-brand-sage text-white shadow-soft' : 'bg-white text-brand-slate hover:bg-brand-sageLight border border-[#EBE8E0]'; ?>">Population Analytics</a>
+                <a href="research_hub.php?tab=intervention<?php echo $embed_suffix; ?>" class="px-4 py-2 rounded-xl font-bold transition-all <?php echo ($active_tab === 'intervention') ? 'bg-brand-sage text-white shadow-soft' : 'bg-white text-brand-slate hover:bg-brand-sageLight border border-[#EBE8E0]'; ?>">Intervention Efficacy</a>
+                <a href="research_hub.php?tab=studies<?php echo $embed_suffix; ?>" class="px-4 py-2 rounded-xl font-bold transition-all <?php echo ($active_tab === 'studies') ? 'bg-brand-sage text-white shadow-soft' : 'bg-white text-brand-slate hover:bg-brand-sageLight border border-[#EBE8E0]'; ?>">Manage Research Studies</a>
+                <a href="research_hub.php?tab=policy<?php echo $embed_suffix; ?>" class="px-4 py-2 rounded-xl font-bold transition-all <?php echo ($active_tab === 'policy') ? 'bg-brand-sage text-white shadow-soft' : 'bg-white text-brand-slate hover:bg-brand-sageLight border border-[#EBE8E0]'; ?>">Policy & Guidelines</a>
             </div>
 
             <!-- SUB-TAB CONTENT -->
@@ -776,6 +804,12 @@ $active_tab = $_GET['tab'] ?? 'population';
                                                 </div>
                                             </div>
                                         </div>
+
+                                        <?php if (!empty($study['video_url'])): ?>
+                                            <button type="button" onclick="openStudyVideoModal('<?php echo addslashes($study['title']); ?>', '<?php echo addslashes($study['video_url']); ?>')" class="px-3.5 py-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-700 font-bold text-xs flex items-center gap-2 transition-all shrink-0">
+                                                <i class="fa-brands fa-youtube text-red-600"></i> Watch Briefing
+                                            </button>
+                                        <?php endif; ?>
                                     </div>
                                 <?php endforeach; ?>
                             </div>
@@ -791,6 +825,11 @@ $active_tab = $_GET['tab'] ?? 'population';
                             <div>
                                 <label for="title" class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 font-outfit">Study Title</label>
                                 <input type="text" id="title" name="title" required placeholder="e.g. Somatic Stress Ingestion Analysis" class="w-full px-4 py-3 rounded-xl border border-gray-200 text-xs focus:ring-2 focus:ring-brand-sage focus:outline-none transition-all">
+                            </div>
+
+                            <div>
+                                <label for="video_url" class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 font-outfit">YouTube Video Briefing URL (Optional)</label>
+                                <input type="text" id="video_url" name="video_url" placeholder="https://www.youtube.com/watch?v=... or https://youtu.be/..." class="w-full px-4 py-3 rounded-xl border border-gray-200 text-xs focus:ring-2 focus:ring-brand-sage focus:outline-none transition-all font-mono">
                             </div>
 
                             <div>
@@ -895,16 +934,24 @@ $active_tab = $_GET['tab'] ?? 'population';
                                 <p class="text-xs text-gray-500 leading-normal line-clamp-4"><?php echo htmlspecialchars($study['description']); ?></p>
                             </div>
 
-                            <div class="pt-4 flex items-center justify-between border-t border-gray-200/50 mt-auto">
+                            <div class="pt-4 flex items-center justify-between border-t border-gray-200/50 mt-auto gap-2">
                                 <div class="text-[10px] font-semibold text-gray-500">
                                     <span>Joined: </span>
                                     <span id="count-<?php echo $s_id; ?>" class="text-brand-slate font-bold"><?php echo $p_count; ?></span>
                                     <span>/<?php echo $target; ?></span>
                                 </div>
                                 
-                                <button id="btn-<?php echo $s_id; ?>" onclick="toggleConsent(<?php echo $s_id; ?>)" class="px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all <?php echo $is_joined ? 'bg-brand-coral text-white hover:bg-red-700' : 'bg-brand-sage text-white hover:bg-brand-slate'; ?>">
-                                    <?php echo $is_joined ? 'Leave Study' : 'Join Study'; ?>
-                                </button>
+                                <div class="flex items-center gap-2">
+                                    <?php if (!empty($study['video_url'])): ?>
+                                        <button type="button" onclick="openStudyVideoModal('<?php echo addslashes($study['title']); ?>', '<?php echo addslashes($study['video_url']); ?>')" class="px-2.5 py-1.5 text-xs font-bold rounded-lg bg-red-50 hover:bg-red-100 text-red-700 transition-all flex items-center gap-1.5 shadow-xs" title="Watch Video Briefing">
+                                            <i class="fa-brands fa-youtube text-red-600"></i>
+                                            <span class="hidden sm:inline">Briefing</span>
+                                        </button>
+                                    <?php endif; ?>
+                                    <button id="btn-<?php echo $s_id; ?>" onclick="toggleConsent(<?php echo $s_id; ?>)" class="px-3.5 py-1.5 text-xs font-bold rounded-lg transition-all <?php echo $is_joined ? 'bg-brand-coral text-white hover:bg-red-700' : 'bg-brand-sage text-white hover:bg-brand-slate'; ?>">
+                                        <?php echo $is_joined ? 'Leave Study' : 'Join Study'; ?>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     <?php endforeach; ?>
@@ -961,6 +1008,74 @@ $active_tab = $_GET['tab'] ?? 'population';
         <?php endif; ?>
 
     </main>
+
+    <!-- RESEARCH VIDEO BRIEFING MODAL -->
+    <div id="study-video-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm hidden transition-opacity duration-300">
+        <div id="study-video-box" class="bg-white rounded-3xl max-w-3xl w-full shadow-2xl border border-gray-100 overflow-hidden transform scale-95 transition-transform duration-300 flex flex-col">
+            <!-- Modal Header -->
+            <div class="p-4 sm:p-5 border-b border-gray-100 flex items-center justify-between bg-brand-bg">
+                <div class="flex items-center gap-2.5">
+                    <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-brand-coralLight text-brand-coral uppercase tracking-wider">
+                        Clinical Briefing
+                    </span>
+                    <h3 id="study-modal-title" class="text-base font-bold font-outfit text-brand-slate truncate max-w-md">
+                        Research Study Briefing
+                    </h3>
+                </div>
+                <button type="button" onclick="closeStudyVideoModal()" class="h-8 w-8 rounded-full hover:bg-gray-200 text-gray-400 hover:text-brand-slate flex items-center justify-center transition-colors">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+            </div>
+
+            <!-- YouTube Video Embed -->
+            <div class="w-full bg-black relative" style="padding-bottom: 56.25%;">
+                <iframe id="study-youtube-frame" src="about:blank" class="absolute inset-0 w-full h-full border-0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="p-4 sm:p-5 flex items-center justify-between bg-white border-t border-gray-100">
+                <span class="text-xs text-gray-500">
+                    <i class="fa-solid fa-circle-info text-brand-sage mr-1"></i>
+                    Study Protocol & Informed Consent Video Briefing
+                </span>
+                <button type="button" onclick="closeStudyVideoModal()" class="px-4 py-2 rounded-xl bg-brand-sage hover:bg-brand-sageHover text-white text-xs font-bold transition-all shadow-sm">
+                    Close Briefing
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openStudyVideoModal(title, videoUrl) {
+            document.getElementById('study-modal-title').innerText = title;
+            let url = videoUrl;
+            if (url.indexOf('?') === -1) {
+                url += '?autoplay=1&rel=0';
+            } else {
+                url += '&autoplay=1&rel=0';
+            }
+            document.getElementById('study-youtube-frame').src = url;
+
+            const modal = document.getElementById('study-video-modal');
+            const box = document.getElementById('study-video-box');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                box.classList.remove('scale-95');
+                box.classList.add('scale-100');
+            }, 20);
+        }
+
+        function closeStudyVideoModal() {
+            const modal = document.getElementById('study-video-modal');
+            const box = document.getElementById('study-video-box');
+            box.classList.remove('scale-100');
+            box.classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                document.getElementById('study-youtube-frame').src = 'about:blank';
+            }, 200);
+        }
+    </script>
 
 </body>
 </html>

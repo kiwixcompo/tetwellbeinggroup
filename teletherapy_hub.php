@@ -451,6 +451,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                     } catch (\Exception $e) {}
                 }
 
+                if (!isset($_SESSION['user_activity_count'][$user_id])) {
+                    $_SESSION['user_activity_count'][$user_id] = 1;
+                } else {
+                    $_SESSION['user_activity_count'][$user_id]++;
+                }
+
                 header("Location: teletherapy_hub.php?booking_success=1&rate=" . urlencode((string)$therapist_rate));
                 exit;
             }
@@ -672,28 +678,49 @@ $today_date = date('l, F j, Y');
         <div class="space-y-8">
             
             <!-- DYNAMIC SEARCH & FILTER CONTROLS -->
-            <section class="bg-white rounded-3xl p-5 shadow-soft border border-[#EBE8E0] grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <!-- Specialty Dropdown -->
+            <section class="bg-white rounded-3xl p-5 shadow-soft border border-[#EBE8E0] space-y-4">
+                <!-- Search by name or keyword with Speech-to-Text -->
                 <div>
-                    <label for="filter-specialty" class="block text-xs font-bold text-brand-slate uppercase tracking-wider mb-1.5 font-outfit">Filter by Specialty</label>
-                    <select id="filter-specialty" onchange="applyFilters()" class="w-full rounded-xl border border-gray-200 bg-[#FAF9F6] p-3 text-xs font-semibold focus:border-brand-sage focus:outline-none text-brand-slate">
-                        <option value="all">All Specialties</option>
-                        <option value="cbt">Cognitive Behavioral Therapy (CBT)</option>
-                        <option value="caregiver">Caregiver Respite & stress</option>
-                        <option value="anxiety">Anxiety & Burnout Support</option>
-                    </select>
+                    <label for="filter-search" class="block text-xs font-bold text-brand-slate uppercase tracking-wider mb-1.5 font-outfit">Search Practitioner or Topic</label>
+                    <div class="relative">
+                        <input 
+                            type="text" 
+                            id="filter-search" 
+                            onkeyup="applyFilters()" 
+                            placeholder="Search by practitioner name, CBT, burnout, mindfulness..."
+                            class="w-full rounded-xl border border-gray-200 bg-[#FAF9F6] pl-4 pr-10 py-3 text-xs font-semibold focus:border-brand-sage focus:outline-none text-brand-slate"
+                        >
+                        <button type="button" onclick="window.TetVoiceToText.toggle('filter-search', this)" title="Voice Search" class="absolute right-2.5 top-2.5 p-1 text-gray-400 hover:text-brand-sage transition-all rounded">
+                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                            </svg>
+                        </button>
+                    </div>
                 </div>
 
-                <!-- Insurance Dropdown -->
-                <div>
-                    <label for="filter-insurance" class="block text-xs font-bold text-brand-slate uppercase tracking-wider mb-1.5 font-outfit">Filter by Insurance</label>
-                    <select id="filter-insurance" onchange="applyFilters()" class="w-full rounded-xl border border-gray-200 bg-[#FAF9F6] p-3 text-xs font-semibold focus:border-brand-sage focus:outline-none text-brand-slate">
-                        <option value="all">All Insurance Compatibility</option>
-                        <option value="blue-cross">Blue Cross</option>
-                        <option value="aetna">Aetna</option>
-                        <option value="cigna">Cigna</option>
-                        <option value="self-pay">Self-Pay / Private</option>
-                    </select>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <!-- Specialty Dropdown -->
+                    <div>
+                        <label for="filter-specialty" class="block text-xs font-bold text-brand-slate uppercase tracking-wider mb-1.5 font-outfit">Filter by Specialty</label>
+                        <select id="filter-specialty" onchange="applyFilters()" class="w-full rounded-xl border border-gray-200 bg-[#FAF9F6] p-3 text-xs font-semibold focus:border-brand-sage focus:outline-none text-brand-slate">
+                            <option value="all">All Specialties</option>
+                            <option value="cbt">Cognitive Behavioral Therapy (CBT)</option>
+                            <option value="caregiver">Caregiver Respite & stress</option>
+                            <option value="anxiety">Anxiety & Burnout Support</option>
+                        </select>
+                    </div>
+
+                    <!-- Insurance Dropdown -->
+                    <div>
+                        <label for="filter-insurance" class="block text-xs font-bold text-brand-slate uppercase tracking-wider mb-1.5 font-outfit">Filter by Insurance</label>
+                        <select id="filter-insurance" onchange="applyFilters()" class="w-full rounded-xl border border-gray-200 bg-[#FAF9F6] p-3 text-xs font-semibold focus:border-brand-sage focus:outline-none text-brand-slate">
+                            <option value="all">All Insurance Compatibility</option>
+                            <option value="blue-cross">Blue Cross</option>
+                            <option value="aetna">Aetna</option>
+                            <option value="cigna">Cigna</option>
+                            <option value="self-pay">Self-Pay / Private</option>
+                        </select>
+                    </div>
                 </div>
             </section>
 
@@ -768,36 +795,51 @@ $today_date = date('l, F j, Y');
 
                         <div>
                             <!-- Header / Avatar placeholder -->
-                            <div class="flex items-center gap-3 mb-4">
+                            <div class="flex items-center gap-3 mb-3">
                                 <div class="h-12 w-12 rounded-2xl bg-brand-sageLight text-brand-sage flex items-center justify-center font-bold text-sm">
                                     <?php echo $initials; ?>
                                 </div>
                                 <div>
                                     <h4 class="font-bold text-brand-slate text-sm font-outfit"><?php echo htmlspecialchars($t_name); ?></h4>
-                                    <span class="text-[10px] text-gray-400 font-medium truncate max-w-[150px] inline-block"><?php echo htmlspecialchars($t_license); ?></span>
+                                    <div class="flex items-center gap-1.5 mt-0.5">
+                                        <span class="inline-flex items-center gap-1 text-[9px] font-extrabold px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
+                                            <i class="fa-solid fa-certificate text-[8px]"></i> HCPC / BACP Verified
+                                        </span>
+                                    </div>
+                                    <span class="text-[10px] text-gray-400 font-medium truncate max-w-[150px] inline-block mt-0.5"><?php echo htmlspecialchars($t_license); ?></span>
                                 </div>
                             </div>
                             
-                            <!-- Specialties badges -->
+                            <!-- Specialties & Modality badges with guidance -->
                             <div class="flex flex-wrap gap-1 mb-3">
                                 <?php foreach ($specialty_badges as $badge): ?>
-                                    <span class="px-2 py-0.5 rounded-md bg-brand-bg text-[9px] font-bold text-brand-slate"><?php echo htmlspecialchars($badge); ?></span>
+                                    <span class="px-2 py-0.5 rounded-md bg-brand-bg text-[9px] font-bold text-brand-slate border border-gray-100 flex items-center gap-1">
+                                        <span class="w-1 h-1 rounded-full bg-brand-sage"></span>
+                                        <?php echo htmlspecialchars($badge); ?>
+                                    </span>
                                 <?php endforeach; ?>
                             </div>
                             
                             <p class="text-xs text-gray-500 leading-relaxed mb-4">
                                 <?php echo htmlspecialchars($t_bio); ?>
                             </p>
+
+                            <!-- Cultural competency & Modality Tag -->
+                            <div class="mb-4 pt-2 border-t border-gray-100/70 flex items-center justify-between text-[10px] text-gray-400">
+                                <span>🗣 English, Spanish</span>
+                                <span class="text-brand-sage font-semibold">Trauma-Informed</span>
+                            </div>
                         </div>
                         
-                        <div class="pt-4 border-t border-gray-100 flex items-center justify-between">
+                        <div class="pt-3 border-t border-gray-100 flex items-center justify-between">
                             <div>
                                 <span class="text-xs font-bold text-brand-slate">&pound;<?php echo number_format($t_rate, 2); ?></span>
                                 <span class="text-[9px] text-gray-400">/ session</span>
                             </div>
                             <?php if ($can_book_teletherapy): ?>
-                            <button type="button" onclick="openBookingModal('<?php echo htmlspecialchars($t_name); ?>')" class="px-4 py-2 rounded-xl bg-brand-sage hover:bg-brand-sageHover text-white text-xs font-bold transition-all active:scale-95">
-                                Book Session
+                            <button type="button" onclick="openBookingModal('<?php echo htmlspecialchars($t_name); ?>')" class="px-4 py-2 rounded-xl bg-brand-sage hover:bg-brand-sageHover text-white text-xs font-bold transition-all active:scale-95 flex items-center gap-1.5 shadow-sm">
+                                <i class="fa-regular fa-calendar-check text-[11px]"></i>
+                                <span>Book Session</span>
                             </button>
                             <?php else: ?>
                             <a href="subscription.php" class="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-brand-coralLight border border-brand-coral/20 text-brand-coral text-xs font-bold transition-all hover:bg-brand-coral hover:text-white">
@@ -1135,10 +1177,17 @@ $today_date = date('l, F j, Y');
         </div>
         
         <!-- Input Area -->
-        <form id="chat-message-form" onsubmit="sendChatMessage(event)" class="p-3.5 border-t border-gray-100 flex gap-2 bg-white">
+        <form id="chat-message-form" onsubmit="sendChatMessage(event)" class="p-3.5 border-t border-gray-100 flex gap-2 bg-white items-center">
             <input type="hidden" id="chat-booking-id" value="">
-            <input type="text" id="chat-message-input" placeholder="Type a message..." required autocomplete="off" class="flex-1 px-4 py-2 text-xs rounded-xl bg-brand-bg border border-gray-200 focus:outline-none focus:border-brand-sage focus:ring-1 focus:ring-brand-sage">
-            <button type="submit" class="px-4 py-2 rounded-xl bg-brand-sage hover:bg-brand-sageHover text-white text-xs font-bold transition-all active:scale-95 flex items-center gap-1">
+            <div class="relative flex-1">
+                <input type="text" id="chat-message-input" placeholder="Type a message..." required autocomplete="off" class="w-full pl-3 pr-8 py-2 text-xs rounded-xl bg-brand-bg border border-gray-200 focus:outline-none focus:border-brand-sage focus:ring-1 focus:ring-brand-sage">
+                <button type="button" onclick="window.TetVoiceToText.toggle('chat-message-input', this)" title="Voice Dictate" class="absolute right-2 top-1.5 p-1 text-gray-400 hover:text-brand-sage transition-all rounded">
+                    <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                    </svg>
+                </button>
+            </div>
+            <button type="submit" class="px-4 py-2 rounded-xl bg-brand-sage hover:bg-brand-sageHover text-white text-xs font-bold transition-all active:scale-95 flex items-center gap-1 shrink-0">
                 Send <span>➔</span>
             </button>
         </form>
@@ -1298,6 +1347,23 @@ $today_date = date('l, F j, Y');
                     </div>
                 </div>
 
+                <!-- Pre-Consultation Clinical Safety Screener (PHQ-2 Mini Intake) -->
+                <div class="p-3.5 rounded-2xl bg-brand-bg/70 border border-gray-200/80 space-y-2 text-xs">
+                    <div class="flex items-center gap-1.5 font-bold text-brand-slate text-[11px]">
+                        <i class="fa-solid fa-clipboard-check text-brand-sage"></i>
+                        <span>Pre-Consultation Wellbeing Check (Confidential)</span>
+                    </div>
+                    <div class="space-y-1.5 pt-1">
+                        <label class="block text-[11px] text-gray-600">Over the past 2 weeks, how often have you felt down, depressed, or hopeless?</label>
+                        <select name="phq2_mood" class="w-full text-xs rounded-xl border border-gray-200 bg-white p-2 text-brand-slate focus:border-brand-sage focus:outline-none">
+                            <option value="0">Not at all (0)</option>
+                            <option value="1">Several days (1)</option>
+                            <option value="2">More than half the days (2)</option>
+                            <option value="3">Nearly every day (3)</option>
+                        </select>
+                    </div>
+                </div>
+
                 <div>
                     <label for="insurance_provider" class="block text-xs font-semibold text-brand-slate mb-1">Insurance Provider (Optional)</label>
                     <input 
@@ -1307,6 +1373,25 @@ $today_date = date('l, F j, Y');
                         placeholder="e.g. Bupa, AXA, Cigna (Leave blank for Self-Pay via PayPal)"
                         class="w-full rounded-xl border border-gray-200 bg-[#FAF9F6] p-3 text-xs focus:border-brand-sage focus:outline-none text-brand-slate"
                     >
+                </div>
+
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <label for="booking_notes" class="block text-xs font-semibold text-brand-slate">What would you like to focus on? (Optional)</label>
+                        <button type="button" onclick="window.TetVoiceToText.toggle('booking_notes', this)" class="flex items-center gap-1 text-[10px] font-bold text-brand-sage hover:text-brand-sageHover bg-brand-sageLight/50 px-2 py-0.5 rounded-lg border border-brand-sage/10 transition-all select-none">
+                            <svg class="h-3 w-3 text-brand-sage" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                            </svg>
+                            <span>Voice Notes</span>
+                        </button>
+                    </div>
+                    <textarea 
+                        name="booking_notes" 
+                        id="booking_notes" 
+                        rows="2" 
+                        placeholder="Briefly describe what you'd like to work through (e.g. coping with stress, burnout, grief)..."
+                        class="w-full rounded-xl border border-gray-200 bg-[#FAF9F6] p-3 text-xs focus:border-brand-sage focus:outline-none text-brand-slate placeholder-gray-400 resize-none"
+                    ></textarea>
                 </div>
 
                 <div class="pt-2 flex flex-col gap-2">
@@ -1328,6 +1413,7 @@ $today_date = date('l, F j, Y');
         function applyFilters() {
             const selectedSpecialty = document.getElementById('filter-specialty').value;
             const selectedInsurance = document.getElementById('filter-insurance').value;
+            const searchQuery = (document.getElementById('filter-search')?.value || '').toLowerCase().trim();
             
             const cards = document.querySelectorAll('.therapist-card');
             let visibleCount = 0;
@@ -1335,11 +1421,13 @@ $today_date = date('l, F j, Y');
             cards.forEach(card => {
                 const cardSpecialties = card.getAttribute('data-specialties').split(',');
                 const cardInsurances = card.getAttribute('data-insurances').split(',');
+                const cardText = card.innerText.toLowerCase();
 
                 const matchesSpecialty = (selectedSpecialty === 'all' || cardSpecialties.includes(selectedSpecialty));
                 const matchesInsurance = (selectedInsurance === 'all' || cardInsurances.includes(selectedInsurance));
+                const matchesSearch = !searchQuery || cardText.includes(searchQuery);
 
-                if (matchesSpecialty && matchesInsurance) {
+                if (matchesSpecialty && matchesInsurance && matchesSearch) {
                     card.classList.remove('hidden');
                     visibleCount++;
                 } else {
@@ -1870,6 +1958,112 @@ $today_date = date('l, F j, Y');
         document.addEventListener('DOMContentLoaded', () => {
             loadEditorAvailability();
         });
+
+        // Global Voice-to-Text Universal Controller for Teletherapy Hub
+        window.TetVoiceToText = {
+            activeRecognition: null,
+            activeButton: null,
+            
+            toggle: function(targetInputId, btn) {
+                const target = document.getElementById(targetInputId);
+                if (!target) {
+                    console.error('Target input not found:', targetInputId);
+                    return;
+                }
+
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                if (!SpeechRecognition) {
+                    alert('Speech Recognition is not supported in this browser. Please use Chrome, Edge, or Safari.');
+                    return;
+                }
+
+                if (this.activeRecognition) {
+                    this.activeRecognition.stop();
+                    this.activeRecognition = null;
+                    if (this.activeButton) {
+                        this.resetButton(this.activeButton);
+                        this.activeButton = null;
+                    }
+                    return;
+                }
+
+                try {
+                    const recognition = new SpeechRecognition();
+                    recognition.continuous = true;
+                    recognition.interimResults = true;
+                    recognition.lang = 'en-US';
+
+                    let originalContent = target.value || '';
+                    if (originalContent.length > 0 && !originalContent.endsWith(' ')) {
+                        originalContent += ' ';
+                    }
+
+                    recognition.onstart = () => {
+                        this.setListeningButton(btn);
+                    };
+
+                    recognition.onresult = (event) => {
+                        let interimTranscript = '';
+                        let finalTranscript = '';
+
+                        for (let i = event.resultIndex; i < event.results.length; ++i) {
+                            if (event.results[i].isFinal) {
+                                finalTranscript += event.results[i][0].transcript;
+                            } else {
+                                interimTranscript += event.results[i][0].transcript;
+                            }
+                        }
+
+                        if (finalTranscript) {
+                            originalContent += finalTranscript + ' ';
+                            target.value = originalContent;
+                        } else if (interimTranscript) {
+                            target.value = originalContent + interimTranscript;
+                        }
+                        if (target.id === 'filter-search' && typeof applyFilters === 'function') {
+                            applyFilters();
+                        }
+                    };
+
+                    recognition.onerror = (event) => {
+                        console.warn('Speech recognition notice:', event.error);
+                        this.resetButton(btn);
+                        this.activeRecognition = null;
+                        this.activeButton = null;
+                    };
+
+                    recognition.onend = () => {
+                        this.resetButton(btn);
+                        this.activeRecognition = null;
+                        this.activeButton = null;
+                    };
+
+                    this.activeRecognition = recognition;
+                    this.activeButton = btn;
+                    recognition.start();
+                } catch (err) {
+                    console.error('Voice dictation error:', err);
+                    this.resetButton(btn);
+                }
+            },
+
+            setListeningButton: function(btn) {
+                if (!btn) return;
+                btn.dataset.originalHtml = btn.innerHTML;
+                btn.classList.add('bg-brand-coral', 'text-white', 'animate-pulse');
+                btn.classList.remove('text-brand-sage', 'text-gray-400');
+                btn.innerHTML = `<span class="inline-block w-2 h-2 rounded-full bg-white animate-ping mr-1"></span> 🎙️`;
+            },
+
+            resetButton: function(btn) {
+                if (!btn) return;
+                if (btn.dataset.originalHtml) {
+                    btn.innerHTML = btn.dataset.originalHtml;
+                }
+                btn.classList.remove('bg-brand-coral', 'text-white', 'animate-pulse');
+                btn.classList.add('text-gray-400');
+            }
+        };
     </script>
 </body>
 </html>

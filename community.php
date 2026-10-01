@@ -4,6 +4,7 @@
  * Anonymous forums, moderated discussion channels, and peer connection layers.
  */
 require_once 'db.php';
+require_once 'EmotionalHealthService.php';
 $tab = $_GET['tab'] ?? 'home';
 
 // Auth Guard: Redirect if not logged in
@@ -170,34 +171,129 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
+    // Empathy Reactions (I Hear You, You're Not Alone, Strength)
+    if ($action === 'react_post') {
+        $post_id = filter_input(INPUT_POST, 'post_id', FILTER_VALIDATE_INT);
+        $reaction_type = $_POST['reaction_type'] ?? 'hearts';
+        if ($post_id) {
+            $allowed_rx = ['hearts', 'hear_you', 'not_alone', 'strength'];
+            if (!in_array($reaction_type, $allowed_rx)) $reaction_type = 'hearts';
+
+            if (isset($_SESSION['mock_community_posts'])) {
+                foreach ($_SESSION['mock_community_posts'] as &$mock_p) {
+                    if ($mock_p['id'] == $post_id) {
+                        if (!isset($mock_p['reactions'])) {
+                            $mock_p['reactions'] = [
+                                'hearts' => (int)($mock_p['hearts'] ?? 0),
+                                'hear_you' => 0,
+                                'not_alone' => 0,
+                                'strength' => 0
+                            ];
+                        }
+                        $mock_p['reactions'][$reaction_type]++;
+                        if ($reaction_type === 'hearts') {
+                            $mock_p['hearts']++;
+                        }
+                        break;
+                    }
+                }
+                unset($mock_p);
+            }
+            if ($db_connected && $pdo) {
+                try {
+                    $stmt = $pdo->prepare("UPDATE community_posts SET hearts = hearts + 1 WHERE id = ?");
+                    $stmt->execute([$post_id]);
+                } catch (PDOException $ex) {}
+            }
+            header("Location: community.php?channel=" . urlencode($current_channel));
+            exit;
+        }
+    }
+
+    // Report Post / Safety Escalation
+    if ($action === 'report_post') {
+        $post_id = filter_input(INPUT_POST, 'post_id', FILTER_VALIDATE_INT);
+        $report_reason = htmlspecialchars(trim($_POST['report_reason'] ?? 'Flagged by peer'));
+        if ($post_id) {
+            if (!isset($_SESSION['community_reports'])) {
+                $_SESSION['community_reports'] = [];
+            }
+            $_SESSION['community_reports'][] = [
+                'post_id' => $post_id,
+                'user_id' => $user_id,
+                'reason' => $report_reason,
+                'timestamp' => date('Y-m-d H:i:s')
+            ];
+            header("Location: community.php?channel=" . urlencode($current_channel) . "&reported=1");
+            exit;
+        }
+    }
+
     // Create Post
     if ($action === 'create_post') {
         $content = filter_input(INPUT_POST, 'content', FILTER_DEFAULT);
         $is_anonymous = isset($_POST['is_anonymous']) ? 1 : 0;
+        $anonymous_alias = trim($_POST['anonymous_alias'] ?? '');
+        $content_warning = trim($_POST['content_warning'] ?? '');
+        
         if (!empty($content)) {
+            // Clinical safety triage
+            $crisis_detected = false;
+            try {
+                if (EmotionalHealthService::checkDistress($content)) {
+                    $_SESSION['crisis_state'] = 1;
+                    $crisis_detected = true;
+                    if ($db_connected && $pdo) {
+                        try {
+                            $stmt = $pdo->prepare("UPDATE users SET crisis_state = 1 WHERE id = ?");
+                            $stmt->execute([$user_id]);
+                        } catch (PDOException $ex) {}
+                    }
+                }
+            } catch (\Throwable $e) {}
+
             $post_saved = false;
             if ($db_connected && $pdo) {
                 try {
                     $stmt = $pdo->prepare("INSERT INTO community_posts (user_id, author_name, channel, content, is_anonymous, hearts, is_pinned) VALUES (?, ?, ?, ?, ?, 0, 0)");
-                    $stmt->execute([$user_id, $user_name, $current_channel, $content, $is_anonymous]);
+                    $author_to_save = ($is_anonymous && !empty($anonymous_alias)) ? $anonymous_alias : $user_name;
+                    $stmt->execute([$user_id, $author_to_save, $current_channel, $content, $is_anonymous]);
                     $post_saved = true;
                     $action_success = "Your post has been published to the circle.";
                 } catch (PDOException $ex) {}
             }
             if (!$post_saved && isset($_SESSION['mock_community_posts'])) {
                 $new_post_id = count($_SESSION['mock_community_posts']) + 1;
+                $author_to_save = ($is_anonymous && !empty($anonymous_alias)) ? $anonymous_alias : $user_name;
                 $_SESSION['mock_community_posts'][] = [
                     'id' => $new_post_id,
                     'user_id' => $user_id,
-                    'author_name' => $user_name,
+                    'author_name' => $author_to_save,
                     'channel' => $current_channel,
                     'content' => $content,
                     'is_anonymous' => $is_anonymous,
+                    'content_warning' => $content_warning,
                     'hearts' => 0,
+                    'reactions' => [
+                        'hearts' => 0,
+                        'hear_you' => 0,
+                        'not_alone' => 0,
+                        'strength' => 0
+                    ],
                     'is_pinned' => 0,
                     'created_at' => date('Y-m-d H:i:s')
                 ];
-                $action_success = "Your post has been published successfully (Session mock).";
+                $action_success = "Your post has been published successfully.";
+                $post_saved = true;
+            }
+
+            if ($post_saved) {
+                // Sync to Wellbeing Passport activities
+                if (!isset($_SESSION['user_activity_count'][$user_id])) {
+                    $_SESSION['user_activity_count'][$user_id] = 1;
+                } else {
+                    $_SESSION['user_activity_count'][$user_id]++;
+                }
             }
         } else {
             $action_error = "Unable to publish empty post content.";
@@ -284,6 +380,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $content = trim($_POST['content'] ?? '');
         $is_anonymous = isset($_POST['is_anonymous']) ? 1 : 0;
         if ($post_id > 0 && !empty($content)) {
+            // Clinical safety triage
+            try {
+                if (EmotionalHealthService::checkDistress($content)) {
+                    $_SESSION['crisis_state'] = 1;
+                    if ($db_connected && $pdo) {
+                        try {
+                            $stmt = $pdo->prepare("UPDATE users SET crisis_state = 1 WHERE id = ?");
+                            $stmt->execute([$user_id]);
+                        } catch (PDOException $ex) {}
+                    }
+                }
+            } catch (\Throwable $e) {}
+
             $saved = false;
             if ($db_connected && $pdo) {
                 try {
@@ -307,6 +416,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $saved = true;
             }
             if ($saved) {
+                if (!isset($_SESSION['user_activity_count'][$user_id])) {
+                    $_SESSION['user_activity_count'][$user_id] = 1;
+                } else {
+                    $_SESSION['user_activity_count'][$user_id]++;
+                }
                 header("Location: community.php?channel=" . urlencode($current_channel) . "&comment_added=1");
                 exit;
             }
@@ -729,22 +843,28 @@ function Math_Round($val) {
             <!-- LEFT COLUMN: CHANNEL SELECTOR -->
             <div class="md:col-span-1 space-y-4">
                 <div class="bg-white rounded-3xl p-5 shadow-soft border border-[#EBE8E0]">
-                    <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center justify-between mb-3">
                         <h3 class="text-xs font-bold text-brand-slate uppercase tracking-wider font-outfit">My Support Circles</h3>
                         <span class="text-[10px] font-bold text-brand-sage bg-brand-sageLight px-2 py-0.5 rounded-full"><?php echo count($channels); ?> Active</span>
                     </div>
+
+                    <!-- Category Filter Pills -->
+                    <div class="flex items-center gap-1.5 overflow-x-auto pb-2 mb-2 no-scrollbar text-[10px] font-bold">
+                        <button type="button" onclick="filterCircleList('all')" class="circle-filter-pill active px-2.5 py-1 rounded-full bg-brand-sage text-white transition-all whitespace-nowrap">All</button>
+                        <button type="button" onclick="filterCircleList('Mood')" class="circle-filter-pill px-2.5 py-1 rounded-full bg-gray-100 hover:bg-brand-sageLight text-brand-slate hover:text-brand-sage transition-all whitespace-nowrap">Mood</button>
+                        <button type="button" onclick="filterCircleList('Caregiver')" class="circle-filter-pill px-2.5 py-1 rounded-full bg-gray-100 hover:bg-brand-sageLight text-brand-slate hover:text-brand-sage transition-all whitespace-nowrap">Caregivers</button>
+                        <button type="button" onclick="filterCircleList('Workplace')" class="circle-filter-pill px-2.5 py-1 rounded-full bg-gray-100 hover:bg-brand-sageLight text-brand-slate hover:text-brand-sage transition-all whitespace-nowrap">Workplace</button>
+                        <button type="button" onclick="filterCircleList('Grief')" class="circle-filter-pill px-2.5 py-1 rounded-full bg-gray-100 hover:bg-brand-sageLight text-brand-slate hover:text-brand-sage transition-all whitespace-nowrap">Grief</button>
+                    </div>
                     
-                    <div class="flex flex-col gap-1.5 max-h-[420px] overflow-y-auto pr-1">
+                    <div id="circle-nav-list" class="flex flex-col gap-1.5 max-h-[420px] overflow-y-auto pr-1">
                         <?php foreach ($all_circles as $circ): ?>
                             <?php 
                                 $isJoined = in_array($circ['id'], $my_circle_ids) || $circ['slug'] === 'general';
                                 $isActive = ($current_channel === $circ['slug']);
-                                if (!$isJoined && count($my_circle_ids) > 0 && !$isActive) {
-                                    // Only show joined circles in primary sidebar, but list all in Discover modal
-                                    // or show top ones with quick join button
-                                }
+                                $circCategory = htmlspecialchars($circ['category'] ?? 'General');
                             ?>
-                            <div class="flex items-center justify-between p-1.5 rounded-2xl transition-all <?php echo $isActive ? 'bg-brand-sage text-white shadow-soft font-bold' : ($isJoined ? 'bg-brand-bg hover:bg-brand-sageLight/60 text-brand-slate' : 'bg-gray-50/70 hover:bg-gray-100 text-gray-400'); ?>">
+                            <div data-category="<?php echo $circCategory; ?>" class="circle-nav-item flex items-center justify-between p-1.5 rounded-2xl transition-all <?php echo $isActive ? 'bg-brand-sage text-white shadow-soft font-bold' : ($isJoined ? 'bg-brand-bg hover:bg-brand-sageLight/60 text-brand-slate' : 'bg-gray-50/70 hover:bg-gray-100 text-gray-400'); ?>">
                                 <a 
                                     href="community.php?channel=<?php echo urlencode($circ['slug']); ?>" 
                                     class="flex items-center gap-2 flex-grow truncate px-2 py-1.5 text-xs font-semibold"
@@ -896,10 +1016,10 @@ function Math_Round($val) {
                         <form method="POST" action="community.php?channel=<?php echo urlencode($current_channel); ?>" class="space-y-4">
                             <input type="hidden" name="action" value="create_post">
                             
-                            <div>
-                                <div class="flex items-center justify-between mb-2">
+                            <div class="space-y-3">
+                                <div class="flex items-center justify-between mb-1">
                                     <label for="post-content" class="block text-xs font-semibold text-brand-slate">Your Post Content</label>
-                                    <button type="button" id="transcribe-post-content" onclick="window.TetVoiceToText.toggle('post-content', this)" class="flex items-center gap-1 text-[10px] font-bold text-brand-sage hover:text-brand-sageHover bg-brand-sageLight/50 px-2 py-0.5 rounded-lg border border-brand-sage/10 transition-all select-none">
+                                    <button type="button" id="transcribe-post-content" onclick="window.TetVoiceToText.toggle('post-content', this)" class="flex items-center gap-1 text-[10px] font-bold text-brand-sage hover:text-brand-sageHover bg-brand-sageLight/50 px-2.5 py-1 rounded-lg border border-brand-sage/20 transition-all select-none shadow-xs">
                                         <svg class="h-3 w-3 text-brand-sage" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
                                         </svg>
@@ -914,17 +1034,45 @@ function Math_Round($val) {
                                     class="w-full rounded-2xl border border-gray-200 bg-brand-inputBg p-4 text-brand-slate placeholder-gray-400 focus:border-brand-sage focus:outline-none focus:ring-2 focus:ring-brand-sage/20 text-xs transition-all"
                                     placeholder="What is on your mind?..."
                                 ></textarea>
+
+                                <!-- Content Warning & Pseudonym Selector -->
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                                    <div>
+                                        <label class="block text-[11px] font-bold text-gray-500 mb-1">
+                                            <i class="fa-solid fa-triangle-exclamation text-amber-500 mr-1"></i> Content Warning (Optional)
+                                        </label>
+                                        <select name="content_warning" class="w-full text-xs rounded-xl border border-gray-200 bg-white px-3 py-2 text-brand-slate focus:border-brand-sage focus:outline-none">
+                                            <option value="">None (Standard post)</option>
+                                            <option value="Sensitive: Grief & Loss">Sensitive: Grief & Loss</option>
+                                            <option value="Sensitive: Severe Burnout">Sensitive: Severe Burnout</option>
+                                            <option value="Sensitive: Panic & Anxiety">Sensitive: Panic & Anxiety</option>
+                                            <option value="Sensitive: Family & Caregiver Strain">Sensitive: Family & Caregiver Strain</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-[11px] font-bold text-gray-500 mb-1">
+                                            <i class="fa-solid fa-user-ninja text-brand-sage mr-1"></i> Identity Selector
+                                        </label>
+                                        <select name="anonymous_alias" id="post-alias-selector" class="w-full text-xs rounded-xl border border-gray-200 bg-white px-3 py-2 text-brand-slate focus:border-brand-sage focus:outline-none">
+                                            <option value="">Use My Real Name (<?php echo htmlspecialchars($user_name); ?>)</option>
+                                            <option value="Gentle Pine">Anonymous (Gentle Pine)</option>
+                                            <option value="Quiet River">Anonymous (Quiet River)</option>
+                                            <option value="Resilient Willow">Anonymous (Resilient Willow)</option>
+                                            <option value="Calm Harbor">Anonymous (Calm Harbor)</option>
+                                        </select>
+                                    </div>
+                                </div>
                             </div>
 
-                            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                                <!-- Anonymous Checkbox -->
+                            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-2">
                                 <label class="flex items-center gap-2 cursor-pointer select-none">
-                                    <input type="checkbox" name="is_anonymous" class="rounded border-gray-300 text-brand-sage focus:ring-brand-sage mt-0.5">
+                                    <input type="checkbox" name="is_anonymous" onchange="document.getElementById('post-alias-selector').value = this.checked ? 'Gentle Pine' : ''" class="rounded border-gray-300 text-brand-sage focus:ring-brand-sage mt-0.5">
                                     <span class="text-xs text-gray-500 font-semibold">Post Anonymously</span>
                                 </label>
 
-                                <button type="submit" class="w-full sm:w-auto px-6 py-2.5 rounded-2xl bg-brand-sage hover:bg-brand-sageHover text-white font-bold text-xs shadow-soft transition-all active:scale-95">
-                                    Share Post
+                                <button type="submit" class="w-full sm:w-auto px-6 py-2.5 rounded-2xl bg-brand-sage hover:bg-brand-sageHover text-white font-bold text-xs shadow-soft transition-all active:scale-95 flex items-center justify-center gap-2">
+                                    <i class="fa-solid fa-paper-plane text-xs"></i>
+                                    <span>Share Post</span>
                                 </button>
                             </div>
                         </form>
@@ -970,34 +1118,108 @@ function Math_Round($val) {
                                     <!-- Content -->
                                     <div class="flex-grow space-y-2">
                                         <div class="flex items-center justify-between text-xs">
-                                            <span class="font-bold text-brand-slate"><?php echo $author; ?></span>
+                                            <div class="flex items-center gap-2">
+                                                <span class="font-bold text-brand-slate"><?php echo $author; ?></span>
+                                                <?php if (!empty($post['content_warning'])): ?>
+                                                    <span class="bg-amber-100 text-amber-800 text-[9px] font-extrabold px-2 py-0.5 rounded-full border border-amber-200 flex items-center gap-1 select-none">
+                                                        ⚠️ <?php echo htmlspecialchars($post['content_warning']); ?>
+                                                    </span>
+                                                <?php endif; ?>
+                                            </div>
                                             <span class="text-gray-400 text-[10px]"><?php echo getRelativeTime($post['created_at']); ?></span>
                                         </div>
                                         
-                                        <p class="text-xs text-gray-600 leading-relaxed">
-                                            <?php echo nl2br(htmlspecialchars($post['content'])); ?>
-                                        </p>
+                                        <?php if (!empty($post['content_warning'])): ?>
+                                            <!-- Sensitive Content Warning Spoiler Blur -->
+                                            <div class="relative group my-2">
+                                                <div id="cw-post-<?php echo (int)$post['id']; ?>" class="filter blur-sm select-none transition-all duration-300 py-1">
+                                                    <p class="text-xs text-gray-600 leading-relaxed"><?php echo nl2br(htmlspecialchars($post['content'])); ?></p>
+                                                </div>
+                                                <div id="cw-overlay-<?php echo (int)$post['id']; ?>" class="absolute inset-0 flex items-center justify-center bg-white/70 backdrop-blur-xs rounded-xl">
+                                                    <button type="button" onclick="document.getElementById('cw-post-<?php echo (int)$post['id']; ?>').classList.remove('blur-sm', 'select-none'); document.getElementById('cw-overlay-<?php echo (int)$post['id']; ?>').style.display = 'none';" class="px-3 py-1.5 rounded-xl bg-brand-slate text-white text-[10px] font-bold shadow-sm hover:bg-black transition-all flex items-center gap-1.5">
+                                                        <i class="fa-solid fa-eye text-[11px]"></i>
+                                                        <span>Show Sensitive Content</span>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        <?php else: ?>
+                                            <p class="text-xs text-gray-600 leading-relaxed">
+                                                <?php echo nl2br(htmlspecialchars($post['content'])); ?>
+                                            </p>
+                                        <?php endif; ?>
 
-                                        <!-- Footer Actions (Hearts + Moderation) -->
-                                        <div class="flex items-center justify-between pt-2 border-t border-gray-100/50">
-                                            <div class="flex items-center gap-2">
-                                                <!-- Hearts Form -->
-                                                <form method="POST" action="community.php?channel=<?php echo urlencode($current_channel); ?>" class="inline">
-                                                    <input type="hidden" name="action" value="heart_post">
+                                        <!-- Footer Actions (Empathy Reactions + Moderation + Report) -->
+                                        <div class="flex flex-wrap items-center justify-between pt-2.5 border-t border-gray-100/70 gap-2">
+                                            <!-- Empathetic Reactions Palette -->
+                                            <?php 
+                                                $reactions = $post['reactions'] ?? [
+                                                    'hearts' => (int)($post['hearts'] ?? 0),
+                                                    'hear_you' => 0,
+                                                    'not_alone' => 0,
+                                                    'strength' => 0
+                                                ];
+                                            ?>
+                                            <div class="flex flex-wrap items-center gap-1.5">
+                                                <!-- Heart / Support -->
+                                                <form method="POST" action="community.php?channel=<?php echo urlencode($current_channel); ?>" class="inline m-0">
+                                                    <input type="hidden" name="action" value="react_post">
                                                     <input type="hidden" name="post_id" value="<?php echo (int)$post['id']; ?>">
-                                                    
-                                                    <button type="submit" class="flex items-center gap-1.5 rounded-full px-3 py-1 bg-brand-bg hover:bg-brand-coralLight hover:text-brand-coral text-gray-400 transition-colors text-[10px] font-bold">
-                                                        <svg class="h-3.5 w-3.5 fill-current text-brand-coral" viewBox="0 0 24 24">
-                                                            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-                                                        </svg>
-                                                        <span>Support (<?php echo (int)$post['hearts']; ?>)</span>
+                                                    <input type="hidden" name="reaction_type" value="hearts">
+                                                    <button type="submit" class="flex items-center gap-1 px-2.5 py-1 rounded-full bg-brand-bg hover:bg-brand-coralLight hover:text-brand-coral text-gray-500 transition-colors text-[10px] font-bold border border-gray-100">
+                                                        <span>❤️</span>
+                                                        <span>Support (<?php echo (int)($reactions['hearts'] ?? 0); ?>)</span>
+                                                    </button>
+                                                </form>
+
+                                                <!-- I Hear You -->
+                                                <form method="POST" action="community.php?channel=<?php echo urlencode($current_channel); ?>" class="inline m-0">
+                                                    <input type="hidden" name="action" value="react_post">
+                                                    <input type="hidden" name="post_id" value="<?php echo (int)$post['id']; ?>">
+                                                    <input type="hidden" name="reaction_type" value="hear_you">
+                                                    <button type="submit" class="flex items-center gap-1 px-2.5 py-1 rounded-full bg-brand-bg hover:bg-brand-sageLight hover:text-brand-sage text-gray-500 transition-colors text-[10px] font-bold border border-gray-100" title="I Hear You">
+                                                        <span>👂</span>
+                                                        <span>I hear you (<?php echo (int)($reactions['hear_you'] ?? 0); ?>)</span>
+                                                    </button>
+                                                </form>
+
+                                                <!-- You're Not Alone -->
+                                                <form method="POST" action="community.php?channel=<?php echo urlencode($current_channel); ?>" class="inline m-0">
+                                                    <input type="hidden" name="action" value="react_post">
+                                                    <input type="hidden" name="post_id" value="<?php echo (int)$post['id']; ?>">
+                                                    <input type="hidden" name="reaction_type" value="not_alone">
+                                                    <button type="submit" class="flex items-center gap-1 px-2.5 py-1 rounded-full bg-brand-bg hover:bg-brand-skyLight hover:text-brand-sky text-gray-500 transition-colors text-[10px] font-bold border border-gray-100" title="You Are Not Alone">
+                                                        <span>🤝</span>
+                                                        <span>Not alone (<?php echo (int)($reactions['not_alone'] ?? 0); ?>)</span>
+                                                    </button>
+                                                </form>
+
+                                                <!-- Sending Strength -->
+                                                <form method="POST" action="community.php?channel=<?php echo urlencode($current_channel); ?>" class="inline m-0">
+                                                    <input type="hidden" name="action" value="react_post">
+                                                    <input type="hidden" name="post_id" value="<?php echo (int)$post['id']; ?>">
+                                                    <input type="hidden" name="reaction_type" value="strength">
+                                                    <button type="submit" class="flex items-center gap-1 px-2.5 py-1 rounded-full bg-brand-bg hover:bg-amber-50 hover:text-amber-700 text-gray-500 transition-colors text-[10px] font-bold border border-gray-100" title="Sending Strength">
+                                                        <span>✨</span>
+                                                        <span>Strength (<?php echo (int)($reactions['strength'] ?? 0); ?>)</span>
                                                     </button>
                                                 </form>
                                             </div>
 
-                                            <!-- Moderation buttons -->
-                                            <?php if ($user_is_champion || $_SESSION['user_role'] === 'admin'): ?>
-                                                <div class="flex items-center gap-2 pl-3">
+                                            <div class="flex items-center gap-2">
+                                                <!-- Report / Safe Moderation Flag -->
+                                                <form method="POST" action="community.php?channel=<?php echo urlencode($current_channel); ?>" class="inline m-0" onsubmit="return confirm('Flag this post for clinical moderator review?');">
+                                                    <input type="hidden" name="action" value="report_post">
+                                                    <input type="hidden" name="post_id" value="<?php echo (int)$post['id']; ?>">
+                                                    <input type="hidden" name="report_reason" value="User flagged as inappropriate or distress">
+                                                    <button type="submit" class="text-gray-400 hover:text-brand-coral text-[10px] font-semibold flex items-center gap-1 transition-colors" title="Report to Moderator">
+                                                        <i class="fa-regular fa-flag"></i>
+                                                        <span class="hidden sm:inline">Report</span>
+                                                    </button>
+                                                </form>
+
+                                                <!-- Moderation buttons -->
+                                                <?php if ($user_is_champion || $_SESSION['user_role'] === 'admin'): ?>
+                                                    <span class="text-gray-200">|</span>
                                                     <!-- Pin/Unpin Action -->
                                                     <form method="POST" action="community.php?channel=<?php echo urlencode($current_channel); ?>" class="inline">
                                                         <input type="hidden" name="action" value="pin_post">
@@ -1018,8 +1240,8 @@ function Math_Round($val) {
                                                             🗑️ Delete
                                                         </button>
                                                     </form>
-                                                </div>
-                                            <?php endif; ?>
+                                                <?php endif; ?>
+                                            </div>
                                         </div>
 
                                         <!-- COMMENTS SECTION -->
@@ -1075,7 +1297,14 @@ function Math_Round($val) {
                                                 <input type="hidden" name="action" value="add_comment">
                                                 <input type="hidden" name="post_id" value="<?php echo (int)$post['id']; ?>">
                                                 <div class="flex-grow">
-                                                    <textarea name="content" rows="1" required class="w-full rounded-xl border border-gray-200 bg-brand-inputBg px-3 py-2 text-xs text-brand-slate placeholder-gray-400 focus:border-brand-sage focus:outline-none focus:ring-1 focus:ring-brand-sage/20 transition-all resize-none" placeholder="Write a supportive reply..."></textarea>
+                                                    <div class="relative">
+                                                        <textarea name="content" id="reply-input-<?php echo (int)$post['id']; ?>" rows="1" required class="w-full rounded-xl border border-gray-200 bg-brand-inputBg pl-3 pr-8 py-2 text-xs text-brand-slate placeholder-gray-400 focus:border-brand-sage focus:outline-none focus:ring-1 focus:ring-brand-sage/20 transition-all resize-none" placeholder="Write a supportive reply..."></textarea>
+                                                        <button type="button" onclick="window.TetVoiceToText.toggle('reply-input-<?php echo (int)$post['id']; ?>', this)" title="Voice Dictate Reply" class="absolute right-2 top-2 p-1 text-gray-400 hover:text-brand-sage transition-all rounded">
+                                                            <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                                                            </svg>
+                                                        </button>
+                                                    </div>
                                                     <div class="flex items-center justify-between mt-1">
                                                         <label class="flex items-center gap-1 cursor-pointer select-none text-[10px] text-gray-400 font-semibold">
                                                             <input type="checkbox" name="is_anonymous" class="rounded border-gray-300 text-brand-sage focus:ring-brand-sage w-3 h-3">
@@ -1443,7 +1672,7 @@ function Math_Round($val) {
 <div id="video-conference-modal" class="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-900/80 backdrop-blur-md hidden opacity-0 transition-opacity duration-300">
     <div class="bg-slate-950 w-full max-w-5xl h-[88vh] rounded-3xl shadow-2xl border border-slate-800 flex flex-col overflow-hidden transform scale-95 transition-all duration-300" id="video-modal-box">
         <!-- Video Header -->
-        <div class="bg-slate-900/90 border-b border-slate-800 px-6 py-4 flex items-center justify-between shrink-0">
+        <div class="bg-slate-900/90 border-b border-slate-800 px-6 py-4 flex flex-wrap items-center justify-between gap-3 shrink-0">
             <div class="flex items-center gap-3">
                 <span class="flex h-3 w-3 relative">
                     <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -1455,23 +1684,56 @@ function Math_Round($val) {
                 </div>
             </div>
             
-            <div class="flex items-center gap-2">
+            <div class="flex flex-wrap items-center gap-2">
+                <!-- Grounding SOS Breathing Button -->
+                <button type="button" onclick="toggleVideoGroundingSOS()" class="px-3 py-1.5 rounded-xl bg-teal-900/60 border border-teal-500/30 hover:bg-teal-800 text-teal-200 text-xs font-bold transition-all flex items-center gap-1.5" title="Pause & Take a Grounding Breath">
+                    <span>🫁</span>
+                    <span class="hidden sm:inline">Grounding SOS</span>
+                </button>
+
+                <!-- Low Sensory Mode Toggle -->
+                <button type="button" id="low-sensory-toggle-btn" onclick="toggleLowSensoryMode()" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-gray-300 text-xs font-bold transition-all flex items-center gap-1.5" title="Toggle Low-Sensory Ambient Mode">
+                    <i class="fa-solid fa-moon text-indigo-300"></i>
+                    <span class="hidden sm:inline">Low Sensory</span>
+                </button>
+
                 <button onclick="copyVideoRoomLink()" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-gray-300 text-xs font-bold transition-all flex items-center gap-1.5" title="Copy Invite Link">
                     <i class="fa-solid fa-link text-[11px]"></i>
                     <span class="hidden sm:inline">Copy Link</span>
                 </button>
+
                 <button onclick="openExternalVideoRoom()" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-gray-300 text-xs transition-all" title="Open in New Window">
                     <i class="fa-solid fa-arrow-up-right-from-square"></i>
                 </button>
-                <button onclick="closeVideoConference()" class="p-2 rounded-xl bg-brand-coral/20 hover:bg-brand-coral text-brand-coral hover:text-white transition-all ml-2" title="Leave & Close Video">
+
+                <button onclick="closeVideoConference()" class="p-2 rounded-xl bg-brand-coral/20 hover:bg-brand-coral text-brand-coral hover:text-white transition-all ml-1" title="Leave & Close Video">
                     <i class="fa-solid fa-phone-slash"></i>
                 </button>
             </div>
         </div>
 
         <!-- Video Iframe Embed Container -->
-        <div class="flex-grow bg-slate-950 relative overflow-hidden">
-            <iframe id="video-conference-frame" class="w-full h-full border-0" allow="camera; microphone; display-capture; autoplay; clipboard-write"></iframe>
+        <div id="video-container-wrapper" class="flex-grow bg-slate-950 relative overflow-hidden transition-all duration-300">
+            <iframe id="video-conference-frame" class="w-full h-full border-0 transition-opacity duration-300" allow="camera; microphone; display-capture; autoplay; clipboard-write"></iframe>
+            
+            <!-- Grounding SOS Overlay -->
+            <div id="video-grounding-overlay" class="absolute inset-0 bg-slate-950/95 backdrop-blur-md hidden flex-col items-center justify-center text-center p-6 z-20 transition-all duration-300">
+                <div class="max-w-md w-full bg-slate-900 border border-slate-700 p-8 rounded-3xl shadow-2xl text-center space-y-4">
+                    <span class="text-4xl block animate-bounce">🌊</span>
+                    <h4 class="text-lg font-bold font-outfit text-white">Take a Grounding Moment</h4>
+                    <p class="text-xs text-gray-300 leading-relaxed">
+                        The call is muted. You are safe. Inhale as the circle expands, hold gently, then exhale slowly.
+                    </p>
+                    <div class="py-6 flex items-center justify-center">
+                        <div class="h-28 w-28 rounded-full border-4 border-teal-400 bg-teal-500/20 flex items-center justify-center animate-pulse shadow-lg text-teal-200 font-bold text-xs">
+                            Breathe Calmly
+                        </div>
+                    </div>
+                    <button type="button" onclick="toggleVideoGroundingSOS()" class="w-full py-3 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs uppercase tracking-wider transition-all">
+                        Return to Peer Room
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -1747,25 +2009,179 @@ function startInstantCircleVideoRoom() {
     }
 }
 
-function showToast(message) {
-    const container = document.getElementById('toast-container');
-    if (!container) return;
-    const toast = document.createElement('div');
-    toast.className = 'bg-brand-sage text-white px-6 py-3 rounded-xl shadow-xl transform transition-all duration-300 translate-y-full opacity-0 font-outfit text-sm font-semibold flex items-center gap-2';
-    toast.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> ${message}`;
-    container.appendChild(toast);
-    
-    // Animate in
-    setTimeout(() => {
-        toast.classList.remove('translate-y-full', 'opacity-0');
-    }, 10);
-    
-    // Animate out and remove
-    setTimeout(() => {
-        toast.classList.add('translate-y-full', 'opacity-0');
-        setTimeout(() => toast.remove(), 300);
-    }, 3500);
+let isLowSensoryActive = false;
+function toggleLowSensoryMode() {
+    isLowSensoryActive = !isLowSensoryActive;
+    const frame = document.getElementById('video-conference-frame');
+    const btn = document.getElementById('low-sensory-toggle-btn');
+    if (frame) {
+        if (isLowSensoryActive) {
+            frame.style.filter = 'brightness(0.65) contrast(0.85) saturate(0.6)';
+            if (btn) {
+                btn.classList.add('bg-indigo-700', 'text-white');
+                btn.classList.remove('bg-slate-800', 'text-gray-300');
+            }
+            showToast('Low Sensory Ambient Mode activated.');
+        } else {
+            frame.style.filter = 'none';
+            if (btn) {
+                btn.classList.remove('bg-indigo-700', 'text-white');
+                btn.classList.add('bg-slate-800', 'text-gray-300');
+            }
+            showToast('Standard Video Mode restored.');
+        }
+    }
 }
+
+let isGroundingSOSActive = false;
+function toggleVideoGroundingSOS() {
+    isGroundingSOSActive = !isGroundingSOSActive;
+    const overlay = document.getElementById('video-grounding-overlay');
+    if (overlay) {
+        if (isGroundingSOSActive) {
+            overlay.classList.remove('hidden');
+            overlay.classList.add('flex');
+            showToast('Video muted for gentle grounding breathing.');
+        } else {
+            overlay.classList.add('hidden');
+            overlay.classList.remove('flex');
+        }
+    }
+}
+
+function filterCircleList(cat) {
+    const items = document.querySelectorAll('.circle-nav-item');
+    const pills = document.querySelectorAll('.circle-filter-pill');
+    
+    pills.forEach(p => {
+        p.classList.remove('bg-brand-sage', 'text-white', 'active');
+        p.classList.add('bg-gray-100', 'text-brand-slate');
+    });
+    
+    // Highlight clicked pill
+    if (event && event.target) {
+        event.target.classList.add('bg-brand-sage', 'text-white', 'active');
+        event.target.classList.remove('bg-gray-100', 'text-brand-slate');
+    }
+
+    items.forEach(item => {
+        const itemCat = (item.getAttribute('data-category') || '').toLowerCase();
+        if (cat === 'all' || itemCat.includes(cat.toLowerCase())) {
+            item.style.display = 'flex';
+        } else {
+            item.style.display = 'none';
+        }
+    });
+}
+
+// Global Voice-to-Text Universal Controller for Community & Care
+window.TetVoiceToText = {
+    activeRecognition: null,
+    activeButton: null,
+    
+    toggle: function(targetInputId, btn) {
+        const target = document.getElementById(targetInputId);
+        if (!target) {
+            console.error('Target input not found:', targetInputId);
+            return;
+        }
+
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            alert('Speech Recognition is not supported in this browser. Please use Chrome, Edge, or Safari.');
+            return;
+        }
+
+        if (this.activeRecognition) {
+            this.activeRecognition.stop();
+            this.activeRecognition = null;
+            if (this.activeButton) {
+                this.resetButton(this.activeButton);
+                this.activeButton = null;
+            }
+            showToast('Voice dictation stopped.');
+            return;
+        }
+
+        try {
+            const recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = 'en-US';
+
+            let originalContent = target.value || '';
+            if (originalContent.length > 0 && !originalContent.endsWith(' ')) {
+                originalContent += ' ';
+            }
+
+            recognition.onstart = () => {
+                this.setListeningButton(btn);
+                showToast('🎙️ Listening... Speak naturally.');
+            };
+
+            recognition.onresult = (event) => {
+                let interimTranscript = '';
+                let finalTranscript = '';
+
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) {
+                        finalTranscript += event.results[i][0].transcript;
+                    } else {
+                        interimTranscript += event.results[i][0].transcript;
+                    }
+                }
+
+                if (finalTranscript) {
+                    originalContent += finalTranscript + ' ';
+                    target.value = originalContent;
+                } else if (interimTranscript) {
+                    target.value = originalContent + interimTranscript;
+                }
+                target.scrollTop = target.scrollHeight;
+            };
+
+            recognition.onerror = (event) => {
+                console.warn('Speech recognition notice:', event.error);
+                this.resetButton(btn);
+                this.activeRecognition = null;
+                this.activeButton = null;
+                if (event.error !== 'no-speech') {
+                    showToast('Voice dictation note: ' + event.error);
+                }
+            };
+
+            recognition.onend = () => {
+                this.resetButton(btn);
+                this.activeRecognition = null;
+                this.activeButton = null;
+            };
+
+            this.activeRecognition = recognition;
+            this.activeButton = btn;
+            recognition.start();
+        } catch (err) {
+            console.error('Voice dictation error:', err);
+            this.resetButton(btn);
+        }
+    },
+
+    setListeningButton: function(btn) {
+        if (!btn) return;
+        btn.dataset.originalHtml = btn.innerHTML;
+        btn.classList.add('bg-brand-coral', 'text-white', 'animate-pulse');
+        btn.classList.remove('text-brand-sage', 'text-gray-400');
+        btn.innerHTML = `<span class="inline-block w-2 h-2 rounded-full bg-white animate-ping mr-1"></span> Listening...`;
+    },
+
+    resetButton: function(btn) {
+        if (!btn) return;
+        if (btn.dataset.originalHtml) {
+            btn.innerHTML = btn.dataset.originalHtml;
+        }
+        btn.classList.remove('bg-brand-coral', 'text-white', 'animate-pulse');
+        btn.classList.add('text-brand-sage');
+    }
+};
 </script>
 </body>
 
