@@ -26,38 +26,114 @@ if (isset($_SESSION['user_name'])) {
 
 // Check role for HR links
 $user_role = $_SESSION['user_role'] ?? 'user';
+
+// ========================================================
+// BETA TESTER CATEGORY-BASED NAVIGATION FILTERING & GATING
+// ========================================================
+$is_tester = !empty($_SESSION['is_beta_tester']);
+$tester_category = $_SESSION['beta_tester']['category_id'] ?? '';
+
+// Map of allowed pillars and pages per category
+$tester_category_config = [
+    'clinician' => [
+        'pillars' => ['dashboard', 'mindbloom', 'community'],
+        'allowed_pages' => ['dashboard.php', 'teletherapy_hub.php', 'assessments.php', 'community.php', 'mindbloom.php', 'logout.php'],
+        'default_page' => 'teletherapy_hub.php'
+    ],
+    'hr_leader' => [
+        'pillars' => ['dashboard'],
+        'allowed_pages' => ['corporate_portal.php', 'subscription.php', 'workplace_safety.php', 'dashboard.php', 'logout.php'],
+        'default_page' => 'corporate_portal.php'
+    ],
+    'caregiver' => [
+        'pillars' => ['community', 'academy'],
+        'allowed_pages' => ['caregiver_hub.php', 'community.php', 'tet_academy.php', 'logout.php'],
+        'default_page' => 'caregiver_hub.php'
+    ],
+    'peer_volunteer' => [
+        'pillars' => ['community'],
+        'allowed_pages' => ['befriender_network.php', 'community.php', 'tet_circle.php', 'logout.php'],
+        'default_page' => 'befriender_network.php'
+    ],
+    'stressed_pro' => [
+        'pillars' => ['dashboard', 'mindbloom'],
+        'allowed_pages' => ['dashboard.php', 'mindbloom.php', 'wellbeing_passport.php', 'breathing_exercises.php', 'ambient_mixer.php', 'vr_resilience.php', 'logout.php'],
+        'default_page' => 'dashboard.php'
+    ],
+    'full_explorer' => [
+        'pillars' => ['dashboard', 'community', 'mindbloom', 'academy'],
+        'allowed_pages' => ['*'],
+        'default_page' => 'dashboard.php'
+    ]
+];
+
+// Determine visible pillars for desktop and mobile navigation
+$show_pillar_dashboard = true;
+$show_pillar_community = true;
+$show_pillar_mindbloom = true;
+$show_pillar_academy = true;
+
+if ($is_tester && !empty($tester_category) && isset($tester_category_config[$tester_category])) {
+    $cfg = $tester_category_config[$tester_category];
+    if (!in_array('*', $cfg['allowed_pages'])) {
+        $show_pillar_dashboard = in_array('dashboard', $cfg['pillars']);
+        $show_pillar_community = in_array('community', $cfg['pillars']);
+        $show_pillar_mindbloom = in_array('mindbloom', $cfg['pillars']);
+        $show_pillar_academy = in_array('academy', $cfg['pillars']);
+
+        // Gating Guard: If tester is attempting to visit a page not in their allowed scope
+        if (!in_array($current_page, $cfg['allowed_pages'])) {
+            $dest = $cfg['default_page'];
+            if (!headers_sent()) {
+                header("Location: {$dest}?gated=1");
+                exit;
+            } else {
+                echo "<script>window.location.replace('{$dest}?gated=1');</script>";
+                exit;
+            }
+        }
+    }
+}
 ?>
 <!-- PHASE 1: GLOBAL NAVIGATION BAR -->
 <header class="sticky top-0 z-50 w-full border-b border-gray-100 bg-white/90 backdrop-blur-lg">
     <div class="mx-auto flex h-[72px] max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         
         <!-- Left: Brand Logo -->
-        <a href="dashboard.php" class="flex shrink-0 items-center transition-transform hover:scale-[1.02] active:scale-95">
+        <a href="<?php echo ($is_tester && !empty($tester_category) && isset($tester_category_config[$tester_category]['default_page'])) ? $tester_category_config[$tester_category]['default_page'] : 'dashboard.php'; ?>" class="flex shrink-0 items-center transition-transform hover:scale-[1.02] active:scale-95">
             <img src="logo.svg" alt="Tet Wellbeing" class="h-10 w-auto">
             <span class="ml-2 font-bold font-outfit text-xl text-brand-slate tracking-tight hidden lg:block">TET Wellbeing</span>
         </a>
 
-        <!-- Center: 4-Pillar Navigation -->
+        <!-- Center: 4-Pillar Navigation (Filtered by Beta Tester Category if active) -->
         <nav class="hidden md:flex items-center h-full gap-8">
+            <?php if ($show_pillar_dashboard): ?>
             <a href="dashboard.php" class="relative flex items-center h-full text-sm font-semibold transition-colors <?php echo $active_pillar === 'dashboard' ? 'text-brand-sage' : 'text-gray-500 hover:text-brand-slate'; ?> group">
                 My TET
                 <span class="absolute bottom-0 left-0 w-full h-[3px] rounded-t-md bg-brand-sage transition-transform duration-300 <?php echo $active_pillar === 'dashboard' ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'; ?>"></span>
             </a>
+            <?php endif; ?>
             
+            <?php if ($show_pillar_community): ?>
             <a href="community.php" class="relative flex items-center h-full text-sm font-semibold transition-colors <?php echo $active_pillar === 'community' ? 'text-brand-sage' : 'text-gray-500 hover:text-brand-slate'; ?> group">
                 Community & Care
                 <span class="absolute bottom-0 left-0 w-full h-[3px] rounded-t-md bg-brand-sage transition-transform duration-300 <?php echo $active_pillar === 'community' ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'; ?>"></span>
             </a>
+            <?php endif; ?>
 
+            <?php if ($show_pillar_mindbloom): ?>
             <a href="mindbloom.php" class="relative flex items-center h-full text-sm font-semibold transition-colors <?php echo $active_pillar === 'mindbloom' ? 'text-brand-sage' : 'text-gray-500 hover:text-brand-slate'; ?> group">
                 MindBloom
                 <span class="absolute bottom-0 left-0 w-full h-[3px] rounded-t-md bg-brand-sage transition-transform duration-300 <?php echo $active_pillar === 'mindbloom' ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'; ?>"></span>
             </a>
+            <?php endif; ?>
             
+            <?php if ($show_pillar_academy): ?>
             <a href="tet_academy.php" class="relative flex items-center h-full text-sm font-semibold transition-colors <?php echo $active_pillar === 'academy' ? 'text-brand-sage' : 'text-gray-500 hover:text-brand-slate'; ?> group">
                 Learning Center
                 <span class="absolute bottom-0 left-0 w-full h-[3px] rounded-t-md bg-brand-sage transition-transform duration-300 <?php echo $active_pillar === 'academy' ? 'scale-x-100' : 'scale-x-0 group-hover:scale-x-100'; ?>"></span>
             </a>
+            <?php endif; ?>
         </nav>
 
         <!-- Right: Profile & Settings -->
@@ -95,6 +171,10 @@ $user_role = $_SESSION['user_role'] ?? 'user';
                         <button onclick="startSectionTour()" class="flex items-center gap-2 px-3 py-2 text-sm text-brand-sage rounded-xl hover:bg-brand-sageLight transition-colors font-semibold text-left w-full">
                             <i class="fa-solid fa-compass w-4 text-center"></i> Show Me Around
                         </button>
+
+                        <button onclick="openBetaCategoryModal()" class="flex items-center gap-2 px-3 py-2 text-sm text-brand-coral rounded-xl hover:bg-brand-coralLight transition-colors font-semibold text-left w-full">
+                            <i class="fa-solid fa-flask-vial w-4 text-center"></i> Beta Testing Program
+                        </button>
                         
                         <a href="subscription.php" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 rounded-xl hover:bg-gray-50 transition-colors font-medium">
                             <i class="fa-solid fa-file-invoice-dollar w-4 text-center"></i> Subscription & Billing
@@ -128,10 +208,21 @@ $user_role = $_SESSION['user_role'] ?? 'user';
         <button onclick="startSectionTour(); document.getElementById('mobile-menu').classList.add('hidden');" class="flex items-center gap-2 text-left px-4 py-3 rounded-xl text-base font-semibold bg-brand-sageLight text-brand-sage">
             <i class="fa-solid fa-compass"></i> Show Me Around Tour
         </button>
+        <button onclick="openBetaCategoryModal(); document.getElementById('mobile-menu').classList.add('hidden');" class="flex items-center gap-2 text-left px-4 py-3 rounded-xl text-base font-semibold bg-brand-coralLight text-brand-coral">
+            <i class="fa-solid fa-flask-vial"></i> Beta Testing Program
+        </button>
+        <?php if ($show_pillar_dashboard): ?>
         <a href="dashboard.php" class="block px-4 py-3 rounded-xl text-base font-semibold <?php echo $active_pillar === 'dashboard' ? 'bg-brand-sageLight text-brand-sage' : 'text-gray-600 hover:bg-gray-50'; ?>">My TET</a>
+        <?php endif; ?>
+        <?php if ($show_pillar_community): ?>
         <a href="community.php" class="block px-4 py-3 rounded-xl text-base font-semibold <?php echo $active_pillar === 'community' ? 'bg-brand-sageLight text-brand-sage' : 'text-gray-600 hover:bg-gray-50'; ?>">Community & Care</a>
+        <?php endif; ?>
+        <?php if ($show_pillar_mindbloom): ?>
         <a href="mindbloom.php" class="block px-4 py-3 rounded-xl text-base font-semibold <?php echo $active_pillar === 'mindbloom' ? 'bg-brand-sageLight text-brand-sage' : 'text-gray-600 hover:bg-gray-50'; ?>">MindBloom</a>
+        <?php endif; ?>
+        <?php if ($show_pillar_academy): ?>
         <a href="tet_academy.php" class="block px-4 py-3 rounded-xl text-base font-semibold <?php echo $active_pillar === 'academy' ? 'bg-brand-sageLight text-brand-sage' : 'text-gray-600 hover:bg-gray-50'; ?>">Learning Center</a>
+        <?php endif; ?>
     </div>
 </div>
 
@@ -140,4 +231,6 @@ $user_role = $_SESSION['user_role'] ?? 'user';
 require_once __DIR__ . '/includes/section_guide.php'; 
 // Include the global voice-to-text input module
 require_once __DIR__ . '/includes/voice_to_text.php';
+// Include the global beta testing category selection & checklist module
+require_once __DIR__ . '/includes/beta_testing_module.php';
 ?>

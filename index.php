@@ -229,12 +229,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['contact_form'])) {
                         Access Client Portal
                     </a>
                 </div>
-                <!-- Small credentials note for easy access -->
-                <div class="p-4 bg-brand-sageLight rounded-2xl border border-brand-sage/20 text-sm text-brand-sage flex items-center gap-3 max-w-md mt-6 shadow-sm">
-                    <svg class="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
-                    </svg>
-                    <span><strong>Prototype Demo Access:</strong> Log in with <code class="bg-white px-1 py-0.5 rounded text-brand-slate">mark@tetwellbeing.com</code> and password <code class="bg-white px-1 py-0.5 rounded text-brand-slate">password123</code>.</span>
+                <!-- 1-Click Beta Tester Access Banner -->
+                <div class="p-4 bg-gradient-to-r from-brand-coralLight/80 to-white rounded-2xl border border-brand-coral/30 text-xs text-brand-slate flex flex-col sm:flex-row sm:items-center justify-between gap-3 max-w-xl mt-6 shadow-sm">
+                    <div class="flex items-center gap-2.5">
+                        <div class="h-8 w-8 rounded-xl bg-brand-coral text-white flex items-center justify-center font-bold text-xs shrink-0">
+                            <i class="fa-solid fa-flask-vial"></i>
+                        </div>
+                        <div>
+                            <span class="font-bold text-brand-coral font-outfit uppercase tracking-wider text-[10px] block">Beta Testers & Reviewers</span>
+                            <span class="text-xs text-gray-700">No login credentials required. Enter directly in 1 click:</span>
+                        </div>
+                    </div>
+                    <a href="login.php?tester_login=1" class="hover-btn px-4 py-2 rounded-xl bg-brand-coral hover:bg-brand-coralHover text-white font-bold text-xs shadow-sm transition-all whitespace-nowrap text-center font-outfit">
+                        Enter as Beta Tester &rarr;
+                    </a>
                 </div>
             </div>
 

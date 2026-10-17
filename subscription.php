@@ -320,10 +320,9 @@ foreach ($plans as $p) {
                         </div>
                         <h3 class="text-lg font-extrabold font-outfit text-brand-slate"><?php echo htmlspecialchars($free['name']); ?></h3>
                         <div class="mt-1 flex items-baseline gap-1">
-                            <span class="text-3xl font-extrabold font-outfit text-brand-slate">£0</span>
-                            <span class="text-sm text-gray-400 font-outfit">/month</span>
+                            <span class="text-sm font-bold font-outfit text-brand-sage uppercase tracking-wider bg-brand-sageLight px-2.5 py-1 rounded-xl">Starter Package</span>
                         </div>
-                        <p class="text-xs text-gray-400 mt-1">No credit card required</p>
+                        <p class="text-xs text-gray-400 mt-2">Essential everyday wellbeing toolkit</p>
                     </div>
                     <ul class="space-y-2.5 flex-grow mb-6">
                         <?php foreach ($free_features as $feat): ?>
@@ -336,7 +335,7 @@ foreach ($plans as $p) {
                     <?php if ($is_free_active): ?>
                     <div class="mt-auto w-full py-2.5 rounded-2xl bg-brand-sageLight text-brand-sage text-sm font-bold text-center font-outfit cursor-default">&#10003; Current Plan</div>
                     <?php else: ?>
-                    <button disabled class="mt-auto w-full py-2.5 rounded-2xl bg-gray-100 text-gray-400 text-sm font-semibold cursor-not-allowed font-outfit">Get Started Free</button>
+                    <button disabled class="mt-auto w-full py-2.5 rounded-2xl bg-gray-100 text-gray-400 text-sm font-semibold cursor-not-allowed font-outfit">Included Free</button>
                     <?php endif; ?>
                 </div>
 
@@ -345,7 +344,6 @@ foreach ($plans as $p) {
                 $pro = $plan_map['professional'] ?? ['slug'=>'professional','name'=>'Professional','price_monthly'=>29.00,'features'=>'Everything in Free,Unlimited Journal Entries,Full Streaming Library,Teletherapy Booking,Predictive Health Alerts,Digital Twin Access,Priority Support'];
                 $pro_features  = array_map('trim', explode(',', $pro['features']));
                 $is_pro_active = ($current_plan === 'professional');
-                $pro_price     = number_format((float)$pro['price_monthly'], 0);
                 ?>
                 <!-- PROFESSIONAL Card (Most Popular) -->
                 <div class="plan-card popular bg-white rounded-3xl p-6 flex flex-col relative">
@@ -366,10 +364,9 @@ foreach ($plans as $p) {
                         </div>
                         <h3 class="text-lg font-extrabold font-outfit text-brand-slate"><?php echo htmlspecialchars($pro['name']); ?></h3>
                         <div class="mt-1 flex items-baseline gap-1">
-                            <span class="text-3xl font-extrabold font-outfit text-brand-sage">£<?php echo $pro_price; ?></span>
-                            <span class="text-sm text-gray-400 font-outfit">/month</span>
+                            <span class="text-sm font-bold font-outfit text-purple-700 uppercase tracking-wider bg-purple-50 border border-purple-100 px-2.5 py-1 rounded-xl">Professional Package</span>
                         </div>
-                        <p class="text-xs text-gray-400 mt-1">Billed monthly. Cancel anytime.</p>
+                        <p class="text-xs text-gray-400 mt-2">Comprehensive personal mental wellness and clinical support</p>
                     </div>
                     <ul class="space-y-2.5 flex-grow mb-6">
                         <?php foreach ($pro_features as $feat): ?>
@@ -382,7 +379,7 @@ foreach ($plans as $p) {
                     <?php if ($is_pro_active): ?>
                     <div class="mt-auto w-full py-2.5 rounded-2xl bg-brand-sage text-white text-sm font-bold text-center font-outfit cursor-default">&#10003; Current Plan</div>
                     <?php else: ?>
-                    <button onclick="openCheckoutModal('professional', '<?php echo htmlspecialchars(addslashes($pro['name'])); ?>', '&pound;<?php echo $pro_price; ?>/mo')"
+                    <button onclick="openCheckoutModal('professional', '<?php echo htmlspecialchars(addslashes($pro['name'])); ?>', 'Professional Package')"
                         class="mt-auto w-full py-2.5 rounded-2xl bg-brand-sage hover:bg-brand-sageHover text-white text-sm font-bold transition-all duration-200 shadow-active hover:shadow-lg active:scale-95 font-outfit">
                         Upgrade to Professional &#8594;
                     </button>
@@ -394,7 +391,6 @@ foreach ($plans as $p) {
                 $corp = $plan_map['corporate'] ?? ['slug'=>'corporate','name'=>'Corporate Wellness','price_monthly'=>199.00,'features'=>'Everything in Professional,Corporate HR Portal,Bulk Session Credits (50),Staff Roster Management,Org Wellbeing Analytics,Dedicated Account Manager,White-label Reports'];
                 $corp_features  = array_map('trim', explode(',', $corp['features']));
                 $is_corp_active = ($current_plan === 'corporate');
-                $corp_price     = number_format((float)$corp['price_monthly'], 0);
                 ?>
                 <!-- CORPORATE Card (Gold) -->
                 <div class="plan-card corporate bg-white rounded-3xl p-6 flex flex-col relative">
@@ -415,10 +411,9 @@ foreach ($plans as $p) {
                         </div>
                         <h3 class="text-lg font-extrabold font-outfit text-brand-slate"><?php echo htmlspecialchars($corp['name']); ?></h3>
                         <div class="mt-1 flex items-baseline gap-1">
-                            <span class="text-3xl font-extrabold font-outfit gold-text">£<?php echo $corp_price; ?></span>
-                            <span class="text-sm text-gray-400 font-outfit">/month</span>
+                            <span class="text-sm font-bold font-outfit text-amber-800 uppercase tracking-wider bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-xl">Corporate Package</span>
                         </div>
-                        <p class="text-xs text-gray-400 mt-1">Per organisation. Unlimited staff seats.</p>
+                        <p class="text-xs text-gray-400 mt-2">Team &amp; organisation wellness with full administrative management</p>
                     </div>
                     <ul class="space-y-2.5 flex-grow mb-6">
                         <?php foreach ($corp_features as $feat): ?>
@@ -431,7 +426,7 @@ foreach ($plans as $p) {
                     <?php if ($is_corp_active): ?>
                     <div class="mt-auto w-full py-2.5 rounded-2xl gold-gradient text-[#3d2c00] text-sm font-bold text-center font-outfit cursor-default">&#10003; Current Plan</div>
                     <?php else: ?>
-                    <button onclick="openCheckoutModal('corporate', '<?php echo htmlspecialchars(addslashes($corp['name'])); ?>', '&pound;<?php echo $corp_price; ?>/mo')"
+                    <button onclick="openCheckoutModal('corporate', '<?php echo htmlspecialchars(addslashes($corp['name'])); ?>', 'Corporate Package')"
                         class="mt-auto w-full py-2.5 rounded-2xl gold-gradient text-[#3d2c00] text-sm font-bold transition-all duration-200 shadow-gold hover:opacity-90 active:scale-95 font-outfit">
                         Go Corporate &#8594;
                     </button>
@@ -541,7 +536,7 @@ foreach ($plans as $p) {
                     <p class="text-xs text-gray-500">Upgrading to</p>
                     <p id="modal-plan-name" class="font-bold text-brand-slate font-outfit text-sm">—</p>
                 </div>
-                <p id="modal-plan-price" class="text-xl font-extrabold font-outfit text-brand-sage">—</p>
+                <span id="modal-plan-price" class="text-xs font-bold font-outfit uppercase tracking-wider bg-brand-sage text-white px-2.5 py-1 rounded-xl">Active Tier</span>
             </div>
 
             <!-- Form -->

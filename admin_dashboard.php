@@ -816,6 +816,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $action_success = "Contact inquiry removed from history (Session Mock).";
         }
     }
+
+    elseif ($action === 'delete_beta_submission' && $target_id) {
+        if ($db_connected && $pdo) {
+            try {
+                $stmt = $pdo->prepare("DELETE FROM beta_test_submissions WHERE id = ?");
+                $stmt->execute([$target_id]);
+                $action_success = "Beta tester submission removed.";
+            } catch (PDOException $e) {
+                $action_error = "Database error: " . $e->getMessage();
+            }
+        }
+        if (isset($_SESSION['mock_beta_test_submissions'])) {
+            $_SESSION['mock_beta_test_submissions'] = array_values(array_filter($_SESSION['mock_beta_test_submissions'], fn($sub) => ($sub['id'] ?? 0) != $target_id));
+            $action_success = "Beta tester submission removed (Session Mock).";
+        }
+    }
 }
 
 // Load users database
@@ -1019,6 +1035,19 @@ if ($db_connected && $pdo) {
 if (empty($contact_inquiries) && isset($_SESSION['mock_contact_inquiries'])) {
     $contact_inquiries = $_SESSION['mock_contact_inquiries'];
     usort($contact_inquiries, fn($a, $b) => strcmp($b['created_at'] ?? '', $a['created_at'] ?? ''));
+}
+
+// Fetch Beta Tester Checklist Submissions
+$beta_submissions = [];
+if ($db_connected && $pdo) {
+    try {
+        $stmt = $pdo->query("SELECT * FROM beta_test_submissions ORDER BY submitted_at DESC LIMIT 100");
+        $beta_submissions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {}
+}
+if (empty($beta_submissions) && isset($_SESSION['mock_beta_test_submissions'])) {
+    $beta_submissions = $_SESSION['mock_beta_test_submissions'];
+    usort($beta_submissions, fn($a, $b) => strcmp($b['submitted_at'] ?? '', $a['submitted_at'] ?? ''));
 }
 ?>
 <!DOCTYPE html>
@@ -2268,6 +2297,111 @@ if (empty($contact_inquiries) && isset($_SESSION['mock_contact_inquiries'])) {
                                     <input type="hidden" name="action" value="delete_contact_inquiry">
                                     <input type="hidden" name="target_id" value="<?php echo $inq['id']; ?>">
                                     <button type="submit" class="px-2.5 py-1.5 rounded-lg text-gray-400 hover:text-brand-coral hover:bg-brand-coralLight text-xs font-semibold transition-colors">
+                                        <i class="fa-solid fa-trash-can"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        <?php endforeach; endif; ?>
+                    </tbody>
+                </table>
+        <!-- BETA TESTER CHECKLIST SUBMISSIONS & JUDGMENT REPOSITORIES -->
+        <div id="beta-tester-records" class="bg-white rounded-3xl shadow-card border border-gray-100 overflow-hidden mb-10">
+            <div class="p-6 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="h-10 w-10 rounded-2xl bg-brand-sageLight text-brand-sage flex items-center justify-center font-bold">
+                        <i class="fa-solid fa-clipboard-check"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h2 class="text-lg font-bold font-outfit text-brand-slate">Beta Tester Checklist Submissions & Judgments</h2>
+                            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-brand-sage text-white">
+                                <?php echo count($beta_submissions); ?> Submissions
+                            </span>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-0.5">Live records of testing evaluations, checklist item verifications, and qualitative reviews submitted across all LinkedIn tester categories.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-brand-bg text-[10px] font-bold text-brand-slate uppercase tracking-wider border-b border-gray-100">
+                            <th class="p-4 pl-6">Tester & Role</th>
+                            <th class="p-4">Category Tested</th>
+                            <th class="p-4">Checklist Score</th>
+                            <th class="p-4">Rating & Recommend</th>
+                            <th class="p-4">Tester Judgment & Notes</th>
+                            <th class="p-4">Date</th>
+                            <th class="p-4 pr-6 text-right font-outfit">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100 text-xs">
+                        <?php if (empty($beta_submissions)): ?>
+                        <tr>
+                            <td colspan="7" class="p-8 text-center text-gray-500 font-medium">No beta tester checklist submissions recorded yet.</td>
+                        </tr>
+                        <?php else: foreach ($beta_submissions as $bs): 
+                            $checks = is_string($bs['completed_checklist'] ?? '') ? json_decode($bs['completed_checklist'], true) : ($bs['completed_checklist'] ?? []);
+                            $rating = intval($bs['overall_rating'] ?? 5);
+                            $rec = $bs['recommendation'] ?? 'yes';
+                        ?>
+                        <tr class="hover:bg-brand-bg/40 transition-colors">
+                            <td class="p-4 pl-6 align-top">
+                                <span class="font-bold text-brand-slate block"><?php echo htmlspecialchars($bs['tester_name']); ?></span>
+                                <a href="mailto:<?php echo htmlspecialchars($bs['tester_email']); ?>" class="text-[11px] text-brand-sage hover:underline block mt-0.5 font-mono">
+                                    <?php echo htmlspecialchars($bs['tester_email']); ?>
+                                </a>
+                            </td>
+                            <td class="p-4 align-top">
+                                <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-brand-coralLight text-brand-coral block w-max max-w-xs truncate">
+                                    <?php echo htmlspecialchars($bs['category_title']); ?>
+                                </span>
+                            </td>
+                            <td class="p-4 align-top whitespace-nowrap">
+                                <div class="flex items-center gap-1.5 font-bold text-brand-slate">
+                                    <i class="fa-solid fa-square-check text-brand-sage"></i>
+                                    <span><?php echo (int)($bs['checked_count'] ?? 0); ?> / <?php echo (int)($bs['total_items'] ?? 5); ?></span>
+                                </div>
+                                <span class="text-[10px] text-gray-400 block mt-0.5">Verified Tasks</span>
+                            </td>
+                            <td class="p-4 align-top whitespace-nowrap">
+                                <div class="flex items-center text-amber-400 text-xs">
+                                    <?php for ($s = 1; $s <= 5; $s++): ?>
+                                        <i class="fa-solid fa-star <?php echo $s <= $rating ? 'text-amber-400' : 'text-gray-200'; ?>"></i>
+                                    <?php endfor; ?>
+                                    <span class="ml-1 font-bold text-brand-slate text-xs"><?php echo $rating; ?>/5</span>
+                                </div>
+                                <span class="inline-block mt-1 px-2 py-0.5 rounded text-[10px] font-bold <?php echo $rec === 'yes' ? 'bg-emerald-50 text-emerald-700' : ($rec === 'maybe' ? 'bg-amber-50 text-amber-700' : 'bg-rose-50 text-rose-700'); ?>">
+                                    <?php echo $rec === 'yes' ? '👍 Recommends' : ($rec === 'maybe' ? '🤔 Potential' : '👎 Needs work'); ?>
+                                </span>
+                            </td>
+                            <td class="p-4 align-top max-w-sm">
+                                <div class="p-3 rounded-xl bg-gray-50 border border-gray-100 text-xs leading-relaxed text-gray-700 whitespace-normal">
+                                    "<?php echo htmlspecialchars($bs['feedback'] ?? 'No written comment'); ?>"
+                                </div>
+                                <?php if (!empty($checks) && is_array($checks)): ?>
+                                <details class="mt-2 text-[11px] text-gray-500 cursor-pointer">
+                                    <summary class="font-bold text-brand-slate hover:text-brand-sage select-none">
+                                        View Checked Items (<?php echo count($checks); ?>)
+                                    </summary>
+                                    <ul class="list-disc list-inside mt-1.5 space-y-1 bg-white p-2 rounded-lg border border-gray-100 text-[10px] text-gray-600">
+                                        <?php foreach ($checks as $item_text => $val): ?>
+                                        <li class="truncate"><?php echo htmlspecialchars(is_string($val) && strlen($val) > 1 ? $val : $item_text); ?></li>
+                                        <?php endforeach; ?>
+                                    </ul>
+                                </details>
+                                <?php endif; ?>
+                            </td>
+                            <td class="p-4 align-top text-gray-500 font-mono text-[10px] whitespace-nowrap">
+                                <?php echo date('M j, Y H:i', strtotime($bs['submitted_at'] ?? 'now')); ?>
+                            </td>
+                            <td class="p-4 pr-6 align-top text-right whitespace-nowrap">
+                                <form method="POST" class="inline" onsubmit="return confirm('Remove this beta tester submission?');">
+                                    <input type="hidden" name="action" value="delete_beta_submission">
+                                    <input type="hidden" name="target_id" value="<?php echo $bs['id']; ?>">
+                                    <button type="submit" class="px-2.5 py-1.5 rounded-lg text-gray-400 hover:text-brand-coral hover:bg-brand-coralLight text-xs font-semibold transition-colors" title="Delete record">
                                         <i class="fa-solid fa-trash-can"></i>
                                     </button>
                                 </form>

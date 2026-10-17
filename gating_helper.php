@@ -78,16 +78,16 @@ function getPlanBadge($required_plan, $extra_classes = '') {
     $p = strtolower($required_plan);
     switch ($p) {
         case 'free':
-            return '<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200/80 shadow-sm font-outfit ' . $extra_classes . '" title="Production Access: Free Account"><i class="fa-solid fa-seedling text-[9px]"></i> Free Plan</span>';
+            return '<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200/80 shadow-sm font-outfit ' . $extra_classes . '" title="Package: Free Plan"><i class="fa-solid fa-seedling text-[9px]"></i> Free Plan</span>';
         case 'basic':
-            return '<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-sky-50 text-sky-700 border border-sky-200/80 shadow-sm font-outfit ' . $extra_classes . '" title="Production Access: Basic Plan (£9.99/mo)"><i class="fa-solid fa-star text-[9px] text-sky-500"></i> Basic (£9.99/mo)</span>';
+            return '<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-sky-50 text-sky-700 border border-sky-200/80 shadow-sm font-outfit ' . $extra_classes . '" title="Package: Basic Plan"><i class="fa-solid fa-star text-[9px] text-sky-500"></i> Basic Plan</span>';
         case 'premium':
-            return '<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-purple-50 text-purple-700 border border-purple-200/80 shadow-sm font-outfit ' . $extra_classes . '" title="Production Access: Premium Plan (£29.99/mo)"><i class="fa-solid fa-crown text-[9px] text-amber-500"></i> Premium (£29.99/mo)</span>';
+            return '<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-purple-50 text-purple-700 border border-purple-200/80 shadow-sm font-outfit ' . $extra_classes . '" title="Package: Premium Plan"><i class="fa-solid fa-crown text-[9px] text-amber-500"></i> Premium Plan</span>';
         case 'corporate':
-            return '<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-amber-50 text-amber-800 border border-amber-200/80 shadow-sm font-outfit ' . $extra_classes . '" title="Production Access: Corporate Plan (£199/mo)"><i class="fa-solid fa-building text-[9px] text-amber-600"></i> Corporate (£199/mo)</span>';
+            return '<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-amber-50 text-amber-800 border border-amber-200/80 shadow-sm font-outfit ' . $extra_classes . '" title="Package: Corporate Plan"><i class="fa-solid fa-building text-[9px] text-amber-600"></i> Corporate Plan</span>';
         case 'guest':
         default:
-            return '<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-gray-50 text-gray-600 border border-gray-200 shadow-sm font-outfit ' . $extra_classes . '" title="Production Access: Open to All"><i class="fa-solid fa-globe text-[9px]"></i> Guest Access</span>';
+            return '<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-gray-50 text-gray-600 border border-gray-200 shadow-sm font-outfit ' . $extra_classes . '" title="Package: Open Access"><i class="fa-solid fa-globe text-[9px]"></i> Guest Access</span>';
     }
 }
 

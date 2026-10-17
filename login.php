@@ -25,6 +25,36 @@ if (isset($_GET['signup_success'])) {
     $success = "Registration successful! You can now log in using your credentials.";
 }
 
+// 1-CLICK INSTANT BETA TESTER LOGIN
+if (isset($_POST['action']) && $_POST['action'] === 'tester_login' || isset($_GET['tester_login'])) {
+    // Generate unique anonymous session identifier (e.g. Beta Tester #482)
+    $rand_id = mt_rand(100, 999);
+    $anon_code = strtoupper(substr(md5(uniqid(mt_rand(), true)), 0, 4));
+    $tester_name = "Beta Tester #{$rand_id}";
+    $tester_email = "tester.{$anon_code}@tetwellbeing.com";
+    $tester_uid = 8000 + $rand_id;
+
+    // Persist or register into session
+    $_SESSION['user_id'] = $tester_uid;
+    $_SESSION['user_name'] = $tester_name;
+    $_SESSION['user_email'] = $tester_email;
+    $_SESSION['user_role'] = 'client';
+    $_SESSION['is_beta_tester'] = true;
+
+    // Pre-activate Beta Testing Program tracking
+    $_SESSION['beta_tester'] = [
+        'active' => true,
+        'category_id' => '', // Will prompt tester to choose their profile
+        'category_title' => '',
+        'started_at' => date('Y-m-d H:i:s'),
+        'visited_pages' => ['dashboard.php'],
+        'dismissed_modal' => false
+    ];
+
+    header('Location: dashboard.php?beta_welcome=1');
+    exit;
+}
+
 // Handle resend code request
 if (isset($_GET['resend'])) {
     $resend_email = filter_var($_GET['resend'], FILTER_VALIDATE_EMAIL);
@@ -204,6 +234,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <script>
         tailwind.config = {
@@ -257,16 +288,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
             <?php endif; ?>
 
+            <!-- 1-CLICK INSTANT BETA TESTER LOGIN CARD -->
+            <div class="p-5 bg-gradient-to-br from-brand-coral/10 via-brand-coral/5 to-white rounded-2xl border-2 border-brand-coral/30 shadow-sm relative overflow-hidden">
+                <div class="flex items-start justify-between gap-3 mb-2.5">
+                    <div class="flex items-center gap-2.5">
+                        <div class="h-9 w-9 rounded-xl bg-brand-coral text-white flex items-center justify-center font-bold text-base shadow-sm">
+                            <i class="fa-solid fa-flask-vial"></i>
+                        </div>
+                        <div>
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-brand-coral block">LinkedIn Evaluation Program</span>
+                            <h3 class="text-sm font-bold font-outfit text-brand-slate">Beta Tester Quick Access</h3>
+                        </div>
+                    </div>
+                    <span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-brand-coralLight text-brand-coral font-outfit">
+                        No Password Needed
+                    </span>
+                </div>
+                <p class="text-xs text-gray-600 leading-relaxed mb-3.5">
+                    Testing the platform? You do not need to register or type any login credentials. Click below to enter immediately as an anonymous beta tester:
+                </p>
+                <form method="POST" action="login.php">
+                    <input type="hidden" name="action" value="tester_login">
+                    <button type="submit" class="w-full py-2.5 px-4 rounded-xl bg-brand-coral hover:bg-brand-coralHover text-white font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2 font-outfit active:scale-95 group">
+                        <span>Enter as Beta Tester (1-Click)</span>
+                        <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                    </button>
+                </form>
+            </div>
+
             <!-- Demo helper credentials box -->
             <div class="p-4 bg-brand-sageLight/50 rounded-2xl border border-brand-sage/20 text-xs text-brand-slate space-y-2">
                 <div class="flex items-center gap-2 font-bold text-brand-sage">
                     <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
                     </svg>
-                    <span>Demo Account Details</span>
+                    <span>Alternative Demo Accounts</span>
                 </div>
                 <p class="text-gray-500 leading-relaxed">
-                    We've set up mock accounts so you can evaluate the platform instantly. Click below to autofill or type:
+                    Or evaluate standard client & admin accounts with password login:
                 </p>
                 <div class="bg-white p-2.5 rounded-xl border border-gray-100 flex flex-col gap-2">
                     <div class="flex items-center justify-between">

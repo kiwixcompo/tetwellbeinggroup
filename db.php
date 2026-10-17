@@ -692,6 +692,36 @@ try {
         $pdo->exec("INSERT INTO platform_commission_logs (id, booking_id, specialist_id, specialist_name, gross_amount, commission_rate, commission_amount, net_payout) VALUES
             (1, 1, 2, 'Dr. Evelyn Carter, PhD', 120.00, 15.00, 18.00, 102.00)");
     }
+
+    // Beta Tester Submissions table (Track tester checklist judgments & feedback)
+    $pdo->exec("CREATE TABLE IF NOT EXISTS beta_test_submissions (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT DEFAULT NULL,
+        tester_name VARCHAR(150) NOT NULL,
+        tester_email VARCHAR(150) NOT NULL,
+        category_id VARCHAR(50) NOT NULL,
+        category_title VARCHAR(150) NOT NULL,
+        overall_rating INT DEFAULT 5,
+        completed_checklist JSON DEFAULT NULL,
+        checked_count INT DEFAULT 0,
+        total_items INT DEFAULT 0,
+        feedback TEXT DEFAULT NULL,
+        recommendation ENUM('yes', 'maybe', 'no') DEFAULT 'yes',
+        submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB");
+
+    $beta_sub_count = $pdo->query("SELECT COUNT(*) FROM beta_test_submissions")->fetchColumn();
+    if ($beta_sub_count == 0) {
+        $demo_checks = json_encode([
+            "Emergency quick-exit & crisis numbers tested" => 1,
+            "AI distress keyword escalation verified" => 1,
+            "AI companion supportive clinical tone" => 1,
+            "Teletherapy provider profiles & booking flow" => 1,
+            "PHQ-9 & GAD-7 clinical assessment scoring" => 1
+        ]);
+        $pdo->exec("INSERT INTO beta_test_submissions (id, user_id, tester_name, tester_email, category_id, category_title, overall_rating, completed_checklist, checked_count, total_items, feedback, recommendation) VALUES
+            (1, 1, 'Dr. Sarah Mitchell, HCPC', 's.mitchell@nhs.net', 'clinician', 'Mental Health Clinicians & Counselors', 5, '$demo_checks', 5, 5, 'Safeguarding red button works instantly. AI companion tone is compassionate and respectfully non-diagnostic. Excellent crisis workflow.', 'yes')");
+    }
     // ────────────────────────────────────────────────────────────────────────
 
     // Seed departments & update Mark if empty
@@ -1466,6 +1496,31 @@ if (!isset($_SESSION['mock_academy_lessons'])) {
 if (!isset($_SESSION['mock_academy_user_progress'])) {
     $_SESSION['mock_academy_user_progress'] = [
         ['user_id' => 1, 'lesson_id' => 1]
+    ];
+}
+if (!isset($_SESSION['mock_beta_test_submissions'])) {
+    $_SESSION['mock_beta_test_submissions'] = [
+        [
+            'id' => 1,
+            'user_id' => 1,
+            'tester_name' => 'Dr. Sarah Mitchell, HCPC',
+            'tester_email' => 's.mitchell@nhs.net',
+            'category_id' => 'clinician',
+            'category_title' => 'Mental Health Clinicians & Counselors',
+            'overall_rating' => 5,
+            'completed_checklist' => [
+                'Emergency quick-exit & crisis numbers tested' => 1,
+                'AI distress keyword escalation verified' => 1,
+                'AI companion supportive clinical tone' => 1,
+                'Teletherapy provider profiles & booking flow' => 1,
+                'PHQ-9 & GAD-7 clinical assessment scoring' => 1
+            ],
+            'checked_count' => 5,
+            'total_items' => 5,
+            'feedback' => 'Safeguarding red button works instantly. AI companion tone is compassionate and respectfully non-diagnostic. Excellent crisis workflow.',
+            'recommendation' => 'yes',
+            'submitted_at' => date('Y-m-d H:i:s', strtotime('-2 hours'))
+        ]
     ];
 }
 // ─────────────────────────────────────────────────────────────────────────────
