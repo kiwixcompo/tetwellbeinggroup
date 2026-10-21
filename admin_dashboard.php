@@ -637,7 +637,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                         ->execute([$target_id, $t_id ?? 0, $t_name, $gross, $commission_rate * 100, $comm_amt, $net_pay]);
 
                     $pdo->commit();
-                    $action_success = "Escrow released. Net £" . number_format($net_pay, 2) . " credited to specialist (15% platform fee of £" . number_format($comm_amt, 2) . " deducted).";
+                    $action_success = "Escrow released. Net $" . number_format($net_pay, 2) . " credited to specialist (15% platform fee of $" . number_format($comm_amt, 2) . " deducted).";
                 } else {
                     $pdo->rollBack();
                     $action_error = "Escrow booking not found or already released.";
@@ -678,7 +678,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                         'net_payout' => $net_pay,
                         'logged_at' => date('Y-m-d H:i:s')
                     ];
-                    $action_success = "Escrow released (Session Mock). Net £" . number_format($net_pay, 2) . " credited (15% fee: £" . number_format($comm_amt, 2) . ").";
+                    $action_success = "Escrow released (Session Mock). Net $" . number_format($net_pay, 2) . " credited (15% fee: $" . number_format($comm_amt, 2) . ").";
                     break;
                 }
             }
@@ -1247,7 +1247,7 @@ if (empty($beta_submissions) && isset($_SESSION['mock_beta_test_submissions'])) 
                 </div>
                 <div>
                     <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">System Escrow Holding</p>
-                    <h3 class="text-2xl font-bold font-outfit text-brand-slate mt-0.5">£<?php echo number_format($escrow_balance_total, 2); ?></h3>
+                    <h3 class="text-2xl font-bold font-outfit text-brand-slate mt-0.5">$<?php echo number_format($escrow_balance_total, 2); ?></h3>
                 </div>
             </div>
 
@@ -1260,7 +1260,7 @@ if (empty($beta_submissions) && isset($_SESSION['mock_beta_test_submissions'])) 
                 </div>
                 <div>
                     <p class="text-[10px] text-white/70 font-bold uppercase tracking-wider">Platform Commission Revenue</p>
-                    <h3 class="text-2xl font-bold font-outfit text-white mt-0.5">£<?php echo number_format($platform_revenue_total, 2); ?></h3>
+                    <h3 class="text-2xl font-bold font-outfit text-white mt-0.5">$<?php echo number_format($platform_revenue_total, 2); ?></h3>
                     <p class="text-[10px] text-white/60 mt-0.5">15% on all cleared bookings</p>
                 </div>
             </div>
@@ -1573,7 +1573,7 @@ if (empty($beta_submissions) && isset($_SESSION['mock_beta_test_submissions'])) 
                 </div>
                 <div class="flex items-center gap-2 bg-brand-sageLight rounded-2xl px-4 py-2">
                     <svg class="h-4 w-4 text-brand-sage" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
-                    <span class="text-xs font-bold text-brand-sage">Total Commission: £<?php echo number_format($platform_revenue_total, 2); ?></span>
+                    <span class="text-xs font-bold text-brand-sage">Total Commission: $<?php echo number_format($platform_revenue_total, 2); ?></span>
                 </div>
             </div>
             <div class="overflow-x-auto">
@@ -1597,14 +1597,14 @@ if (empty($beta_submissions) && isset($_SESSION['mock_beta_test_submissions'])) 
                         <tr class="hover:bg-brand-bg/40 transition-colors">
                             <td class="p-4 pl-6 font-mono text-brand-slate">#<?php echo htmlspecialchars($cl['booking_id']); ?></td>
                             <td class="p-4 font-bold text-brand-slate"><?php echo htmlspecialchars($cl['specialist_name']); ?></td>
-                            <td class="p-4 font-bold text-gray-700">£<?php echo number_format((float)$cl['gross_amount'], 2); ?></td>
+                            <td class="p-4 font-bold text-gray-700">$<?php echo number_format((float)$cl['gross_amount'], 2); ?></td>
                             <td class="p-4">
                                 <span class="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-brand-sageLight text-brand-sage font-bold text-[10px]">
-                                    £<?php echo number_format((float)$cl['commission_amount'], 2); ?>
+                                    $<?php echo number_format((float)$cl['commission_amount'], 2); ?>
                                     <span class="text-brand-sage/60">(<?php echo number_format((float)$cl['commission_rate'], 0); ?>%)</span>
                                 </span>
                             </td>
-                            <td class="p-4 font-bold text-brand-sage">£<?php echo number_format((float)$cl['net_payout'], 2); ?></td>
+                            <td class="p-4 font-bold text-brand-sage">$<?php echo number_format((float)$cl['net_payout'], 2); ?></td>
                             <td class="p-4 pr-6 font-mono text-[10px] text-gray-400"><?php echo htmlspecialchars(substr($cl['logged_at'], 0, 16)); ?></td>
                         </tr>
                         <?php endforeach; endif; ?>

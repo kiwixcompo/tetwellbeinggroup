@@ -720,7 +720,7 @@ try {
             "PHQ-9 & GAD-7 clinical assessment scoring" => 1
         ]);
         $pdo->exec("INSERT INTO beta_test_submissions (id, user_id, tester_name, tester_email, category_id, category_title, overall_rating, completed_checklist, checked_count, total_items, feedback, recommendation) VALUES
-            (1, 1, 'Dr. Sarah Mitchell, HCPC', 's.mitchell@nhs.net', 'clinician', 'Mental Health Clinicians & Counselors', 5, '$demo_checks', 5, 5, 'Safeguarding red button works instantly. AI companion tone is compassionate and respectfully non-diagnostic. Excellent crisis workflow.', 'yes')");
+            (1, 1, 'Dr. Sarah Mitchell, PsyD', 's.mitchell@nhs.net', 'clinician', 'Mental Health Clinicians & Counselors', 5, '$demo_checks', 5, 5, 'Safeguarding red button works instantly. AI companion tone is compassionate and respectfully non-diagnostic. Excellent crisis workflow.', 'yes')");
     }
     // ────────────────────────────────────────────────────────────────────────
 
@@ -1503,7 +1503,7 @@ if (!isset($_SESSION['mock_beta_test_submissions'])) {
         [
             'id' => 1,
             'user_id' => 1,
-            'tester_name' => 'Dr. Sarah Mitchell, HCPC',
+            'tester_name' => 'Dr. Sarah Mitchell, PsyD',
             'tester_email' => 's.mitchell@nhs.net',
             'category_id' => 'clinician',
             'category_title' => 'Mental Health Clinicians & Counselors',

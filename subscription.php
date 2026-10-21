@@ -485,7 +485,7 @@ foreach ($plans as $p) {
                                 $status_class = 'bg-gray-50 text-gray-600 border-gray-200';
                             }
                             $inv_plan_label = ucfirst($inv['plan_slug'] ?? 'Unknown');
-                            $inv_amount     = '&pound;' . number_format((float)($inv['amount'] ?? 0), 2);
+                            $inv_amount     = '$' . number_format((float)($inv['amount'] ?? 0), 2);
                             $inv_date       = date('d M Y', strtotime($inv['created_at'] ?? 'now'));
                             $inv_id_display = 'INV-' . str_pad($inv['id'] ?? '0', 5, '0', STR_PAD_LEFT);
                         ?>

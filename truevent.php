@@ -119,7 +119,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="text-center mb-10">
             <div class="inline-flex items-center gap-2 mb-3">
                 <span class="px-3 py-1 rounded-full text-xs font-bold font-outfit uppercase tracking-wider bg-sky-500/20 text-sky-300 border border-sky-500/30">
-                    <i class="fa-solid fa-star text-[10px] text-sky-400"></i> Basic Plan (£9.99/mo in Production)
+                    <i class="fa-solid fa-star text-[10px] text-sky-400"></i> Basic Plan (Basic Plan)
                 </span>
             </div>
             <h1 class="text-3xl md:text-4xl font-extrabold text-white tracking-tight mb-3">TrueVent</h1>

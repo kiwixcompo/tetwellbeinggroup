@@ -803,7 +803,7 @@ $today_date = date('l, F j, Y');
                                     <h4 class="font-bold text-brand-slate text-sm font-outfit"><?php echo htmlspecialchars($t_name); ?></h4>
                                     <div class="flex items-center gap-1.5 mt-0.5">
                                         <span class="inline-flex items-center gap-1 text-[9px] font-extrabold px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
-                                            <i class="fa-solid fa-certificate text-[8px]"></i> HCPC / BACP Verified
+                                            <i class="fa-solid fa-certificate text-[8px]"></i> Licensed / Board Certified
                                         </span>
                                     </div>
                                     <span class="text-[10px] text-gray-400 font-medium truncate max-w-[150px] inline-block mt-0.5"><?php echo htmlspecialchars($t_license); ?></span>
@@ -833,7 +833,7 @@ $today_date = date('l, F j, Y');
                         
                         <div class="pt-3 border-t border-gray-100 flex items-center justify-between">
                             <div>
-                                <span class="text-xs font-bold text-brand-slate">&pound;<?php echo number_format($t_rate, 2); ?></span>
+                                <span class="text-xs font-bold text-brand-slate">$<?php echo number_format($t_rate, 2); ?></span>
                                 <span class="text-[9px] text-gray-400">/ session</span>
                             </div>
                             <?php if ($can_book_teletherapy): ?>
@@ -1292,7 +1292,7 @@ $today_date = date('l, F j, Y');
             <form method="POST" action="teletherapy_hub.php" id="teletherapy-booking-form" class="space-y-4">
                 <input type="hidden" name="action" value="book_session">
                 <input type="hidden" name="therapist_name" id="modal-therapist-name">
-                <input type="hidden" name="selected_currency" id="selected_currency" value="GBP">
+                <input type="hidden" name="selected_currency" id="selected_currency" value="USD">
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
@@ -1327,15 +1327,13 @@ $today_date = date('l, F j, Y');
                     <div class="flex items-center justify-between">
                         <div>
                             <span class="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Session Fee</span>
-                            <div class="text-xl font-extrabold font-outfit text-brand-slate" id="display-session-fee">£100.00 GBP</div>
+                            <div class="text-xl font-extrabold font-outfit text-brand-slate" id="display-session-fee">$100.00 USD</div>
                         </div>
                         <div class="text-right">
                             <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Currency</label>
                             <select id="currency-selector" onchange="updateCurrencyConversion()" class="text-xs font-bold rounded-xl border border-blue-200 bg-white px-2.5 py-1 text-brand-slate focus:outline-none focus:ring-1 focus:ring-blue-400">
-                                <option value="GBP" data-rate="1" data-symbol="£">GBP (£)</option>
-                                <option value="USD" data-rate="1.30" data-symbol="$">USD ($)</option>
-                                <option value="EUR" data-rate="1.18" data-symbol="€">EUR (€)</option>
-                                <option value="NGN" data-rate="2050" data-symbol="₦">NGN (₦)</option>
+                                <option value="USD" data-rate="1" data-symbol="$" selected>USD ($)</option>
+                                <option value="NGN" data-rate="1600" data-symbol="₦">NGN (₦)</option>
                             </select>
                         </div>
                     </div>
@@ -1455,17 +1453,17 @@ $today_date = date('l, F j, Y');
         const bookingDateInput = document.getElementById('booking_date');
         const bookingTimeSelect = document.getElementById('booking_time');
 
-        let baseFeeGBP = 100.00;
+        let baseFeeUSD = 100.00;
 
         function updateCurrencyConversion() {
             const selector = document.getElementById('currency-selector');
             if (!selector) return;
             const option = selector.options[selector.selectedIndex];
             const rate = parseFloat(option.getAttribute('data-rate') || 1);
-            const symbol = option.getAttribute('data-symbol') || '£';
+            const symbol = option.getAttribute('data-symbol') || '$';
             const curr = option.value;
             
-            const converted = (baseFeeGBP * rate).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            const converted = (baseFeeUSD * rate).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
             const displayEl = document.getElementById('display-session-fee');
             if (displayEl) {
                 displayEl.textContent = `${symbol}${converted} ${curr}`;
@@ -1483,9 +1481,9 @@ $today_date = date('l, F j, Y');
             // Look up therapist rate if present
             const card = document.querySelector(`.therapist-card[data-therapist-name="${therapistName}"]`);
             if (card && card.dataset.hourlyRate) {
-                baseFeeGBP = parseFloat(card.dataset.hourlyRate);
+                baseFeeUSD = parseFloat(card.dataset.hourlyRate);
             } else {
-                baseFeeGBP = 100.00;
+                baseFeeUSD = 100.00;
             }
             updateCurrencyConversion();
             

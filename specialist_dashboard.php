@@ -712,21 +712,21 @@ if (empty($current_avail_periods) && isset($_SESSION['mock_availability'])) {
                         <div class="p-4 bg-brand-bg rounded-2xl border border-gray-100 flex flex-col">
                             <span class="text-[10px] text-gray-400 font-bold uppercase">Escrow Held</span>
                             <span class="text-2xl font-extrabold text-brand-slate mt-1">
-                                &pound;<?php echo number_format((float)($specialist['escrow_balance'] ?? 0.00), 2); ?>
+                                $<?php echo number_format((float)($specialist['escrow_balance'] ?? 0.00), 2); ?>
                             </span>
                             <span class="text-[10px] text-gray-400 mt-1">Gross (pre-fee)</span>
                         </div>
                         <div class="p-4 bg-brand-sageLight/40 rounded-2xl border border-brand-sage/10 flex flex-col">
                             <span class="text-[10px] text-brand-sage font-bold uppercase">Cleared Balance</span>
                             <span class="text-2xl font-extrabold text-brand-sage mt-1">
-                                &pound;<?php echo number_format((float)($specialist['clearance_balance'] ?? 0.00), 2); ?>
+                                $<?php echo number_format((float)($specialist['clearance_balance'] ?? 0.00), 2); ?>
                             </span>
                             <span class="text-[10px] text-brand-sage/70 mt-1">Net (85% of gross)</span>
                         </div>
                         <div class="p-4 bg-brand-coralLight rounded-2xl border border-brand-coral/10 flex flex-col">
                             <span class="text-[10px] text-brand-coral font-bold uppercase">Total Fees Deducted</span>
                             <span class="text-2xl font-extrabold text-brand-coral mt-1">
-                                &pound;<?php echo number_format($specialist_total_commission, 2); ?>
+                                $<?php echo number_format($specialist_total_commission, 2); ?>
                             </span>
                             <span class="text-[10px] text-brand-coral/70 mt-1">Platform fee: 15%</span>
                         </div>
@@ -758,13 +758,13 @@ if (empty($current_avail_periods) && isset($_SESSION['mock_availability'])) {
                                 <?php foreach ($specialist_commission_logs as $cl): ?>
                                 <tr class="hover:bg-brand-bg/50 transition-colors">
                                     <td class="p-3 pl-4 font-mono text-brand-slate">#<?php echo htmlspecialchars($cl['booking_id']); ?></td>
-                                    <td class="p-3 font-bold text-gray-700">&pound;<?php echo number_format((float)$cl['gross_amount'], 2); ?></td>
+                                    <td class="p-3 font-bold text-gray-700">$<?php echo number_format((float)$cl['gross_amount'], 2); ?></td>
                                     <td class="p-3">
                                         <span class="px-1.5 py-0.5 rounded bg-brand-coralLight text-brand-coral font-bold text-[10px]">
-                                            -&pound;<?php echo number_format((float)$cl['commission_amount'], 2); ?>
+                                            -$<?php echo number_format((float)$cl['commission_amount'], 2); ?>
                                         </span>
                                     </td>
-                                    <td class="p-3 font-bold text-brand-sage">&pound;<?php echo number_format((float)$cl['net_payout'], 2); ?></td>
+                                    <td class="p-3 font-bold text-brand-sage">$<?php echo number_format((float)$cl['net_payout'], 2); ?></td>
                                     <td class="p-3 font-mono text-[10px] text-gray-400"><?php echo htmlspecialchars(substr($cl['logged_at'], 0, 10)); ?></td>
                                 </tr>
                                 <?php endforeach; ?>

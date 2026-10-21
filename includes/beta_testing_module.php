@@ -78,7 +78,7 @@ $current_page_name = basename($_SERVER['PHP_SELF']);
                 <div class="flex-1 min-w-0">
                     <div class="flex items-center justify-between gap-2">
                         <h3 class="text-sm font-bold font-outfit text-brand-slate group-hover:text-brand-sage transition-colors">1. Mental Health Clinicians & Counselors</h3>
-                        <span class="text-[10px] font-bold text-purple-600 bg-purple-100/60 px-2 py-0.5 rounded-full shrink-0">BACP / HCPC</span>
+                        <span class="text-[10px] font-bold text-purple-600 bg-purple-100/60 px-2 py-0.5 rounded-full shrink-0">Licensed / Accredited</span>
                     </div>
                     <p class="text-xs text-gray-500 mt-1 leading-relaxed">
                         Evaluates clinical safety, crisis intervention triggers, AI Companion boundaries, and Teletherapy intake workflows.
